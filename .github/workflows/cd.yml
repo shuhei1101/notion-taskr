@@ -44,6 +44,6 @@ jobs:
           --image $IMAGE \
           --project $GCP_PROJECT_ID \
           --region $GCP_REGION \
-          --service-account $SERVICE_ACCOUNT_NAME
+          --service-account $SERVICE_ACCOUNT_NAME \
           --platform managed \
-          --allow-unauthenticated  # 認証なしでアクセスを許可する場合。必要に応じて変更
+          --allow-unauthenticated  
