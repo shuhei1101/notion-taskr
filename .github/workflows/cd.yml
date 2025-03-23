@@ -47,4 +47,4 @@ jobs:
           --region $GCP_REGION \
           --service-account $SERVICE_ACCOUNT_NAME \
           --platform managed \
-          --allow-unauthenticated
+          --no-allow-unauthenticated 
