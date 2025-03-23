@@ -10,17 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # GitHub リポジトリの内容をクローン
-      - name: Checkout code
-        uses: actions/checkout@v2
+    # GitHub リポジトリの内容をクローン
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      # GCP 認証設定
-      - name: Set up Google Cloud authentication
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+    # GCP 認証設定
+    - name: Set up Google Cloud authentication
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}  # GCP_SA_KEY に設定したサービスアカウントキーを使用
 
-      # Cloud Build を実行
-      - name: Trigger Cloud Build
-        run: |
-          gcloud builds submit --config cloudbuild.yaml .
+    # プロジェクトIDを設定
+    - name: Set GCP project ID
+      run: |
+        gcloud config set project ${{ secrets.PROJECT_ID }}
+
+    # Cloud Build を実行
+    - name: Trigger Cloud Build
+      run: |
+        gcloud builds submit --config .github/workflows/cloudbuild.yaml --project ${{ secrets.PROJECT_ID }} .
