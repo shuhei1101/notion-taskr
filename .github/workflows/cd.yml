@@ -47,10 +47,4 @@ jobs:
           --region $GCP_REGION \
           --service-account $SERVICE_ACCOUNT_NAME \
           --platform managed \
-          --no-allow-unauthenticated 
-    - name: Restrict access to Cloud Run
-      run: | 
-        gcloud run services add-iam-policy-binding $SERVICE_NAME \
-          --region $GCP_REGION \
-          --member=user:$ALLOWED_EMAIL \
-          --role=roles/run.invoker
+          --allow-unauthenticateds  # 認証を無効化（IAP で認証するため）
