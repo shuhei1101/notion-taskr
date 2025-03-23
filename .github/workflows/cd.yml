@@ -33,7 +33,7 @@ jobs:
       run: gcloud artifacts docker images delete ${{ env.IMAGE }} --quiet
 
     - name: Build a docker image
-      run: docker build -t ${{ env.IMAGE }} --build-arg NOTION_TOKEN=${{ secrets.NOTION_TOKEN }} .
+      run: docker build --no-cache -t ${{ env.IMAGE }} --build-arg NOTION_TOKEN=${{ secrets.NOTION_TOKEN }} .
 
     - name: Push the docker image
       run: docker push ${{ env.IMAGE }}
@@ -48,4 +48,4 @@ jobs:
           --image $IMAGE \
           --project $GCP_PROJECT_ID \
           --region $GCP_REGION \
-          --service-account $SERVICE_ACCOUNT_NAME 
+          --service-account $SERVICE_ACCOUNT_NAME
