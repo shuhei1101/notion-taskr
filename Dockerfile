@@ -1,4 +1,8 @@
 FROM python:3.12-slim
+
+ARG NOTION_TOKEN
+ENV NOTION_TOKEN=$NOTION_TOKEN
+
 WORKDIR /app
 COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt

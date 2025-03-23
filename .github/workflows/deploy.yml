@@ -1,31 +1,52 @@
-name: Deploy to Cloud Run via Cloud Build
+name: Deploy to Cloud Run
 
 on:
   push:
     branches:
-      - main  # main ブランチに push されたときにトリガーされる
-
+      - main
+env:
+  SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+  SERVICE_ACCOUNT_NAME: ${{ secrets.SERVICE_ACCOUNT_NAME }}
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: ${{ secrets.GCP_REGION }}
+  IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.SERVICE_NAME }}/${{ secrets.SERVICE_NAME }}
+  NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}  # GitHub Secrets から取得
+  
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-    # GitHub リポジトリの内容をクローン
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-    # GCP 認証設定
-    - name: Set up Google Cloud authentication
-      uses: google-github-actions/setup-gcloud@v2
+    - id: "auth"
+      uses: "google-github-actions/auth@v2"
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}  # GCP_SA_KEY に設定したサービスアカウントキーを使用
+        credentials_json: "${{ secrets.GCP_SA_KEY }}"
 
-    # プロジェクトIDを設定
-    - name: Set GCP project ID
-      run: |
-        gcloud config set project ${{ secrets.PROJECT_ID }}
+    - name: Configure docker to use the gcloud cli
+      run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
 
-    # Cloud Build を実行
-    - name: Trigger Cloud Build
-      run: |
-        gcloud builds submit --config cloudbuild.yaml --project ${{ secrets.PROJECT_ID }} .
+    - name: Delete old image
+      continue-on-error: true
+      run: gcloud artifacts docker images delete ${{ env.IMAGE }} --quiet
+
+    - name: Build a docker image
+      run: docker build -t ${{ env.IMAGE }} --build-arg NOTION_TOKEN=${{ secrets.NOTION_TOKEN }} .
+
+    - name: Push the docker image
+      run: docker push ${{ env.IMAGE }}
+
+    - name: Deploy to Cloud Run
+      run: | 
+        gcloud run jobs deploy $SERVICE_NAME \
+          --tasks 1 \
+          --parallelism 1 \
+          --max-retries 3 \
+          --task-timeout 1m \
+          --image $IMAGE \
+          --project $GCP_PROJECT_ID \
+          --region $GCP_REGION \
+          --service-account $SERVICE_ACCOUNT_NAME \
+          --set-secrets=ID=ID:latest,CLIENT_SECRET=CLIENT_SECRET:latest
