@@ -1,0 +1,29 @@
+steps:
+  # コンテナイメージをビルドする
+  - name: 'gcr.io/cloud-builders/docker'  # Docker を使う
+    args: [
+      'build', '-t', 
+      'asia-northeast1-docker.pkg.dev/notion-api-454608/notion-api-repo/notion-api:$COMMIT_SHA',   # イメージ名
+      '.'  # ビルドするディレクトリ
+    ]
+
+  # 2. Artifact Registry にイメージをプッシュする
+  - name: 'gcr.io/cloud-builders/docker'  # Docker を使う
+    args: [
+      'push', 
+      'asia-northeast1-docker.pkg.dev/notion-api-454608/notion-api-repo/notion-api:$COMMIT_SHA'  # プッシュするイメージ
+    ]
+
+  # 3. Cloud Run にデプロイする
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'  # Cloud SDK を使う
+    entrypoint: gcloud  # gcloud コマンドを使う
+    args: [
+      'run', 'deploy', 'notion-api',  # Cloud Run サービス名
+      '--image', '',  # デプロイするイメージ
+      '--region', 'asia-northeast1',  # リージョン
+      '--platform', 'managed',  # プラットフォーム
+      '--no-allow-unauthenticated'  # 認証を必須にする
+    ]
+
+images:
+  - 'asia-northeast1-docker.pkg.dev/notion-api-454608/notion-api-repo/notion-api:$COMMIT_SHA'  # プッシュするイメージ
