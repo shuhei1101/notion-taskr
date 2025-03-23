@@ -48,3 +48,4 @@ jobs:
           --service-account $SERVICE_ACCOUNT_NAME \
           --platform managed \
           --allow-unauthenticateds  # 認証を無効化（IAP で認証するため）
+          --ingress=internal-and-cloud-load-balancing  # Load Balancer を経由してアクセス可能にする
