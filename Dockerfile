@@ -9,3 +9,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN pip install --no-cache-dir .
 CMD gunicorn app.main:app --bind 0.0.0.0:$PORT --workers 2 --threads 4
+
