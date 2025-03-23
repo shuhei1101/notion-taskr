@@ -28,4 +28,4 @@ jobs:
     # Cloud Build を実行
     - name: Trigger Cloud Build
       run: |
-        gcloud builds submit --config .github/workflows/cloudbuild.yaml --project ${{ secrets.PROJECT_ID }} .
+        gcloud builds submit --config cloudbuild.yaml --project ${{ secrets.PROJECT_ID }} .
