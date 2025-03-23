@@ -40,12 +40,10 @@ jobs:
 
     - name: Deploy to Cloud Run
       run: | 
-        gcloud run jobs deploy $SERVICE_NAME \
-          --tasks 1 \
-          --parallelism 1 \
-          --max-retries 3 \
-          --task-timeout 1m \
+        gcloud run deploy $SERVICE_NAME \
           --image $IMAGE \
           --project $GCP_PROJECT_ID \
           --region $GCP_REGION \
           --service-account $SERVICE_ACCOUNT_NAME
+          --platform managed \
+          --allow-unauthenticated  # 認証なしでアクセスを許可する場合。必要に応じて変更
