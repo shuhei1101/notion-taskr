@@ -49,4 +49,3 @@ jobs:
           --project $GCP_PROJECT_ID \
           --region $GCP_REGION \
           --service-account $SERVICE_ACCOUNT_NAME \
-          --set-secrets=ID=ID:latest,CLIENT_SECRET=CLIENT_SECRET:latest
