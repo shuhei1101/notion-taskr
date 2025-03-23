@@ -48,4 +48,4 @@ jobs:
           --image $IMAGE \
           --project $GCP_PROJECT_ID \
           --region $GCP_REGION \
-          --service-account $SERVICE_ACCOUNT_NAME
+          --service-account $SERVICE_ACCOUNT_NAME 
