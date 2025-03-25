@@ -14,6 +14,8 @@ env:
   JOB_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ secrets.SERVICE_NAME }}-job  # ジョブ用のDockerイメージ名
   ALLOWED_EMAIL: ${{ secrets.ALLOWED_EMAIL }}
   NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+  JOB_NAME: notion-api-job
+  CLOUD_RUN_JOB_TOPIC: notion-api-job-topic
  
 jobs:
   deploy:
@@ -79,8 +81,8 @@ jobs:
             --project $GCP_PROJECT_ID \
             --region $GCP_REGION \
             --service-account $SERVICE_ACCOUNT_NAME \
-            --task-timeout=300s \
-            --max-retries=2 \
+            --task-timeout=50s \
+            --max-retries=0 \
             --tasks=1
         else
           echo "Creating new job..."
@@ -89,8 +91,8 @@ jobs:
             --project $GCP_PROJECT_ID \
             --region $GCP_REGION \
             --service-account $SERVICE_ACCOUNT_NAME \
-            --task-timeout=300s \
-            --max-retries=2 \
+            --task-timeout=50s \
+            --max-retries=0 \
             --tasks=1
         fi
 
@@ -99,7 +101,7 @@ jobs:
       run: |
         gcloud scheduler jobs create pubsub $JOB_NAME \
           --schedule "*/5 * * * *" \
-          --time-zone "Asia/Tokyo" \
+          --location $GCP_REGION \
           --topic $CLOUD_RUN_JOB_TOPIC \
           --message-body '{"trigger": "true"}' \
           --project $GCP_PROJECT_ID
