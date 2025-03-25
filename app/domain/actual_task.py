@@ -3,6 +3,7 @@ import re
 from dataclasses import dataclass
 
 from domain.task import Task
+from domain.task_name import TaskName
 from util.calculator import get_hours_diff
 
 @dataclass
@@ -27,8 +28,8 @@ class ActualTask(Task):
 
         return cls(
             page_id=data['id'],
-            name=name,
-            tag=data['properties']['タグ']['multi_select'],
+            name=TaskName.from_raw_task_name(name),
+            tags=map(lambda tag: tag['name'], data['properties']['タグ']['multi_select']),
             start_date=start_date,
             end_date=end_date,
             man_hour=get_hours_diff(start_date, end_date),

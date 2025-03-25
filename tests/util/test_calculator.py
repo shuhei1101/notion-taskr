@@ -1,20 +1,19 @@
-import unittest
+from datetime import datetime
 
-from util.calculator import calc_time_diff
+from util.calculator import get_hours_diff
 
-class TestCalculator(unittest.TestCase):
-    def test_calc_time_diff(self):
-        start_date_str = '2025-04-10T21:00:00.000+09:00'
-        end_date_str = '2025-04-10T20:00:00.000+09:00'
-        actual = calc_time_diff(start_date_str, end_date_str)
-        expected = -1
-        self.assertEqual(actual, expected)
+class TestCalculator():
+    def test_get_hours_diff(self):
+        start_date = datetime(2020, 1, 1, 0, 0, 0)
+        end_date = datetime(2020, 1, 1, 1, 0, 0)
+        assert get_hours_diff(start_date, end_date) == 1.0
 
-    def test_calc_time_diff_when_arg_is_not_str(self):
-        start_date_str = 2025
-        end_date_str = 2025
-        with self.assertRaises(ValueError):
-            calc_time_diff(start_date_str, end_date_str)
-            
-if __name__ == '__main__':
-    unittest.main()
+    def test_get_hours_diff_when_same_date(self):
+        start_date = datetime(2020, 1, 1, 0, 0, 0)
+        end_date = datetime(2020, 1, 1, 0, 30, 0)
+        assert get_hours_diff(start_date, end_date) == 0.5
+
+    def test_get_hours_diff_when_start_date_is_future(self):
+        start_date = datetime(2020, 1, 2, 0, 0, 0)
+        end_date = datetime(2020, 1, 1, 0, 0, 0)
+        assert get_hours_diff(start_date, end_date) == -24.0

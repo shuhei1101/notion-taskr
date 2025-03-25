@@ -1,10 +1,12 @@
 from dataclasses import dataclass
+from typing import List
+
+from domain.task_name import TaskName
 
 @dataclass
 class Task():
     '''タスクモデル'''
     page_id: str
-    name: str
-    tag: str
-
+    name: TaskName
+    tags: List[str]
         

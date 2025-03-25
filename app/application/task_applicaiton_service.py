@@ -4,12 +4,17 @@ import config
 from domain.budget_task_service import BudgetTaskService
 from domain.actual_task import ActualTask
 from domain.budget_task import BudgetTask
+from infrastructure.actual_task_repository import ActualTaskRepository
+from infrastructure.budget_task_repository import BudgetTaskRepository
 from util.converter import man_hour_to_man_days
-from infrastructure.task_repostiory import TaskRepository
 
 class TaskApplicationService:
     def __init__(self):
-        self.repository = TaskRepository(
+        self.actual_task_repository = ActualTaskRepository(
+            config.NOTION_TOKEN, 
+            config.TASK_DB_ID
+        )
+        self.budget_task_repository = BudgetTaskRepository(
             config.NOTION_TOKEN, 
             config.TASK_DB_ID
         )
@@ -21,9 +26,9 @@ class TaskApplicationService:
         :param str tag: タグ
         '''
         # タスクの実績を取得
-        actual_tasks: List[ActualTask] = self.repository.get_actual_tasks(tags=tags)
+        actual_tasks: List[ActualTask] = self.actual_task_repository.find_by_tags(tags=tags)
         # タスクの予定を取得
-        budget_tasks: List[BudgetTask] = self.repository.get_budget_tasks(tags=tags)
+        budget_tasks: List[BudgetTask] = self.budget_task_repository.find_by_tags(tags=tags)
 
         # 予定タスクごとに実績工数を集計
         for budget_task in budget_tasks:
@@ -34,6 +39,9 @@ class TaskApplicationService:
             
             # 実績工数を人日に変換
             actual_man_days = man_hour_to_man_days(man_hour)
+            # copy
+            updated_budget_task = budget_task.copy()
+
             if actual_man_days != 0 and actual_man_days != budget_task.actual_man_hour:
                 # 予定タスクの実績工数を更新
                 self.repository.update_man_hour(

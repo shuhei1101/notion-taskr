@@ -1,3 +1,5 @@
+# 開発時はdocker-compose.ymlからビルドすること
+
 FROM ubuntu:22.04
 
 RUN apt-get update && apt-get install -y \
@@ -9,10 +11,10 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY requirements.txt requirements.txt
+COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
-RUN pip3 install --no-cache-dir -r requirements.dev.txt
 
 COPY . .
+RUN pip3 install --no-cache-dir -r requirements.dev.txt
 
 CMD ["tail", "-f", "/dev/null"]

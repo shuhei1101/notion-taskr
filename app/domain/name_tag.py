@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 @dataclass
-class Tag():
+class NameTag():
     key: str
     value: str
     
