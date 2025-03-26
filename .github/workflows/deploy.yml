@@ -96,12 +96,3 @@ jobs:
             --tasks=1
         fi
 
-    # Cloud Scheduler にジョブを作成または更新
-    - name: Create or Update Cloud Scheduler Job
-      run: |
-        gcloud scheduler jobs create pubsub $JOB_NAME \
-          --schedule "*/5 * * * *" \
-          --location $GCP_REGION \
-          --topic $CLOUD_RUN_JOB_TOPIC \
-          --message-body '{"trigger": "true"}' \
-          --project $GCP_PROJECT_ID
