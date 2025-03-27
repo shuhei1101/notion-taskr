@@ -53,3 +53,28 @@ class ActualTaskRepository:
             return actual_tasks
         except Exception as e:
             raise
+
+    # 未完了のタスクを取得する
+    def find_uncompleted(self) -> List[ActualTask]:
+        '''タスクDBの未完了の実績を全て取得する'''
+        try:
+            response_data = self.client.databases.query(
+                **{
+                    'database_id': self.db_id,
+                    'filter': {
+                        'property': '予定フラグ',
+                        "checkbox": {
+                            "equals": False  # 予定フラグが「チェックなし」のものを取得
+                        }
+                    }
+                }
+            )
+            # response_dataをActualTaskのリストに変換する
+            actual_tasks = list(map(
+                lambda data: ActualTask.from_response_data(data),
+                response_data['results']
+            ))
+
+            return actual_tasks
+        except Exception as e:
+            raise
