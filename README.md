@@ -5,7 +5,7 @@ Flaskを用いてNotionのAPIを利用するアプリケーション
 
 
 # 概要
-![alt text](docs/img/アプリ構成イメージ.png)
+![alt text](docs/img/アプリ構成イメージ.png) \
 NotionのAPIを利用して、Notionのデータを取得、更新、削除が可能。 \
 実行方法は以下の通り
 1. Cloud Schedulerを用いた定期実行
