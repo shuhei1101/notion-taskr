@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 
-from application.task_applicaiton_service import TaskApplicationService
+from app.application.task_applicaiton_service import TaskApplicationService
 
 app = Flask(__name__)
 

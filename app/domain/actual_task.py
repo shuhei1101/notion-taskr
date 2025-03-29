@@ -2,10 +2,10 @@ from datetime import datetime
 import re
 from dataclasses import dataclass
 
-from domain.task import Task
-from domain.task_name import TaskName
-from util.calculator import get_hours_diff
-from util.converter import man_hour_to_man_days
+from app.domain.task import Task
+from app.domain.task_name import TaskName
+from app.util.calculator import get_hours_diff
+from app.util.converter import man_hour_to_man_days
 
 @dataclass
 class ActualTask(Task):

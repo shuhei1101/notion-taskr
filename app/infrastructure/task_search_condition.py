@@ -1,4 +1,4 @@
-from infrastructure.operator import *
+from app.infrastructure.operator import *
 
 class TaskSearchConditions:
     '''Notionのフィルターを生成するクラス'''

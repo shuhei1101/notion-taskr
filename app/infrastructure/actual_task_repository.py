@@ -1,10 +1,10 @@
 from typing import List
 from notion_client import Client
 
-from domain.actual_task import ActualTask
-from infrastructure.operator import CheckboxOperator
-from infrastructure.task_search_condition import TaskSearchConditions
-from infrastructure.task_update_properties import TaskUpdateProperties
+from app.domain.actual_task import ActualTask
+from app.infrastructure.operator import CheckboxOperator
+from app.infrastructure.task_search_condition import TaskSearchConditions
+from app.infrastructure.task_update_properties import TaskUpdateProperties
 
 
 class ActualTaskRepository:

@@ -1,10 +1,10 @@
 from typing import List
 from notion_client import Client
 
-from domain.budget_task import BudgetTask
-from infrastructure.operator import CheckboxOperator
-from infrastructure.task_search_condition import TaskSearchConditions
-from infrastructure.task_update_properties import TaskUpdateProperties
+from app.domain.budget_task import BudgetTask
+from app.infrastructure.operator import CheckboxOperator
+from app.infrastructure.task_search_condition import TaskSearchConditions
+from app.infrastructure.task_update_properties import TaskUpdateProperties
 
 class BudgetTaskRepository:
     def __init__(self, token, db_id):

@@ -1,15 +1,15 @@
 import copy
 from typing import List
 
-import config
-from domain.budget_task_service import BudgetTaskService
-from domain.actual_task import ActualTask
-from domain.budget_task import BudgetTask
-from domain.tag_builder import TagBuilder
-from infrastructure.actual_task_repository import ActualTaskRepository
-from infrastructure.budget_task_repository import BudgetTaskRepository
-from infrastructure.operator import *
-from infrastructure.task_search_condition import TaskSearchConditions
+import app.config as config
+from app.domain.budget_task_service import BudgetTaskService
+from app.domain.actual_task import ActualTask
+from app.domain.budget_task import BudgetTask
+from app.domain.tag_builder import TagBuilder
+from app.infrastructure.actual_task_repository import ActualTaskRepository
+from app.infrastructure.budget_task_repository import BudgetTaskRepository
+from app.infrastructure.operator import *
+from app.infrastructure.task_search_condition import TaskSearchConditions
 
 class TaskApplicationService:
     def __init__(self):

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from domain.task import Task
-from domain.task_name import TaskName
+from app.domain.task import Task
+from app.domain.task_name import TaskName
 
 @dataclass
 class BudgetTask(Task):

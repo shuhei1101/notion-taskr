@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import re
 from typing import List
 
-from domain.name_tag import NameTag
+from app.domain.name_tag import NameTag
 
 @dataclass
 class TaskName():

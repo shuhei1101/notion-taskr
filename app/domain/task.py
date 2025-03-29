@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from domain.task_name import TaskName
+from app.domain.task_name import TaskName
 
 @dataclass
 class Task():

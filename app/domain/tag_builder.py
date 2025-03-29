@@ -1,4 +1,4 @@
-from domain.name_tag import NameTag
+from app.domain.name_tag import NameTag
 
 
 class TagBuilder:
