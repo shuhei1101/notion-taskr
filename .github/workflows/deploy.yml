@@ -70,7 +70,6 @@ jobs:
           --platform managed \
           --allow-unauthenticated
 
-          
     # ジョブをCloud Runにデプロイ（作成または更新） 
     - name: Deploy Cloud Run Job (Create or Update)
       run: |
