@@ -12,7 +12,6 @@ class TaskName():
     def __init__(self, task_name: str, tags: List[NameTag]):
         self.task_name = task_name
         self.tags = tags
-        self._sort_tags()
 
     @classmethod
     def from_raw_task_name(cls, raw_task_name: str):
@@ -23,11 +22,11 @@ class TaskName():
         '''
         # タグを取得
         # 正規表現で[title-value]形式のタグを探す
-        pattern = r"\[(?P<title>\w+)-(?P<value>\d+)\]"
+        pattern = r"\[([^-\[\]]+)-([^\[\]]+)\]"
         matches = re.findall(pattern, raw_task_name)
         
         # マッチしたタグをTagオブジェクトに変換してリストに追加
-        tags = [NameTag(match[0], int(match[1])) for match in matches]
+        tags = [NameTag(match[0], match[1]) for match in matches]
         
         # タイトルからタグを削除
         for match in matches:
@@ -37,6 +36,21 @@ class TaskName():
             task_name=raw_task_name, 
             tags=tags
         )
+    
+    def get_display_str(self):
+        '''表示用の文字列を返す
+
+        タスク名とタグを結合して表示する
+        タグは[key-value] [key-value]の形式で表示する
+        タグが存在しない場合はタスク名のみを表示する
+        
+        :return: 表示用の文字列
+        '''
+        # タグをソート
+        sorted_tags = sorted(self.tags, key=lambda x: x.key)
+        # タグを結合
+        tags_str = ' '.join([tag.get_display_str() for tag in sorted_tags])
+        return f'{self.task_name} {tags_str}'
     
     def register_tag(self, tag: NameTag):
         '''タグを登録する
@@ -48,7 +62,6 @@ class TaskName():
         # 既に登録されているタグを削除
         self.tags = [t for t in self.tags if t.key != tag.key]
         self.tags.append(tag)
-        self._sort_tags()
 
     def get_tag(self, key: str) -> NameTag:
         '''指定したタイトルのタグを取得する
@@ -62,10 +75,3 @@ class TaskName():
             if tag.key == key:
                 return tag
         return None
-    
-    def _sort_tags(self):
-        '''タグをソートする
-
-        タグのvalueで昇順にソートする
-        '''
-        self.tags = sorted(self.tags, key=lambda x: x.value)

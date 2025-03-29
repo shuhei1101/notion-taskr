@@ -2,6 +2,9 @@ from typing import List
 from notion_client import Client
 
 from domain.actual_task import ActualTask
+from infrastructure.operator import CheckboxOperator
+from infrastructure.task_search_condition import TaskSearchConditions
+from infrastructure.task_update_properties import TaskUpdateProperties
 
 
 class ActualTaskRepository:
@@ -10,71 +13,76 @@ class ActualTaskRepository:
             auth=token,
         )
         self.db_id = db_id
+        self.filter = TaskSearchConditions()
 
-    def find_by_tags(self, tags: List[str]=[]) -> List[ActualTask]:
-        '''タスクDBの指定タグの実績を全て取得する'''
+    def find_all(self) -> List[ActualTask]:
+        '''全ての実績を取得する'''
+        filter = TaskSearchConditions().and_(
+            TaskSearchConditions().where_budget_flag(
+                operator=CheckboxOperator.EQUALS, 
+                is_budget=False
+            ),
+        ).build()
+        
+        response_data = self.client.databases.query(
+            **{
+                'database_id': self.db_id,
+                'filter': filter
+            }
+        )
 
-        filter_condition = {
-                    "and": [
-                        *(
-                            [{
-                                "or": [
-                                    {
-                                        "property": "タグ",
-                                        "multi_select": {
-                                            "contains": tag
-                                        }
-                                    } for tag in tags
-                                ]
-                            }] if tags else []  # ✅ 空ならタグのフィルタを追加しない
-                        ),
-                        # プロパティ「予定フラグ」が「チェックなし」である
-                        {
-                            'property': '予定フラグ',
-                            "checkbox": {
-                                "equals": False  # 予定フラグが「チェックなし」のものを取得
-                            }
-                        },
-                    ]
-                }
-        try:
-            response_data = self.client.databases.query(
-                **{
-                    'database_id': self.db_id,
-                    'filter': filter_condition,
-                }
-            )
-            # response_dataをActualTaskのリストに変換する
-            actual_tasks = list(map(
-                lambda data: ActualTask.from_response_data(data),
-                response_data['results']
-            ))
+        # response_dataをBudgetTaskのリストに変換する
+        actual_tasks = []
+        for data in response_data['results']:
+            try:
+                actual_tasks.append(ActualTask.from_response_data(data))
+            except Exception as e:
+                print(f"スキップ: {e}")
+        return actual_tasks
 
-            return actual_tasks
-        except Exception as e:
-            raise
+    def find_by_condition(self, condition: TaskSearchConditions) -> List[ActualTask]:
+        '''指定した実績を全て取得する'''
 
-    # 未完了のタスクを取得する
-    def find_uncompleted(self) -> List[ActualTask]:
-        '''タスクDBの未完了の実績を全て取得する'''
-        try:
-            response_data = self.client.databases.query(
-                **{
-                    'database_id': self.db_id,
-                    'filter': {
-                        'property': '予定フラグ',
-                        "checkbox": {
-                            "equals": False  # 予定フラグが「チェックなし」のものを取得
-                        }
-                    }
-                }
-            )
-            # response_dataをActualTaskのリストに変換する
-            actual_tasks = list(map(
-                lambda data: ActualTask.from_response_data(data),
-                response_data['results']
-            ))
+        filter = TaskSearchConditions().and_(
+            TaskSearchConditions().where_budget_flag(
+                operator=CheckboxOperator.EQUALS, 
+                is_budget=False
+            ),
+            condition,
+        ).build()
 
-            return actual_tasks
-        except Exception as e:
-            raise
+        response_data = self.client.databases.query(
+            **{
+                'database_id': self.db_id,
+                'filter': filter
+            }
+        )
+
+        # response_dataをBudgetTaskのリストに変換する
+        actual_tasks = []
+        for data in response_data['results']:
+            try:
+                actual_tasks.append(ActualTask.from_response_data(data))
+            except Exception as e:
+                print(f"スキップ: {e}")
+
+        return actual_tasks
+    
+    def update(self, actual_task: ActualTask):
+        '''実績タスクを更新する'''
+
+        properties = TaskUpdateProperties() \
+            .set_name(actual_task.name.get_display_str()) \
+            .build()
+        
+        self.client.pages.update(
+            **{
+                'page_id': actual_task.page_id,
+                'properties': properties
+            }
+        )
+
+
+
+
+

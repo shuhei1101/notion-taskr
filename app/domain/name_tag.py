@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 @dataclass
 class NameTag():
+    '''タスク名のタグクラス'''
     key: str
     value: str
     
