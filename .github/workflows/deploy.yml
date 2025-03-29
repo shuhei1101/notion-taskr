@@ -68,7 +68,7 @@ jobs:
           --region $GCP_REGION \
           --service-account $SERVICE_ACCOUNT_NAME \
           --platform managed \
-          --no-allow-unauthenticated 
+          --allow-unauthenticated
 
           
     # ジョブをCloud Runにデプロイ（作成または更新） 
