@@ -19,7 +19,7 @@ class BudgetTaskService():
         name_sub = re.sub(pattern, '', task.name).strip()
         
         # タスク名に工数タグを付与
-        man_days_tag = f'[{actual_man_days}/{task.budget_man_hour}人日]'
+        man_days_tag = f'[{actual_man_days}/{task.budget_man_days}人日]'
         new_name = f'{name_sub} {man_days_tag}'
         return new_name
     
