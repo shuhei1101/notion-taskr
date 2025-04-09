@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="notion-api",
-    version="0.1",
-    packages=find_packages(where='app'),
-    package_dir={'': 'app'},
-    test_suite="tests"
+    name="notion-api",  # パッケージ名
+    version="0.1",  # バージョン番号（公開しない場合は削除可能）
+    packages=find_packages(where="src", include=["src", "src.*"]),  # src ディレクトリ内のパッケージをインクルード
+    package_dir={'': 'src'},  # ソースコードは src ディレクトリ内にある
+    test_suite="tests",  # テストスイートの指定
 )
