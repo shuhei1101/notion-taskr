@@ -33,5 +33,6 @@ class ActualTask(Task):
             start_date=start_date,
             end_date=end_date,
             man_days=man_hour_to_man_days(get_hours_diff(start_date, end_date)),
-            budget_task_id=task_name.id_label.value,  # 予定タスクのID
+            budget_task_id=task_name.id_label.value if task_name.id_label else None,
         )
+        
