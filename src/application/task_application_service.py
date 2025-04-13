@@ -68,7 +68,7 @@ class TaskApplicationService:
         for budget_task in budget_tasks:
             try:
                 actual_man_days = sum(map(
-                    # もし予定タスクのIDを持つ実績タスクがあれば、その工数を取得
+                    # もし予定タスクのIDを持つ実績タスクがあれば、その工数の合計を算出
                     lambda actual_task: actual_task.man_days if str(actual_task.budget_task_id) == str(budget_task.id) else 0,
                     actual_tasks
                 ))
@@ -77,17 +77,22 @@ class TaskApplicationService:
                 updated_budget_task = copy.deepcopy(budget_task)
                 updated_budget_task.actual_man_days = actual_man_days
 
-                # 予定タスクの名前のタグに実績工数を追加
+                # 実績工数タグを付与
                 updated_budget_task.name.man_days_label = ManDaysLabel.from_man_days(
                     actual_man_days=actual_man_days,
                     budget_man_days=budget_task.budget_man_days,
                 )
+                
+                if actual_man_days != budget_task.actual_man_days or not budget_task.name.man_days_label:
+                # 予定タスクの実績工数を更新
+                    self.budget_task_repository.update(updated_budget_task)
 
-                if actual_man_days != 0 and actual_man_days != budget_task.actual_man_days:
-                    # 予定タスクの実績工数を更新
-                    self.budget_task_repository.update(
-                        updated_budget_task
-                    )
+                for actual_task in actual_tasks:
+                    # 実績タスクの予定タスクIDを更新
+                    if str(actual_task.budget_task_id) == str(budget_task.id):
+                        actual_task.budget_task_id = updated_budget_task.page_id
+                        self.actual_task_repository.update(actual_task)
+
             except Exception as e:
                 # エラーが発生した場合はログに出力
                 print(f"Error occurred while updating budget task {budget_task.name.task_name}: {str(e)}")
@@ -147,10 +152,10 @@ class TaskApplicationService:
                     self.actual_task_repository.update(actual_task)
 
             # 予定タスクの名前にIDをタグとして付与（非同期）
-            # self.budget_task_repository.update(budget_task)
+            self.budget_task_repository.update(budget_task)
 
         
 if __name__ == '__main__':
     service = TaskApplicationService()
-    service.update_man_days(tags=[])
-    # service.add_id_to_actual_task()
+    service.add_id_to_actual_task()
+    # service.update_man_days(tags=[]å)
