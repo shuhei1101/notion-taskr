@@ -6,3 +6,5 @@ google-auth-oauthlib==0.5.2
 notion-client==2.3.0
 
 setuptools==78.1.0
+
+-e .

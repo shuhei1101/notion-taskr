@@ -1,6 +1,0 @@
-README.md
-setup.py
-src/notion_api.egg-info/PKG-INFO
-src/notion_api.egg-info/SOURCES.txt
-src/notion_api.egg-info/dependency_links.txt
-src/notion_api.egg-info/top_level.txt

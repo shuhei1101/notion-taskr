@@ -1,7 +1,7 @@
 from flask import Flask, render_template
 import logging
 
-from application.task_applicaiton_service import TaskApplicationService
+from application.task_application_service import TaskApplicationService
 
 app = Flask(__name__)
 
