@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from domain.name_labels.id_label import IdLabel
 from domain.task import Task
 from domain.task_name import TaskName
 
@@ -13,12 +14,12 @@ class BudgetTask(Task):
     actual_man_days: float
 
     @classmethod
-    def from_response_data(cls, data):
+    def from_response_data(cls, data: dict):
         '''レスポンスデータからインスタンスを生成する'''
         id_prefix = data['properties']['ID']['unique_id']['prefix']
         id_number = data['properties']['ID']['unique_id']['number']
         task_name = TaskName.from_raw_task_name(data['properties']['名前']['title'][0]['plain_text'])
-        task_name.id_label = task_name.id_label.from_id(id_prefix, id_number)
+        task_name.id_label = IdLabel.from_id(id_prefix, id_number)
         return cls(
             page_id=data['id'],
             name=task_name,
