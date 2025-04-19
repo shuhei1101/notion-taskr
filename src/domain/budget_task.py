@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from domain.actual_task import ActualTask
 from domain.name_labels.id_label import IdLabel
 from domain.task import Task
 from domain.task_name import TaskName
@@ -12,6 +13,7 @@ class BudgetTask(Task):
     id_number: str
     budget_man_days: float
     actual_man_days: float
+    actual_tasks: list[ActualTask] = None  # 紐づいている実績タスク
 
     @classmethod
     def from_response_data(cls, data: dict):
