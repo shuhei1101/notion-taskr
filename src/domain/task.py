@@ -9,6 +9,7 @@ class Task():
     page_id: str
     name: TaskName
     tags: List[str]
+    is_changed: bool = False
     
 
     
