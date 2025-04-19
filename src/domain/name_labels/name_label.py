@@ -4,8 +4,9 @@ import re
 from typing import List
 from typing import TYPE_CHECKING
 
+from domain.name_labels.label_registable import LabelRegistable
+
 if TYPE_CHECKING:
-    from domain.task_name import TaskName
     from domain.name_labels.man_days_label import ManDaysLabel
 
 
@@ -23,13 +24,13 @@ class NameLabel(ABC):
 
     @classmethod
     @abstractmethod
-    def parse_and_register(cls, key: str, value: str, delegate: 'TaskName'):
+    def parse_and_register(cls, key: str, value: str, delegate: 'LabelRegistable'):
         '''ラベルを解析してdelegeteのメンバへ登録する'''
         pass
     
 
     @staticmethod
-    def parse_labels(str: str, delegate: 'TaskName') -> 'TaskName':
+    def parse_labels(str: str, delegate: 'LabelRegistable'):
         from domain.name_labels.id_label import IdLabel
         
         '''ラベルを解析してdelegeteのメンバへ登録する
@@ -40,8 +41,7 @@ class NameLabel(ABC):
         pattern = r'([^\U0001F300-\U0001FAD6]+)'
         if re.match(pattern, str):
             # IDラベルを登録
-            delegate.id_label = IdLabel.from_id("", str)
-            return delegate
+            delegate.register_id_label(IdLabel.from_id("", str))
         else:
             # 正規表現で[絵文字value]形式で取得
             # match[0]が絵文字、match[1]がvalue
