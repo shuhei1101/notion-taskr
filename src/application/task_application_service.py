@@ -158,4 +158,4 @@ class TaskApplicationService:
 if __name__ == '__main__':
     service = TaskApplicationService()
     service.add_id_to_actual_task()
-    # service.update_man_days(tags=[]å)
+    service.update_man_days(tags=[])
