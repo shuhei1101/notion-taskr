@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from domain.name_labels.id_label import IdLabel
     from domain.name_labels.man_days_label import ManDaysLabel
+from domain.name_labels.label_registable import LabelRegistable
 from domain.name_labels.name_label import NameLabel
 
 
 @dataclass
-class TaskName():
+class TaskName(LabelRegistable):
     task_name: str  # タスク名
     id_label: 'IdLabel' = None  # IDラベル
     man_days_label: 'ManDaysLabel' = None  # 工数ラベル
@@ -54,3 +55,14 @@ class TaskName():
         # 文字列を結合
         return ' '.join(display_strs)
 
+    def register_id_label(self, label: 'IdLabel'):
+        '''IDラベルを登録するメソッド
+
+        :param IdLabel label: IDラベル
+        '''
+        self.id_label = label
+
+    def register_man_days_label(self, label):
+        '''工数ラベルを登録するメソッド'''
+
+        self.register_man_days_label = label
