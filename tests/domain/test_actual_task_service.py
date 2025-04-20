@@ -1,9 +1,9 @@
 import unittest
 
-from domain.actual_task_service import ActualTaskService
-from domain.actual_task import ActualTask
+from domain.excuted_task_service import ExcutedTaskService
+from domain.excuted_task import ExcutedTask
 
-class ActualTestTaskService(unittest.TestCase):
+class ExcutedTestTaskService(unittest.TestCase):
     pass
 
 if __name__ == '__main__':

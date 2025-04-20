@@ -62,6 +62,3 @@ class NameLabel(ABC):
                 except ValueError:
                     continue
 
-
-        
-        

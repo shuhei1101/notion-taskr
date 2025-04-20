@@ -12,12 +12,12 @@ class ManDaysLabel(NameLabel):
     '''工数のラベルクラス'''
 
     @classmethod
-    def from_man_days(cls, budget_man_days: float, actual_man_days: float) -> str:
+    def from_man_days(cls, scheduled_man_days: float, excuted_man_days: float) -> str:
         '''工数タグを生成する'''
 
         return cls(
             key='⌛️',
-            value=f'{truncate_decimal(actual_man_days)}/{truncate_decimal(budget_man_days)}',
+            value=f'{truncate_decimal(excuted_man_days)}/{truncate_decimal(scheduled_man_days)}',
         )
     
     @classmethod
