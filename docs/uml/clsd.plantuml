@@ -15,8 +15,8 @@ class AppLogger {
 
 package domain {
     class Task {}
-    class ActualTask {}
-    class BudgetTask {}
+    class ExcutedTask {}
+    class ScheduledTask {}
 }
 
 class config {}
@@ -24,7 +24,7 @@ class config {}
 class TaskApplicationService {
     __init__(self)
     ' タスクの実績工数を予定タスクに反映する
-    update_actual_task(tag)
+    update_excuted_task(tag)
 }
 
 TaskApplicationService --> config: 読み込み
@@ -32,7 +32,7 @@ TaskApplicationService --> TaskQueryService: 使用
 
 class TaskQueryService {
     __init__(self, token): dbと接続
-    get_actual_task(tag): 指定タグの実績工数（人日）を取得
+    get_excuted_task(tag): 指定タグの実績工数（人日）を取得
 }
 
 @enduml
