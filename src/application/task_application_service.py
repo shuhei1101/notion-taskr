@@ -2,28 +2,28 @@ import copy
 from typing import List
 
 import config as config
-from domain.budget_task_service import BudgetTaskService
-from domain.actual_task import ActualTask
-from domain.budget_task import BudgetTask
+from domain.scheduled_task_service import ScheduledTaskService
+from domain.excuted_task import ExcutedTask
+from domain.scheduled_task import ScheduledTask
 from domain.name_labels.id_label import IdLabel
 from domain.name_labels.man_days_label import ManDaysLabel
-from infrastructure.actual_task_repository import ActualTaskRepository
-from infrastructure.budget_task_repository import BudgetTaskRepository
+from infrastructure.excuted_task_repository import ExcutedTaskRepository
+from infrastructure.scheduled_task_repository import ScheduledTaskRepository
 from infrastructure.operator import *
 from infrastructure.task_search_condition import TaskSearchConditions
 
 
 class TaskApplicationService:
     def __init__(self):
-        self.actual_task_repository = ActualTaskRepository(
+        self.excuted_task_repository = ExcutedTaskRepository(
             config.NOTION_TOKEN, 
             config.TASK_DB_ID
         )
-        self.budget_task_repository = BudgetTaskRepository(
+        self.scheduled_task_repository = ScheduledTaskRepository(
             config.NOTION_TOKEN, 
             config.TASK_DB_ID
         )
-        self.service = BudgetTaskService()
+        self.scheduled_task_service = ScheduledTaskService()
         
     def update_man_days(self, tags: List[str] = None):
         '''予定タスクのIDを持つ実績タスクから実績工数を割り出し、
@@ -33,7 +33,7 @@ class TaskApplicationService:
         '''
 
         # タスクの実績を取得
-        actual_tasks: List[ActualTask] = self.actual_task_repository.find_by_condition(
+        excuted_tasks: List[ExcutedTask] = self.excuted_task_repository.find_by_condition(
             TaskSearchConditions()
                 .or_(
                     *(
@@ -46,10 +46,10 @@ class TaskApplicationService:
                         )
                     )
                 )
-        ) if tags else self.actual_task_repository.find_all()
+        ) if tags else self.excuted_task_repository.find_all()
 
         # タスクの予定を取得
-        budget_tasks: List[BudgetTask] = self.budget_task_repository.find_by_condition(
+        scheduled_tasks: List[ScheduledTask] = self.scheduled_task_repository.find_by_condition(
             TaskSearchConditions()
                 .or_(
                     *(
@@ -62,47 +62,64 @@ class TaskApplicationService:
                         )
                     )
                 )
-        ) if tags else self.budget_task_repository.find_all()
+        ) if tags else self.scheduled_task_repository.find_all()
 
         # 予定タスクごとに実績工数を集計
-        for budget_task in budget_tasks:
+        updated_scheduled_tasks: list[ScheduledTask] = self.scheduled_task_service.aggregate_excuted_man_days(
+            scheduled_tasks=scheduled_tasks,
+            excuted_tasks=excuted_tasks
+        )
+
+        self._update_scheduled_tasks(updated_scheduled_tasks)
+
+        # 実績タスクにも実績工数を付与
+        for scheduled_task in updated_scheduled_tasks:
+            # 予定タスクのIDを持つ実績タスクをフィルタリング
+            for excuted_task in excuted_tasks:
+                if str(excuted_task.scheduled_task_id) == str(scheduled_task.id):
+                    # 実績タスクの予定タスクIDを更新
+                    excuted_task.update_man_days_label(scheduled_task.name.man_days_label)
+
+
+        # 予定タスクごとに実績工数を集計
+        for scheduled_task in scheduled_tasks:
             try:
-                actual_man_days = sum(map(
+                excuted_man_days = sum(map(
                     # もし予定タスクのIDを持つ実績タスクがあれば、その工数の合計を算出
-                    lambda actual_task: actual_task.man_days if str(actual_task.budget_task_id) == str(budget_task.id) else 0,
-                    actual_tasks
+                    lambda excuted_task: excuted_task.man_days if str(excuted_task.scheduled_task_id) == str(scheduled_task.id) else 0,
+                    excuted_tasks
                 ))
                 
                 # コピーして実績工数を更新
-                updated_budget_task = copy.deepcopy(budget_task)
-                updated_budget_task.actual_man_days = actual_man_days
+                updated_scheduled_task = copy.deepcopy(scheduled_task)
+                updated_scheduled_task.update_excuted_man_days(excuted_man_days)
 
-                # 実績工数タグを付与
-                updated_budget_task.name.man_days_label = ManDaysLabel.from_man_days(
-                    actual_man_days=actual_man_days,
-                    budget_man_days=budget_task.budget_man_days,
-                )
+                # 実績工数タグを更新
+                updated_scheduled_task.update_man_days_label(ManDaysLabel.from_man_days(
+                    excuted_man_days=excuted_man_days,
+                    scheduled_man_days=scheduled_task.scheduled_man_days,
+                ))
                 
-                if actual_man_days != budget_task.actual_man_days or not budget_task.name.man_days_label:
+                if excuted_man_days != scheduled_task.excuted_man_days or not scheduled_task.name.man_days_label:
                 # 予定タスクの実績工数を更新
-                    self.budget_task_repository.update(updated_budget_task)
+                    self.scheduled_task_repository.update(updated_scheduled_task)
 
-                for actual_task in actual_tasks:
+                for excuted_task in excuted_tasks:
                     # 実績タスクの予定タスクIDを更新
-                    if str(actual_task.budget_task_id) == str(budget_task.id):
-                        actual_task.budget_task_id = updated_budget_task.page_id
-                        self.actual_task_repository.update(actual_task)
+                    if str(excuted_task.scheduled_task_id) == str(scheduled_task.id):
+                        excuted_task.update_scheduled_task_id(updated_scheduled_task.page_id)
+                        self.excuted_task_repository.update(excuted_task)
 
             except Exception as e:
                 # エラーが発生した場合はログに出力
-                print(f"Error occurred while updating budget task {budget_task.name.task_name}: {str(e)}")
+                print(f"Error occurred while updating scheduled task {scheduled_task.name.task_name}: {str(e)}")
                 continue
 
-    def add_id_to_actual_task(self):
+    def add_id_to_excuted_task(self):
         '''予定タスクのIDを持つ実績タスクにIDを付与する'''
         
         # 未完了の予定タスクを全て取得する
-        budget_tasks: List[BudgetTask] = self.budget_task_repository.find_by_condition(
+        scheduled_tasks: List[ScheduledTask] = self.scheduled_task_repository.find_by_condition(
             TaskSearchConditions().where_status(
                 operator=StatusOperator.EQUALS,
                 status="未着手"
@@ -110,14 +127,14 @@ class TaskApplicationService:
         )
 
         # 予定タスク名を配列に格納する（タグ部分と頭と末尾の空白を除去）
-        budget_task_names = list(map(
+        scheduled_task_names = list(map(
             lambda task: task.name.task_name,
-            budget_tasks
+            scheduled_tasks
         ))
 
         # 予定タスク名に一致する実績タスクを全て取得する
         # このとき、一回のクエリで全て取得する
-        actual_tasks: List[ActualTask] = self.actual_task_repository.find_by_condition(
+        excuted_tasks: List[ExcutedTask] = self.excuted_task_repository.find_by_condition(
             TaskSearchConditions().or_(
                 *(
                     map(
@@ -125,37 +142,49 @@ class TaskApplicationService:
                             operator=TextOperator.EQUALS,
                             name=name
                         ),
-                        budget_task_names
+                        scheduled_task_names
                     )
                 )
             )
         )
 
         # 予定タスク名配列を回し、一致する実績タスクの名前にIDをタグとして付与する
-        for budget_task in budget_tasks:
+        for scheduled_task in scheduled_tasks:
             # 一致する実績タスクたちを取得
-            matched_actual_tasks = list(filter(
-                lambda actual_task: actual_task.name.task_name == budget_task.name.task_name,
-                actual_tasks
+            matched_excuted_tasks = list(filter(
+                lambda excuted_task: excuted_task.name.task_name == scheduled_task.name.task_name,
+                excuted_tasks
             ))
 
-            if matched_actual_tasks != []:
-                for actual_task in matched_actual_tasks:
+            if matched_excuted_tasks != []:
+                for excuted_task in matched_excuted_tasks:
                     # 実績タスクの名前にIDをタグとして付与
-                    actual_task.name.id_label = IdLabel.from_id(
-                        id_prefix=budget_task.id_prefix,
-                        id_number=budget_task.id_number
-                    )
+                    excuted_task.update_id_label(IdLabel.from_id(
+                        id_prefix=scheduled_task.id_prefix,
+                        id_number=scheduled_task.id_number
+                    ))
                     
 
                     # 実績タスクを更新
-                    self.actual_task_repository.update(actual_task)
+                    self.excuted_task_repository.update(excuted_task)
 
             # 予定タスクの名前にIDをタグとして付与（非同期）
-            self.budget_task_repository.update(budget_task)
-
+            self.scheduled_task_repository.update(scheduled_task)
         
+    def _update_scheduled_tasks(self, scheduled_tasks: list[ScheduledTask]):
+        '''予定タスクの実績工数を更新するメソッド'''
+        for scheduled_task in scheduled_tasks:
+            if scheduled_task.is_updated:
+                self.scheduled_task_repository.update(scheduled_task)
+
+    def _update_excuted_tasks(self, excuted_tasks: list[ExcutedTask]):
+        '''実績タスクの予定タスクIDを更新するメソッド'''
+        for excuted_task in excuted_tasks:
+            if excuted_task.is_updated:
+                self.excuted_task_repository.update(excuted_task)
+
+
 if __name__ == '__main__':
     service = TaskApplicationService()
-    service.add_id_to_actual_task()
+    service.add_id_to_excuted_task()
     service.update_man_days(tags=[])
