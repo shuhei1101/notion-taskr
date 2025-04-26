@@ -72,49 +72,6 @@ class TaskApplicationService:
 
         self._update_scheduled_tasks(updated_scheduled_tasks)
 
-        # 実績タスクにも実績工数を付与
-        for scheduled_task in updated_scheduled_tasks:
-            # 予定タスクのIDを持つ実績タスクをフィルタリング
-            for excuted_task in excuted_tasks:
-                if str(excuted_task.scheduled_task_id) == str(scheduled_task.id):
-                    # 実績タスクの予定タスクIDを更新
-                    excuted_task.update_man_days_label(scheduled_task.name.man_days_label)
-
-
-        # 予定タスクごとに実績工数を集計
-        for scheduled_task in scheduled_tasks:
-            try:
-                excuted_man_days = sum(map(
-                    # もし予定タスクのIDを持つ実績タスクがあれば、その工数の合計を算出
-                    lambda excuted_task: excuted_task.man_days if str(excuted_task.scheduled_task_id) == str(scheduled_task.id) else 0,
-                    excuted_tasks
-                ))
-                
-                # コピーして実績工数を更新
-                updated_scheduled_task = copy.deepcopy(scheduled_task)
-                updated_scheduled_task.update_excuted_man_days(excuted_man_days)
-
-                # 実績工数タグを更新
-                updated_scheduled_task.update_man_days_label(ManDaysLabel.from_man_days(
-                    excuted_man_days=excuted_man_days,
-                    scheduled_man_days=scheduled_task.scheduled_man_days,
-                ))
-                
-                if excuted_man_days != scheduled_task.excuted_man_days or not scheduled_task.name.man_days_label:
-                # 予定タスクの実績工数を更新
-                    self.scheduled_task_repository.update(updated_scheduled_task)
-
-                for excuted_task in excuted_tasks:
-                    # 実績タスクの予定タスクIDを更新
-                    if str(excuted_task.scheduled_task_id) == str(scheduled_task.id):
-                        excuted_task.update_scheduled_task_id(updated_scheduled_task.page_id)
-                        self.excuted_task_repository.update(excuted_task)
-
-            except Exception as e:
-                # エラーが発生した場合はログに出力
-                print(f"Error occurred while updating scheduled task {scheduled_task.name.task_name}: {str(e)}")
-                continue
-
     def add_id_to_excuted_task(self):
         '''予定タスクのIDを持つ実績タスクにIDを付与する'''
         

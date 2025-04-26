@@ -35,9 +35,9 @@ class ScheduledTaskService():
             # 予定タスクの実績工数を更新
             updated_scheduled_task.update_excuted_man_days(excuted_man_days)
             
-            # 実績工数タグの追加
+            # 実績工数タグの更新
             updated_scheduled_task.update_man_days_label(ManDaysLabel.from_man_days(
-                excuted_man_days=excuted_man_days,
+                excuted_man_days=scheduled_task.excuted_man_days,
                 scheduled_man_days=scheduled_task.scheduled_man_days,
             ))
 
