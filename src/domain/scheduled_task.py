@@ -38,8 +38,18 @@ class ScheduledTask(Task):
             instance.update_id_label(IdLabel.from_id(id_prefix, id_number))
 
         return instance
-    
-    def update_excuted_man_days(self, excuted_man_days: float):
-        '''実績工数を更新するメソッド'''
+
+    def update_excuted_tasks(self, excuted_tasks: list[ExcutedTask]):
+        '''実績タスクを更新する'''
         self.is_updated = True
-        self.excuted_man_days = excuted_man_days
+        self.excuted_tasks = excuted_tasks
+
+        # 実績工数を集計する
+        self._aggregate_excuted_man_days()
+
+    def _aggregate_excuted_man_days(self):
+        '''実績工数を集計する'''
+        self.excuted_man_days = sum(map(
+            lambda excuted_task: excuted_task.man_days,
+            self.excuted_tasks
+        ))
