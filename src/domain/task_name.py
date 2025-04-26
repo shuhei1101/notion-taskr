@@ -39,8 +39,8 @@ class TaskName(LabelRegistable):
             NameLabel.parse_labels(match, instance) 
         
         return instance
-    
-    def get_display_str(self):
+
+    def __str__(self):
         '''表示用の文字列を返す
 
         :return: 表示用の文字列
@@ -55,14 +55,11 @@ class TaskName(LabelRegistable):
         # 文字列を結合
         return ' '.join(display_strs)
 
+
     def register_id_label(self, label: 'IdLabel'):
-        '''IDラベルを登録するメソッド
-
-        :param IdLabel label: IDラベル
-        '''
+        '''IDラベルを登録するメソッド'''
         self.id_label = label
-
-    def register_man_days_label(self, label):
+        
+    def register_man_days_label(self, label: 'ManDaysLabel'):
         '''工数ラベルを登録するメソッド'''
-
-        self.register_man_days_label = label
+        self.man_days_label = label
