@@ -28,7 +28,7 @@ class ManDaysLabel(NameLabel):
         if key == emoji.emojize(':hourglass_done:'):
             delegate.register_man_days_label(cls(
                 key=key,
-                value=value,
+                value=str(value),
             ))
 
         else:

@@ -7,6 +7,7 @@ from domain.value_objects.man_days import ManDays
 from domain.value_objects.notion_date import NotionDate
 from domain.value_objects.notion_id import NotionId
 from domain.value_objects.page_id import PageId
+from domain.value_objects.status import Status
 from domain.value_objects.tag import Tag
 
 @dataclass
@@ -44,6 +45,7 @@ class ExecutedTask(Task):
                     prefix=data['properties']['ID']['unique_id']['prefix'],
                     number=task_number,
                 ),
+                status=Status(data['properties']['ステータス']['status']['name']),
                 date=notion_date,
                 man_days=ManDays.from_notion_date(notion_date),
                 scheduled_task_id=NotionId(
@@ -58,12 +60,7 @@ class ExecutedTask(Task):
         
     def update_scheduled_task_id(self, scheduled_task_id: NotionId):
         '''予定タスクIDを更新するメソッド'''
-        if self.scheduled_task_id is None:
+        if self.scheduled_task_id != scheduled_task_id:
             self.is_updated = True
             self.scheduled_task_id = scheduled_task_id
-        else:
-            # 既に登録されている場合は、値を確認し、更新する
-            if not self.scheduled_task_id.__eq__(scheduled_task_id):
-                self.is_updated = True
-                self.scheduled_task_id = scheduled_task_id
 

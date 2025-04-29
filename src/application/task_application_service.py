@@ -19,7 +19,7 @@ class TaskApplicationService:
     def __init__(self, logger: Logger=AppLogger()):
         self.logger = logger
         self.executed_task_repo = ExecutedTaskRepository(
-            config.NOTION_TOKEN, 
+            config.NOTION_TOKEN,
             config.TASK_DB_ID
         )
         self.scheduled_task_repo = ScheduledTaskRepository(
@@ -39,7 +39,7 @@ class TaskApplicationService:
         # 条件作成（過去一ヶ月〜未来）
         condition = TaskSearchConditions().or_(
                 TaskSearchConditions().where_date(
-                    operator=DateOperator.PAST_MONTH,
+                    operator=DateOperator.PAST_YEAR,
                 ),
                 TaskSearchConditions().where_date(
                     date=datetime.now().strftime('%Y-%m-%d'),
@@ -103,7 +103,7 @@ class TaskApplicationService:
         # 更新
         self._update_executed_tasks(executed_tasks)
 
-        # 予定タスクにIDが一致する実績タスクを追加する
+        # 予定タスクと実績タスクの紐づけ
         self.scheduled_task_service.add_executed_tasks_to_scheduled(
                 to=scheduled_tasks,
                 source=self.executed_task_repo.find_by_condition(
@@ -121,9 +121,14 @@ class TaskApplicationService:
         for scheduled_task in scheduled_tasks:
             scheduled_task.aggregate_executed_man_days()
 
-        # 実績タスクの名前を更新する
+        # 実績タスクのプロパティを予定タスクからコピーする
         for scheduled_task in scheduled_tasks:
-            scheduled_task.update_executed_task_name()
+            try:
+                scheduled_task.update_executed_tasks_properties()
+            except ValueError:
+                self.logger.debug(
+                    f"予定タスク[{scheduled_task.id.number}]の実績タスクが存在しませんでした。"
+                )
 
         # 更新
         self._update_scheduled_tasks(scheduled_tasks)

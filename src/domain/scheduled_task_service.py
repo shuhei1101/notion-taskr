@@ -13,7 +13,7 @@ class ScheduledTaskService():
             try:
                 # 予定タスクのIDを持つ実績タスクをフィルタリング
                 scheduled_task.update_executed_tasks(list(filter(
-                    lambda executed_task: scheduled_task.name.id_label.value == executed_task.scheduled_task_id,
+                    lambda executed_task: scheduled_task.id == executed_task.scheduled_task_id,
                     source
                 )))
 

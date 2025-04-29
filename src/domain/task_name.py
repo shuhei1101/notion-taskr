@@ -34,7 +34,7 @@ class TaskName(LabelRegistable):
             task_name=raw_task_name,
         )
     
-        # マッチしたラベルをTagオブジェクトに変換してリストに追加
+        # マッチしたラベルをラベルオブジェクトに変換してリストに追加
         for match in matches:
             NameLabel.parse_labels(match, instance) 
         
@@ -55,6 +55,13 @@ class TaskName(LabelRegistable):
         # 文字列を結合
         return ' '.join(display_strs)
 
+    def __eq__(self, other: 'TaskName'):
+        if not isinstance(other, TaskName):
+            return False
+        return self.task_name == other.task_name \
+            and self.id_label == other.id_label \
+            and self.man_days_label == other.man_days_label
+        
     def register_id_label(self, label: 'IdLabel'):
         '''IDラベルを登録するメソッド'''
         self.id_label = label

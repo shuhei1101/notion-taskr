@@ -8,6 +8,7 @@ from domain.task_name import TaskName
 from domain.value_objects.man_days import ManDays
 from domain.value_objects.notion_id import NotionId
 from domain.value_objects.page_id import PageId
+from domain.value_objects.status import Status
 
 @dataclass
 class ScheduledTask(Task):
@@ -31,19 +32,24 @@ class ScheduledTask(Task):
                 prefix=data['properties']['ID']['unique_id']['prefix'],
                 number=task_number,
             )
+
+            status = Status(data['properties']['ステータス']['status']['name'])
             
             instance = cls(
                 page_id=PageId(data['id']),
                 name=task_name,
                 tags=map(lambda tag: tag['name'], data['properties']['タグ']['multi_select']),
                 id=notion_id,
+                status=status,
                 scheduled_man_days=ManDays(data['properties']['人日(予)']['number']),
                 executed_man_days=ManDays(data['properties']['人日(実)']['number']),
             )
 
-            # IDラベルを登録
-            if not instance.name.id_label:
-                instance.update_id_label(IdLabel.from_id(notion_id))
+            # IDラベルを更新
+            instance.update_id_label(IdLabel.from_property(
+                id=notion_id,
+                status=status,
+            ))
 
             return instance
         except KeyError as e:
@@ -55,15 +61,16 @@ class ScheduledTask(Task):
         '''実績タスク配列を付与する'''
         self.executed_tasks = executed_tasks
 
-    def update_executed_task_name(self):
-        '''実績タスクのTaskNameを自身と紐づける
+    def update_executed_tasks_properties(self):
+        '''実績タスクのプロパティを更新する
         
         :raise ValueError: 実績タスクが存在しない場合
         '''
         if self.executed_tasks is None:
-            raise ValueError('実績タスクが存在しません')
+            raise ValueError('実績タスクが存在しません。')
         for executed_task in self.executed_tasks:
             executed_task.name = self.name
+            executed_task.status = self.status
 
     def aggregate_executed_man_days(self):
         '''実績工数を集計し、ラベルを更新する'''
