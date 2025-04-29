@@ -1,123 +1,74 @@
-import copy
 from typing import List
 
+from app_logger import AppLogger
+from app_timer import AppTimer
 import config as config
-from domain.budget_task_service import BudgetTaskService
-from domain.actual_task import ActualTask
-from domain.budget_task import BudgetTask
+from domain.executed_task_service import ExecutedTaskService
+from domain.scheduled_task_service import ScheduledTaskService
+from domain.executed_task import ExecutedTask
+from domain.scheduled_task import ScheduledTask
 from domain.name_labels.id_label import IdLabel
-from domain.name_labels.man_days_label import ManDaysLabel
-from infrastructure.actual_task_repository import ActualTaskRepository
-from infrastructure.budget_task_repository import BudgetTaskRepository
+from domain.task_service import TaskService
+from infrastructure.executed_task_repository import ExecutedTaskRepository
+from infrastructure.scheduled_task_repository import ScheduledTaskRepository
 from infrastructure.operator import *
 from infrastructure.task_search_condition import TaskSearchConditions
-
+from datetime import datetime
 
 class TaskApplicationService:
     def __init__(self):
-        self.actual_task_repository = ActualTaskRepository(
+        self.executed_task_repo = ExecutedTaskRepository(
             config.NOTION_TOKEN, 
             config.TASK_DB_ID
         )
-        self.budget_task_repository = BudgetTaskRepository(
+        self.scheduled_task_repo = ScheduledTaskRepository(
             config.NOTION_TOKEN, 
             config.TASK_DB_ID
         )
-        self.service = BudgetTaskService()
-        
-    def update_man_days(self, tags: List[str] = None):
-        '''予定タスクのIDを持つ実績タスクから実績工数を割り出し、
-        予定タスクの実績工数を更新する。
+        self.task_service = TaskService()
+        self.scheduled_task_service = ScheduledTaskService()
+        self.executed_task_service = ExecutedTaskService()
 
-        :param tags: タグのリスト
-        '''
-
-        # タスクの実績を取得
-        actual_tasks: List[ActualTask] = self.actual_task_repository.find_by_condition(
-            TaskSearchConditions()
-                .or_(
-                    *(
-                        map(
-                            lambda tag: TaskSearchConditions().where_tag(
-                                operator=MultiSelectOperator.CONTAINS,
-                                tag=tag
-                            ),
-                            tags
-                        )
-                    )
-                )
-        ) if tags else self.actual_task_repository.find_all()
-
-        # タスクの予定を取得
-        budget_tasks: List[BudgetTask] = self.budget_task_repository.find_by_condition(
-            TaskSearchConditions()
-                .or_(
-                    *(
-                        map(
-                            lambda tag: TaskSearchConditions().where_tag(
-                                operator=MultiSelectOperator.CONTAINS,
-                                tag=tag
-                            ),
-                            tags
-                        )
-                    )
-                )
-        ) if tags else self.budget_task_repository.find_all()
-
-        # 予定タスクごとに実績工数を集計
-        for budget_task in budget_tasks:
-            try:
-                actual_man_days = sum(map(
-                    # もし予定タスクのIDを持つ実績タスクがあれば、その工数の合計を算出
-                    lambda actual_task: actual_task.man_days if str(actual_task.budget_task_id) == str(budget_task.id) else 0,
-                    actual_tasks
-                ))
-                
-                # コピーして実績工数を更新
-                updated_budget_task = copy.deepcopy(budget_task)
-                updated_budget_task.actual_man_days = actual_man_days
-
-                # 実績工数タグを付与
-                updated_budget_task.name.man_days_label = ManDaysLabel.from_man_days(
-                    actual_man_days=actual_man_days,
-                    budget_man_days=budget_task.budget_man_days,
-                )
-                
-                if actual_man_days != budget_task.actual_man_days or not budget_task.name.man_days_label:
-                # 予定タスクの実績工数を更新
-                    self.budget_task_repository.update(updated_budget_task)
-
-                for actual_task in actual_tasks:
-                    # 実績タスクの予定タスクIDを更新
-                    if str(actual_task.budget_task_id) == str(budget_task.id):
-                        actual_task.budget_task_id = updated_budget_task.page_id
-                        self.actual_task_repository.update(actual_task)
-
-            except Exception as e:
-                # エラーが発生した場合はログに出力
-                print(f"Error occurred while updating budget task {budget_task.name.task_name}: {str(e)}")
-                continue
-
-    def add_id_to_actual_task(self):
+    def regular_task(self):
         '''予定タスクのIDを持つ実績タスクにIDを付与する'''
+
+        app_timer = AppTimer()
+        app_timer.start()
+
+        # 条件作成（過去一ヶ月〜未来）
+        condition = TaskSearchConditions().or_(
+                TaskSearchConditions().where_date(
+                    operator=DateOperator.PAST_MONTH,
+                ),
+                TaskSearchConditions().where_date(
+                    date=datetime.now().strftime('%Y-%m-%d'),
+                    operator=DateOperator.ON_OR_AFTER
+                )
+            )
         
         # 未完了の予定タスクを全て取得する
-        budget_tasks: List[BudgetTask] = self.budget_task_repository.find_by_condition(
-            TaskSearchConditions().where_status(
-                operator=StatusOperator.EQUALS,
-                status="未着手"
+        scheduled_tasks: List[ScheduledTask] = self.scheduled_task_repo.find_by_condition(
+            condition=condition,
+            on_error=lambda e, data: AppLogger().error(
+                f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
             )
         )
 
         # 予定タスク名を配列に格納する（タグ部分と頭と末尾の空白を除去）
-        budget_task_names = list(map(
+        scheduled_task_names = list(map(
             lambda task: task.name.task_name,
-            budget_tasks
+            scheduled_tasks
+        ))
+
+        # 予定タスクIDを配列に格納する
+        scheduled_task_ids = list(map(
+            lambda task: task.id.number,
+            scheduled_tasks
         ))
 
         # 予定タスク名に一致する実績タスクを全て取得する
-        # このとき、一回のクエリで全て取得する
-        actual_tasks: List[ActualTask] = self.actual_task_repository.find_by_condition(
+        # （一回のクエリで全て取得する）
+        executed_tasks: List[ExecutedTask] = self.executed_task_repo.find_by_condition(
             TaskSearchConditions().or_(
                 *(
                     map(
@@ -125,37 +76,79 @@ class TaskApplicationService:
                             operator=TextOperator.EQUALS,
                             name=name
                         ),
-                        budget_task_names
+                        scheduled_task_names
+                    )
+                ),
+                *(
+                    map(
+                        lambda id: TaskSearchConditions().where_id(
+                            id=id
+                        ),
+                        scheduled_task_ids
                     )
                 )
+            ),
+            on_error=lambda e, data: AppLogger().error(
+                f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
             )
         )
 
-        # 予定タスク名配列を回し、一致する実績タスクの名前にIDをタグとして付与する
-        for budget_task in budget_tasks:
-            # 一致する実績タスクたちを取得
-            matched_actual_tasks = list(filter(
-                lambda actual_task: actual_task.name.task_name == budget_task.name.task_name,
-                actual_tasks
-            ))
+        # 実績タスクにIDを付与する（未付与のもののみ）
+        self.executed_task_service.add_id_tag(
+            to=executed_tasks,
+            source=scheduled_tasks
+        )
 
-            if matched_actual_tasks != []:
-                for actual_task in matched_actual_tasks:
-                    # 実績タスクの名前にIDをタグとして付与
-                    actual_task.name.id_label = IdLabel.from_id(
-                        id_prefix=budget_task.id_prefix,
-                        id_number=budget_task.id_number
+        # 更新
+        self._update_executed_tasks(executed_tasks)
+
+        # 予定タスクにIDが一致する実績タスクを追加する（工数計算も実施）
+        self.scheduled_task_service.add_executed_tasks_to_scheduled(
+                to=scheduled_tasks,
+                source=self.executed_task_repo.find_by_condition(
+                    condition=condition,
+                    on_error=lambda e, data: AppLogger().error(
+                        f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
                     )
-                    
+                ),
+                on_error=lambda e, task: AppLogger().error(
+                    f"予定タスク[{task.id.number}]の実績追加に失敗。エラー内容: {e}"
+                ),
+            )
 
-                    # 実績タスクを更新
-                    self.actual_task_repository.update(actual_task)
+        # 実績タスクの名前を更新する
+        self._update_scheduled_tasks(scheduled_tasks)
+        self._update_executed_tasks([
+            executed_task
+            for scheduled_task in scheduled_tasks
+            for executed_task in scheduled_task.executed_tasks
+        ])
 
-            # 予定タスクの名前にIDをタグとして付与（非同期）
-            self.budget_task_repository.update(budget_task)
-
+        # 経過時間を表示
+        AppLogger().info(
+            f"処理時間: {app_timer.get_elapsed_time()}秒"
+        )
         
+    def _update_scheduled_tasks(self, scheduled_tasks: list[ScheduledTask],):
+        '''予定タスクの実績工数を更新するメソッド'''
+        updated_scheduled_tasks = self.task_service.get_updated_tasks(scheduled_tasks)
+        for updated_scheduled_task in updated_scheduled_tasks:
+            try:
+                self.scheduled_task_repo.update(updated_scheduled_task)
+                AppLogger().info(f"予定タスク[{updated_scheduled_task.id.number}]を更新しました。")
+            except Exception as e:
+                AppLogger().error(f"予定タスク[{updated_scheduled_task.id.number}]の更新に失敗しました。 エラー内容: {e}")
+
+    def _update_executed_tasks(self, executed_tasks: list[ExecutedTask],):
+        '''実績タスクの予定タスクIDを更新するメソッド'''
+        updated_executed_tasks = self.task_service.get_updated_tasks(executed_tasks)
+        for updated_executed_task in updated_executed_tasks:
+            try:
+                self.executed_task_repo.update(updated_executed_task)
+                AppLogger().info(f"実績タスク[{updated_executed_task.id.number}]を更新しました。")
+            except Exception as e:
+                AppLogger().error(f"実績タスク[{updated_executed_task.id.number}]の更新に失敗しました。 エラー内容: {e}")
+
 if __name__ == '__main__':
     service = TaskApplicationService()
-    service.add_id_to_actual_task()
-    service.update_man_days(tags=[])
+    service.regular_task()

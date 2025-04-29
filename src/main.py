@@ -11,11 +11,11 @@ logging.basicConfig(level=logging.DEBUG)
 def index():
     return render_template("index.html")
 
-@app.route("/update-actual-task-id")
-def update_actual_task_id():
+@app.route("/update-executed-task-id")
+def update_executed_task_id():
     '''実績タスクのIDを付与する'''
     try:
-        TaskApplicationService().add_id_to_actual_task()
+        TaskApplicationService().add_id_to_executed_task()
         return "Task ID updated successfully!"
     except Exception as e:
         app.logger.error(f"Error occurred while updating task ID: {str(e)}")

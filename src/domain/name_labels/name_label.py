@@ -1,15 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import re
+
 from typing import List
 from typing import TYPE_CHECKING
 
 from domain.name_labels.label_registable import LabelRegistable
-
-if TYPE_CHECKING:
-    from domain.name_labels.man_days_label import ManDaysLabel
-
-
+from util.validator import has_emoji
 
 @dataclass
 class NameLabel(ABC):
@@ -32,24 +28,25 @@ class NameLabel(ABC):
     @staticmethod
     def parse_labels(str: str, delegate: 'LabelRegistable'):
         from domain.name_labels.id_label import IdLabel
+        from domain.name_labels.man_days_label import ManDaysLabel
         
         '''ラベルを解析してdelegeteのメンバへ登録する
         
         chain of responsibleパターンで検索する
         '''
         # 正規表現で[絵文字]を含まない場合、IDラベルとする
-        pattern = r'([^\U0001F300-\U0001FAD6]+)'
-        if re.match(pattern, str):
+        if not has_emoji(str):
             # IDラベルを登録
-            delegate.register_id_label(IdLabel.from_id("", str))
+            delegate.register_id_label(IdLabel(
+                key="",
+                value=str,
+            ))
         else:
             # 正規表現で[絵文字value]形式で取得
             # match[0]が絵文字、match[1]がvalue
-            pattern = r'([\U0001F300-\U0001FAD6])([^\U0001F300-\U0001FAD6]+)'
-            match = re.search(pattern, str)
-            if not match:
-                raise ValueError('No match found')
-            match = match.groups()
+            key = str[0]
+            value = str[1:]
+
             # 検索対象のクラスを配列に格納
             handlers: List['NameLabel'] = [
                 ManDaysLabel,
@@ -58,10 +55,7 @@ class NameLabel(ABC):
             # ID以外のラベルを登録
             for handler in handlers:
                 try:
-                    handler.parse_and_register(match[0], match[1], delegate)
+                    handler.parse_and_register(key, value, delegate)
                 except ValueError:
                     continue
 
-
-        
-        

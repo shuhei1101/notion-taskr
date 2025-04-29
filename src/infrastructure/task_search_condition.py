@@ -41,6 +41,7 @@ class TaskSearchConditions:
         return self
 
     def where_status(self, operator: StatusOperator, status: str, ):
+        '''ステータスで絞り込む'''
         self.conditions = {
             'property': 'ステータス',
             "status": {
@@ -49,12 +50,12 @@ class TaskSearchConditions:
         }
         return self
 
-    def where_budget_flag(self, operator: CheckboxOperator, is_budget: bool):
+    def where_scheduled_flag(self, operator: CheckboxOperator, is_scheduled: bool):
         '''予定フラグのフィルターを生成する'''
         self.conditions = {
             'property': '予定フラグ',
             "checkbox": {
-                operator.value: is_budget
+                operator.value: is_scheduled
             }
         }
         return self
@@ -69,6 +70,25 @@ class TaskSearchConditions:
         }
         return self
 
+    def where_date(self, operator: DateOperator, date: str={}):
+        '''日付のフィルターを生成する'''
+        self.conditions = {
+            'property': '日付',
+            "date": {
+                operator.value: date
+            }
+        }
+        return self
+    
+    def where_id(self, id: str):
+        '''IDのフィルターを生成する'''
+        self.conditions = {
+            'property': 'ID',
+            "unique_id": {
+                "equals": id
+            }
+        }
+        return self
 
 
 if __name__ == "__main__":
@@ -78,13 +98,13 @@ if __name__ == "__main__":
     condition.and_(
         condition.where_tag(MultiSelectOperator.CONTAINS, "test"),
         condition.where_status(StatusOperator.EQUALS, "未着手"),
-        condition.where_budget_flag(CheckboxOperator.EQUALS, True),
+        condition.where_scheduled_flag(CheckboxOperator.EQUALS, True),
     ),
     condition.and_(
         condition.where_name(TextOperator.CONTAINS, "test"),
-        condition.where_budget_flag(CheckboxOperator.EQUALS, False),
+        condition.where_scheduled_flag(CheckboxOperator.EQUALS, False),
     ))
-    # condition.where_budget_flag(CheckboxOperator.EQUALS, True)
+    # condition.where_scheduled_flag(CheckboxOperator.EQUALS, True)
     # condition.where_name(TextOperator.CONTAINS, "test")
     # json形式で出力
     import json

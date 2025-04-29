@@ -1,0 +1,13 @@
+import emoji
+
+def has_emoji(s: str) -> bool:
+    """文字列に絵文字が含まれているかを判定する関数"""
+    
+    return any(char in emoji.EMOJI_DATA for char in s)
+
+# 動作確認用
+if __name__ == "__main__":
+    print(has_emoji("⌛️"))  # True
+    print(has_emoji("test"))  # False
+    print(has_emoji("test⌛️"))  # True
+    print(has_emoji("test test"))  # False

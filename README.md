@@ -51,7 +51,7 @@
 #### 5.2.1. 実績タスクに予定タスクのIDラベル付与
 
 ```bash
-curl https://notion-api-454608-365326475377.asia-northeast2.run.app/update-actual-task-id
+curl https://notion-api-454608-365326475377.asia-northeast2.run.app/update-excuted-task-id
 ```
 
 #### 5.2.2. 工数計算
@@ -153,7 +153,7 @@ curl https://notion-api-454608-365326475377.asia-northeast2.run.app/update-man-d
 
 ### 6.14. 【】名前が空のページを削除
 
-Notion apiで取得したデータをBudgetTaskなどのドメインに変換するとき、
+Notion apiで取得したデータをScheduledTaskなどのドメインに変換するとき、
 
 名前が空だとエラーになる。
 
@@ -161,8 +161,8 @@ Notion apiで取得したデータをBudgetTaskなどのドメインに変換す
 
 ### 6.15. 【】ドメインのバリデーションチェック追加
 
-- ActualTaskにバリデーションチェックを追加
-- BudgetTaskにバリデーションチェックを追加
+- ExcutedTaskにバリデーションチェックを追加
+- ScheduledTaskにバリデーションチェックを追加
 
 ### 【】APIトークンとDB_IDを外だしする
 

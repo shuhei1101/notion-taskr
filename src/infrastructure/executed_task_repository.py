@@ -1,13 +1,13 @@
-from typing import List
+from typing import Callable, List
 from notion_client import Client
 
-from domain.actual_task import ActualTask
+from domain.executed_task import ExecutedTask
 from infrastructure.operator import CheckboxOperator
 from infrastructure.task_search_condition import TaskSearchConditions
 from infrastructure.task_update_properties import TaskUpdateProperties
 
 
-class ActualTaskRepository:
+class ExecutedTaskRepository:
     def __init__(self, token, db_id):
         self.client = Client(
             auth=token,
@@ -15,12 +15,14 @@ class ActualTaskRepository:
         self.db_id = db_id
         self.filter = TaskSearchConditions()
 
-    def find_all(self) -> List[ActualTask]:
+    def find_all(self,
+                 on_error: Callable[[Exception, dict[str]], None]
+                 ) -> List[ExecutedTask]:
         '''全ての実績を取得する'''
         filter = TaskSearchConditions().and_(
-            TaskSearchConditions().where_budget_flag(
+            TaskSearchConditions().where_scheduled_flag(
                 operator=CheckboxOperator.EQUALS, 
-                is_budget=False
+                is_scheduled=False
             ),
         ).build()
         
@@ -31,22 +33,24 @@ class ActualTaskRepository:
             }
         )
 
-        # response_dataをBudgetTaskのリストに変換する
-        actual_tasks = []
+        # response_dataをScheduledTaskのリストに変換する
+        executed_tasks = []
         for data in response_data['results']:
             try:
-                actual_tasks.append(ActualTask.from_response_data(data))
+                executed_tasks.append(ExecutedTask.from_response_data(data))
             except Exception as e:
-                print(f"スキップ: {e}")
-        return actual_tasks
+                on_error(e, data)
+        return executed_tasks
 
-    def find_by_condition(self, condition: TaskSearchConditions) -> List[ActualTask]:
+    def find_by_condition(self, condition: TaskSearchConditions,
+                          on_error: Callable[[Exception, dict[str]], None]
+                          ) -> List[ExecutedTask]:
         '''指定した実績を全て取得する'''
 
         filter = TaskSearchConditions().and_(
-            TaskSearchConditions().where_budget_flag(
+            TaskSearchConditions().where_scheduled_flag(
                 operator=CheckboxOperator.EQUALS, 
-                is_budget=False
+                is_scheduled=False
             ),
             condition,
         ).build()
@@ -58,26 +62,26 @@ class ActualTaskRepository:
             }
         )
 
-        # response_dataをBudgetTaskのリストに変換する
-        actual_tasks = []
+        # response_dataをScheduledTaskのリストに変換する
+        executed_tasks = []
         for data in response_data['results']:
             try:
-                actual_tasks.append(ActualTask.from_response_data(data))
+                executed_tasks.append(ExecutedTask.from_response_data(data))
             except Exception as e:
-                print(f"スキップ: {e}")
+                on_error(e, data)
 
-        return actual_tasks
+        return executed_tasks
     
-    def update(self, actual_task: ActualTask):
+    def update(self, executed_task: ExecutedTask):
         '''実績タスクを更新する'''
 
         properties = TaskUpdateProperties() \
-            .set_name(actual_task.name.get_display_str()) \
+            .set_name(executed_task.get_display_name()) \
             .build()
         
         self.client.pages.update(
             **{
-                'page_id': actual_task.page_id,
+                'page_id': executed_task.page_id.value,
                 'properties': properties
             }
         )

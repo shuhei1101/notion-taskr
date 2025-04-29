@@ -11,9 +11,9 @@ class TaskUpdateProperties:
         }
         return self
 
-    def set_actual_man_days(self, actual_man_hour: float):
+    def set_executed_man_days(self, executed_man_hour: float):
         '''実際の人日数の更新'''
-        self.properties['人日(実)'] = {'number': actual_man_hour}
+        self.properties['人日(実)'] = {'number': executed_man_hour}
         return self
 
     def set_status(self, status: str):
@@ -21,9 +21,9 @@ class TaskUpdateProperties:
         self.properties['ステータス'] = {'select': {'equals': status}}
         return self
 
-    def set_budget_flag(self, budget_flag: bool):
+    def set_scheduled_flag(self, scheduled_flag: bool):
         '''予定フラグの更新'''
-        self.properties['予定フラグ'] = {'checkbox': {'equals': budget_flag}}
+        self.properties['予定フラグ'] = {'checkbox': {'equals': scheduled_flag}}
         return self
 
     def set_price(self, price: float):
