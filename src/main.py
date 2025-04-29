@@ -14,12 +14,13 @@ def index():
 @app.route("/update-executed-task-id")
 def update_executed_task_id():
     '''実績タスクのIDを付与する'''
-    try:
-        TaskApplicationService().add_id_to_executed_task()
-        return "Task ID updated successfully!"
-    except Exception as e:
-        app.logger.error(f"Error occurred while updating task ID: {str(e)}")
-        return f"An error occurred: {str(e)}", 500
+    pass
+    # try:
+    #     TaskApplicationService().add_id_to_executed_task()
+    #     return "Task ID updated successfully!"
+    # except Exception as e:
+    #     app.logger.error(f"Error occurred while updating task ID: {str(e)}")
+    #     return f"An error occurred: {str(e)}", 500
 
 @app.route("/update-man-days")
 def update_man_days():

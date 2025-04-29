@@ -55,15 +55,6 @@ class ScheduledTask(Task):
         '''実績タスク配列を付与する'''
         self.executed_tasks = executed_tasks
 
-        # 実績工数を集計する
-        self._aggregate_executed_man_days()
-
-        # 実績工数ラベルを更新する
-        self.update_man_days_label(ManDaysLabel.from_man_days(
-            executed_man_days=self.executed_man_days,
-            scheduled_man_days=self.scheduled_man_days
-        ))
-
     def update_executed_task_name(self):
         '''実績タスクのTaskNameを自身と紐づける
         
@@ -74,9 +65,18 @@ class ScheduledTask(Task):
         for executed_task in self.executed_tasks:
             executed_task.name = self.name
 
-    def _aggregate_executed_man_days(self):
-        '''実績工数を集計する'''
-        self.executed_man_days = ManDays(sum(map(
-                lambda executed_task: executed_task.man_days.value,
-                self.executed_tasks
+    def aggregate_executed_man_days(self):
+        '''実績工数を集計し、ラベルを更新する'''
+        if self.executed_tasks is None:
+            self.executed_man_days = ManDays(0)
+        else:
+            self.executed_man_days = ManDays(sum(map(
+                    lambda executed_task: executed_task.man_days.value,
+                    self.executed_tasks
             )))
+        
+        # 実績工数ラベルを更新する
+        self.update_man_days_label(ManDaysLabel.from_man_days(
+            executed_man_days=self.executed_man_days,
+            scheduled_man_days=self.scheduled_man_days
+        ))
