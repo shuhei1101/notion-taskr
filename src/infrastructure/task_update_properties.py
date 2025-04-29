@@ -11,9 +11,9 @@ class TaskUpdateProperties:
         }
         return self
 
-    def set_excuted_man_days(self, excuted_man_hour: float):
+    def set_executed_man_days(self, executed_man_hour: float):
         '''実際の人日数の更新'''
-        self.properties['人日(実)'] = {'number': excuted_man_hour}
+        self.properties['人日(実)'] = {'number': executed_man_hour}
         return self
 
     def set_status(self, status: str):

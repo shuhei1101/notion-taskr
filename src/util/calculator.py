@@ -1,10 +1,10 @@
 from datetime import datetime
 
 def get_hours_diff(start_date: datetime, end_date: datetime):
-    '''日付文字列の差分を計算する
+    '''日付の差分を計算する
     
-    :param start_date: 開始日時
-    :param end_date: 終了日時
+    :param datetime start_date: 開始日時
+    :param datetime end_date: 終了日時
     :return: 差分時間（時間単位）
     '''
     # 差分を計算

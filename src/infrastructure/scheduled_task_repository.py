@@ -1,4 +1,4 @@
-from typing import List
+from typing import Callable, List
 from notion_client import Client
 
 from domain.scheduled_task import ScheduledTask
@@ -14,7 +14,9 @@ class ScheduledTaskRepository:
         self.db_id = db_id
         self.filter = TaskSearchConditions()
 
-    def find_all(self) -> List[ScheduledTask]:
+    def find_all(self,
+                 on_error: Callable[[Exception, dict[str]], None]
+                 ) -> List[ScheduledTask]:
         '''全ての予定を取得する'''
         filter = TaskSearchConditions().and_(
             TaskSearchConditions().where_scheduled_flag(
@@ -37,10 +39,13 @@ class ScheduledTaskRepository:
                 scheduled_tasks.append(ScheduledTask.from_response_data(data))
             except Exception as e:
                 # 名前が空のときにもスキップされる
-                print(f"スキップ: {e}")
+                on_error(e, data)
+                
         return scheduled_tasks
 
-    def find_by_condition(self, condition: TaskSearchConditions) -> List[ScheduledTask]:
+    def find_by_condition(self, condition: TaskSearchConditions,
+                          on_error: Callable[[Exception, dict[str]], None]
+                          ) -> List[ScheduledTask]:
         '''タスクDBの指定タグの予定を全て取得する'''
 
         filter = TaskSearchConditions().and_(
@@ -65,7 +70,7 @@ class ScheduledTaskRepository:
                 scheduled_tasks.append(ScheduledTask.from_response_data(data))
             except Exception as e:
                 # 名前が空のときにもスキップされる
-                print(f"スキップ: {e}")
+                on_error(e, data)
 
         return scheduled_tasks
 
@@ -73,13 +78,13 @@ class ScheduledTaskRepository:
         '''予定タスクを更新する'''
 
         properties = TaskUpdateProperties() \
-            .set_name(scheduled_task.name.get_display_str()) \
-            .set_excuted_man_days(scheduled_task.excuted_man_days) \
+            .set_name(scheduled_task.get_display_name()) \
+            .set_executed_man_days(scheduled_task.executed_man_days.value) \
             .build()
 
         self.client.pages.update(
             **{
-                'page_id': scheduled_task.page_id,
+                'page_id': scheduled_task.page_id.value,
                 'properties': properties
             }
         )

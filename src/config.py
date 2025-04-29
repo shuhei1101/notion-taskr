@@ -1,5 +1,15 @@
+import os
+
+
+src_dir = os.path.dirname(__file__)
+project_root = os.path.dirname(src_dir)
+log_dir = os.path.join(project_root, 'log')
+
 # 出力ログレベル
 LOG_LEVEL = 'DEBUG'
+# ログファイルの出力先
+LOG_PATH = os.path.join(log_dir, 'app.log')
+os.makedirs(log_dir, exist_ok=True)  # ログディレクトリが存在しない場合は作成
 
 # NOTION_TOKEN = os.getenv('NOTION_TOKEN')
 NOTION_TOKEN = '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'

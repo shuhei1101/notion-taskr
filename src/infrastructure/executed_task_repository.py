@@ -1,13 +1,13 @@
-from typing import List
+from typing import Callable, List
 from notion_client import Client
 
-from domain.excuted_task import ExcutedTask
+from domain.executed_task import ExecutedTask
 from infrastructure.operator import CheckboxOperator
 from infrastructure.task_search_condition import TaskSearchConditions
 from infrastructure.task_update_properties import TaskUpdateProperties
 
 
-class ExcutedTaskRepository:
+class ExecutedTaskRepository:
     def __init__(self, token, db_id):
         self.client = Client(
             auth=token,
@@ -15,7 +15,9 @@ class ExcutedTaskRepository:
         self.db_id = db_id
         self.filter = TaskSearchConditions()
 
-    def find_all(self) -> List[ExcutedTask]:
+    def find_all(self,
+                 on_error: Callable[[Exception, dict[str]], None]
+                 ) -> List[ExecutedTask]:
         '''全ての実績を取得する'''
         filter = TaskSearchConditions().and_(
             TaskSearchConditions().where_scheduled_flag(
@@ -32,15 +34,17 @@ class ExcutedTaskRepository:
         )
 
         # response_dataをScheduledTaskのリストに変換する
-        excuted_tasks = []
+        executed_tasks = []
         for data in response_data['results']:
             try:
-                excuted_tasks.append(ExcutedTask.from_response_data(data))
+                executed_tasks.append(ExecutedTask.from_response_data(data))
             except Exception as e:
-                print(f"スキップ: {e}")
-        return excuted_tasks
+                on_error(e, data)
+        return executed_tasks
 
-    def find_by_condition(self, condition: TaskSearchConditions) -> List[ExcutedTask]:
+    def find_by_condition(self, condition: TaskSearchConditions,
+                          on_error: Callable[[Exception, dict[str]], None]
+                          ) -> List[ExecutedTask]:
         '''指定した実績を全て取得する'''
 
         filter = TaskSearchConditions().and_(
@@ -59,25 +63,25 @@ class ExcutedTaskRepository:
         )
 
         # response_dataをScheduledTaskのリストに変換する
-        excuted_tasks = []
+        executed_tasks = []
         for data in response_data['results']:
             try:
-                excuted_tasks.append(ExcutedTask.from_response_data(data))
+                executed_tasks.append(ExecutedTask.from_response_data(data))
             except Exception as e:
-                print(f"スキップ: {e}")
+                on_error(e, data)
 
-        return excuted_tasks
+        return executed_tasks
     
-    def update(self, excuted_task: ExcutedTask):
+    def update(self, executed_task: ExecutedTask):
         '''実績タスクを更新する'''
 
         properties = TaskUpdateProperties() \
-            .set_name(excuted_task.name.get_display_str()) \
+            .set_name(executed_task.get_display_name()) \
             .build()
         
         self.client.pages.update(
             **{
-                'page_id': excuted_task.page_id,
+                'page_id': executed_task.page_id.value,
                 'properties': properties
             }
         )

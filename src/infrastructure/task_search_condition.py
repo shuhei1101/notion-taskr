@@ -41,6 +41,7 @@ class TaskSearchConditions:
         return self
 
     def where_status(self, operator: StatusOperator, status: str, ):
+        '''ステータスで絞り込む'''
         self.conditions = {
             'property': 'ステータス',
             "status": {
@@ -69,6 +70,25 @@ class TaskSearchConditions:
         }
         return self
 
+    def where_date(self, operator: DateOperator, date: str={}):
+        '''日付のフィルターを生成する'''
+        self.conditions = {
+            'property': '日付',
+            "date": {
+                operator.value: date
+            }
+        }
+        return self
+    
+    def where_id(self, id: str):
+        '''IDのフィルターを生成する'''
+        self.conditions = {
+            'property': 'ID',
+            "unique_id": {
+                "equals": id
+            }
+        }
+        return self
 
 
 if __name__ == "__main__":

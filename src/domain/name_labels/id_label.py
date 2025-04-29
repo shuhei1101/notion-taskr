@@ -1,15 +1,16 @@
 from dataclasses import dataclass
 
 from domain.name_labels.name_label import NameLabel
+from domain.value_objects.notion_id import NotionId
 
 @dataclass
 class IdLabel(NameLabel):
     @classmethod
-    def from_id(cls, id_prefix: str, id_number: str):
+    def from_id(cls, id: NotionId):
         '''IDラベルを生成する'''
         return cls(
             key="",
-            value=id_number,
+            value=id.number,
         )
 
     @classmethod

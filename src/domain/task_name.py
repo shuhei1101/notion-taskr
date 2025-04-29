@@ -55,7 +55,6 @@ class TaskName(LabelRegistable):
         # 文字列を結合
         return ' '.join(display_strs)
 
-
     def register_id_label(self, label: 'IdLabel'):
         '''IDラベルを登録するメソッド'''
         self.id_label = label
