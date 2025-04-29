@@ -11,7 +11,7 @@ class NotionId:
         self.prefix = prefix
         self.number = number
 
-    def __eq__(self, other):
-        if isinstance(other, NotionId):
-            return self.number == other.number
-        return False
+    def __eq__(self, other: 'NotionId'):
+        if not isinstance(other, NotionId):
+            return False
+        return self.number == other.number
