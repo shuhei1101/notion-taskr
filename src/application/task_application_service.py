@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import List
 
 from app_logger import AppLogger
@@ -7,7 +8,6 @@ from domain.executed_task_service import ExecutedTaskService
 from domain.scheduled_task_service import ScheduledTaskService
 from domain.executed_task import ExecutedTask
 from domain.scheduled_task import ScheduledTask
-from domain.name_labels.id_label import IdLabel
 from domain.task_service import TaskService
 from infrastructure.executed_task_repository import ExecutedTaskRepository
 from infrastructure.scheduled_task_repository import ScheduledTaskRepository
@@ -16,7 +16,8 @@ from infrastructure.task_search_condition import TaskSearchConditions
 from datetime import datetime
 
 class TaskApplicationService:
-    def __init__(self):
+    def __init__(self, logger: Logger=AppLogger()):
+        self.logger = logger
         self.executed_task_repo = ExecutedTaskRepository(
             config.NOTION_TOKEN, 
             config.TASK_DB_ID
@@ -46,10 +47,10 @@ class TaskApplicationService:
                 )
             )
         
-        # 未完了の予定タスクを全て取得する
+        # 条件にあう予定タスクを全て取得する
         scheduled_tasks: List[ScheduledTask] = self.scheduled_task_repo.find_by_condition(
             condition=condition,
-            on_error=lambda e, data: AppLogger().error(
+            on_error=lambda e, data: self.logger.error(
                 f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
             )
         )
@@ -88,7 +89,7 @@ class TaskApplicationService:
                     )
                 )
             ),
-            on_error=lambda e, data: AppLogger().error(
+            on_error=lambda e, data: self.logger.error(
                 f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
             )
         )
@@ -102,21 +103,29 @@ class TaskApplicationService:
         # 更新
         self._update_executed_tasks(executed_tasks)
 
-        # 予定タスクにIDが一致する実績タスクを追加する（工数計算も実施）
+        # 予定タスクにIDが一致する実績タスクを追加する
         self.scheduled_task_service.add_executed_tasks_to_scheduled(
                 to=scheduled_tasks,
                 source=self.executed_task_repo.find_by_condition(
                     condition=condition,
-                    on_error=lambda e, data: AppLogger().error(
+                    on_error=lambda e, data: self.logger.error(
                         f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
                     )
                 ),
-                on_error=lambda e, task: AppLogger().error(
-                    f"予定タスク[{task.id.number}]の実績追加に失敗。エラー内容: {e}"
+                on_error=lambda e, task: self.logger.error(
+                    f"予定タスク[{task.id.number}]と実績タスクの紐づけに失敗。エラー内容: {e}"
                 ),
             )
 
+        # 予定タスクの工数を計算
+        for scheduled_task in scheduled_tasks:
+            scheduled_task.aggregate_executed_man_days()
+
         # 実績タスクの名前を更新する
+        for scheduled_task in scheduled_tasks:
+            scheduled_task.update_executed_task_name()
+
+        # 更新
         self._update_scheduled_tasks(scheduled_tasks)
         self._update_executed_tasks([
             executed_task
@@ -125,7 +134,7 @@ class TaskApplicationService:
         ])
 
         # 経過時間を表示
-        AppLogger().info(
+        self.logger.info(
             f"処理時間: {app_timer.get_elapsed_time()}秒"
         )
         
@@ -135,9 +144,9 @@ class TaskApplicationService:
         for updated_scheduled_task in updated_scheduled_tasks:
             try:
                 self.scheduled_task_repo.update(updated_scheduled_task)
-                AppLogger().info(f"予定タスク[{updated_scheduled_task.id.number}]を更新しました。")
+                self.logger.info(f"予定タスク[{updated_scheduled_task.id.number}]を更新しました。")
             except Exception as e:
-                AppLogger().error(f"予定タスク[{updated_scheduled_task.id.number}]の更新に失敗しました。 エラー内容: {e}")
+                self.logger.error(f"予定タスク[{updated_scheduled_task.id.number}]の更新に失敗しました。 エラー内容: {e}")
 
     def _update_executed_tasks(self, executed_tasks: list[ExecutedTask],):
         '''実績タスクの予定タスクIDを更新するメソッド'''
@@ -145,9 +154,9 @@ class TaskApplicationService:
         for updated_executed_task in updated_executed_tasks:
             try:
                 self.executed_task_repo.update(updated_executed_task)
-                AppLogger().info(f"実績タスク[{updated_executed_task.id.number}]を更新しました。")
+                self.logger.info(f"実績タスク[{updated_executed_task.id.number}]を更新しました。")
             except Exception as e:
-                AppLogger().error(f"実績タスク[{updated_executed_task.id.number}]の更新に失敗しました。 エラー内容: {e}")
+                self.logger.error(f"実績タスク[{updated_executed_task.id.number}]の更新に失敗しました。 エラー内容: {e}")
 
 if __name__ == '__main__':
     service = TaskApplicationService()
