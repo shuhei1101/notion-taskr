@@ -4,8 +4,11 @@ class AppTimer:
     def __init__(self):
         self.start_time = None
 
-    def start(self):
-        self.start_time = time.time()
+    @classmethod
+    def init_and_start(cls):
+        instance = cls()
+        instance.start_time = time.time()
+        return instance
 
     def get_elapsed_time(self):
         """経過時間を取得するメソッド

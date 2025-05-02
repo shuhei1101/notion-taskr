@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 
+import config
 from domain.name_labels.label_registable import LabelRegistable
 from domain.name_labels.name_label import NameLabel
 from domain.value_objects.notion_id import NotionId
 from domain.value_objects.status import Status
-from util.validator import has_emoji
+from util.validator import is_emoji_matches
 
 @dataclass
 class IdLabel(NameLabel):
@@ -12,9 +13,10 @@ class IdLabel(NameLabel):
     @classmethod
     def from_property(cls, id: NotionId, status: Status) -> 'IdLabel':
         '''IDラベルを生成する'''
-        key = ""
         if status == Status('完了'):
             key = "✓"
+        else:
+            key = ""
 
         return cls(
             key=key,
@@ -29,12 +31,12 @@ class IdLabel(NameLabel):
         '''
         label = key + value  # 文字列を結合する
 
-        if label[0] == "✓":
-            key = label[0]
-            value = label[1:]
-        elif not has_emoji(label):
+        if label[0].isdigit():
             key = ""
             value = label
+        elif label[0] == "✓":
+            key = label[0]
+            value = label[1:]
         else:
             raise ValueError(f'Unknown key: {key}')
         

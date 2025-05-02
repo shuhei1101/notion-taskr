@@ -19,4 +19,3 @@ class ScheduledTaskService():
 
             except Exception as e:
                 on_error(e, scheduled_task)
-

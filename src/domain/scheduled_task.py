@@ -41,6 +41,9 @@ class ScheduledTask(Task):
                 tags=map(lambda tag: tag['name'], data['properties']['タグ']['multi_select']),
                 id=notion_id,
                 status=status,
+                parent_task_page_id=PageId(
+                    value=data['properties']['親アイテム']['relation'][0]['id'],
+                ) if data['properties']['親アイテム']['relation'] else None,
                 scheduled_man_hours=ManHours(data['properties']['人時(予)']['number']),
                 executed_man_hours=ManHours(data['properties']['人時(実)']['number']),
             )
@@ -94,5 +97,7 @@ class ScheduledTask(Task):
     def update_executed_man_hours(self, executed_man_hours: ManHours):
         '''実績人日を更新する'''
         if self.executed_man_hours != executed_man_hours:
-            self.is_updated = True
+            self.toggle_is_updated(f'実績人日: {self.executed_man_hours} -> {executed_man_hours}')
             self.executed_man_hours = executed_man_hours
+
+

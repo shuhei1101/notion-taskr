@@ -26,7 +26,6 @@ class NameLabel(ABC):
     def parse_and_register(cls, key: str, value: str, delegate: 'LabelRegistable'):
         '''ラベルを解析してdelegeteのメンバへ登録する'''
         pass
-    
 
     @staticmethod
     def parse_labels(label: str, delegate: 'LabelRegistable'):
@@ -36,6 +35,7 @@ class NameLabel(ABC):
         '''
         from domain.name_labels.id_label import IdLabel
         from domain.name_labels.man_hours_label import ManHoursLabel
+        from domain.name_labels.parent_id_label import ParentIdLabel
 
         label = remove_variant_selectors(label)  # バリアントセレクタを除去
 
@@ -46,6 +46,8 @@ class NameLabel(ABC):
         handlers: List['NameLabel'] = [
             IdLabel,
             ManHoursLabel,
+            ManHoursLabel,
+            ParentIdLabel,
         ]
     
         # ID以外のラベルを登録

@@ -41,14 +41,13 @@ class ExecutedTask(Task):
                 name=task_name,
                 tags=map(lambda tag: Tag(tag['name']), data['properties']['タグ']['multi_select']),
                 id=NotionId(
-                    prefix=data['properties']['ID']['unique_id']['prefix'],
                     number=task_number,
+                    prefix=data['properties']['ID']['unique_id']['prefix'],
                 ),
                 status=Status(data['properties']['ステータス']['status']['name']),
                 date=notion_date,
                 man_hours=ManHours.from_notion_date(notion_date),
                 scheduled_task_id=NotionId(
-                    prefix="",
                     number=task_name.id_label.value,
                 ) if task_name.id_label else None,
             )
@@ -60,6 +59,6 @@ class ExecutedTask(Task):
     def update_scheduled_task_id(self, scheduled_task_id: NotionId):
         '''予定タスクIDを更新するメソッド'''
         if self.scheduled_task_id != scheduled_task_id:
-            self.is_updated = True
+            self.toggle_is_updated(f'予定タスクID: {self.scheduled_task_id} -> {scheduled_task_id}')
             self.scheduled_task_id = scheduled_task_id
 

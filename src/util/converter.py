@@ -21,6 +21,6 @@ def remove_variant_selectors(text):
 
 # 動作確認用
 if __name__ == '__main__':
-    label = '⏲️0/2'
+    label = '🌳0/2'
     print(emoji.demojize(label))
     print(emoji.demojize(remove_variant_selectors(label)))

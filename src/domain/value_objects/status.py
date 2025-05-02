@@ -7,7 +7,7 @@ class Status:
     def __init__(self, value: str):
         if not value:
             raise ValueError(f"Statusは必須です。")
-        self.value = value
+        self.value = str(value)
 
     def __eq__(self, other: 'Status'):
         if not isinstance(other, Status):

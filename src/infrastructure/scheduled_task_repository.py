@@ -1,6 +1,9 @@
 from typing import Callable, List
+from domain.value_objects.page_id import PageId
 from notion_client import Client
 
+import config
+from domain.task import Task
 from domain.scheduled_task import ScheduledTask
 from infrastructure.operator import CheckboxOperator
 from infrastructure.task_search_condition import TaskSearchConditions
@@ -73,6 +76,15 @@ class ScheduledTaskRepository:
                 on_error(e, data)
 
         return scheduled_tasks
+    
+    def find_by_page_id(self, page_id: PageId) -> Task:
+        '''ページIDから1件のページ情報を取得する'''
+        try:
+            response_data = self.client.pages.retrieve(page_id=page_id.value)
+            return ScheduledTask.from_response_data(response_data)
+        
+        except Exception as e:
+            raise RuntimeError(f"ページ取得失敗: {e}")
 
     def update(self, scheduled_task: ScheduledTask):
         '''予定タスクを更新する'''
@@ -88,3 +100,14 @@ class ScheduledTaskRepository:
                 'properties': properties
             }
         )
+
+# 動作確認用
+if __name__ == '__main__':
+    token = config.NOTION_TOKEN
+    db_id = config.TASK_DB_ID
+
+    scheduled_task_repo = ScheduledTaskRepository(token, db_id)
+    scheduled_task = scheduled_task_repo.find_by_page_id(
+        page_id='1875ffa1-def1-4c34-8875-e559eb6e5853'
+    )
+    print(scheduled_task)

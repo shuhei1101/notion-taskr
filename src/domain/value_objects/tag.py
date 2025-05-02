@@ -8,4 +8,4 @@ class Tag:
     def __init__(self, value: str):
         if not value:
             raise ValueError(f"タグは必須です。")
-        self.value = value
+        self.value = str(value)
