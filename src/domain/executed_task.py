@@ -1,9 +1,8 @@
-from datetime import datetime
 from dataclasses import dataclass
 
 from domain.task import Task
 from domain.task_name import TaskName
-from domain.value_objects.man_days import ManDays
+from domain.value_objects.man_hours import ManHours
 from domain.value_objects.notion_date import NotionDate
 from domain.value_objects.notion_id import NotionId
 from domain.value_objects.page_id import PageId
@@ -14,7 +13,7 @@ from domain.value_objects.tag import Tag
 class ExecutedTask(Task):
     '''実績タスクモデル'''
     date: NotionDate = None
-    man_days: ManDays = None
+    man_hours: ManHours = None
     scheduled_task_id: NotionId = None  # 紐づいている予定タスクのID
 
     @classmethod
@@ -47,7 +46,7 @@ class ExecutedTask(Task):
                 ),
                 status=Status(data['properties']['ステータス']['status']['name']),
                 date=notion_date,
-                man_days=ManDays.from_notion_date(notion_date),
+                man_hours=ManHours.from_notion_date(notion_date),
                 scheduled_task_id=NotionId(
                     prefix="",
                     number=task_name.id_label.value,

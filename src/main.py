@@ -1,8 +1,6 @@
 from flask import Flask, render_template
 import logging
 
-from application.task_application_service import TaskApplicationService
-
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.DEBUG)
@@ -21,16 +19,6 @@ def update_executed_task_id():
     # except Exception as e:
     #     app.logger.error(f"Error occurred while updating task ID: {str(e)}")
     #     return f"An error occurred: {str(e)}", 500
-
-@app.route("/update-man-days")
-def update_man_days():
-    '''予定タスクに予実工数を付与する'''
-    try:
-        TaskApplicationService().update_man_days()
-        return "Man days updated successfully!"
-    except Exception as e:
-        app.logger.error(f"Error occurred while updating man days: {str(e)}")
-        return f"An error occurred: {str(e)}", 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

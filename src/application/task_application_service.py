@@ -62,37 +62,34 @@ class TaskApplicationService:
         ))
 
         # 予定タスクIDを配列に格納する
-        scheduled_task_ids = list(map(
-            lambda task: task.id.number,
-            scheduled_tasks
-        ))
+        # scheduled_task_ids = list(map(
+        #     lambda task: task.id.number,
+        #     scheduled_tasks
+        # ))
 
-        # 予定タスク名に一致する実績タスクを全て取得する
-        # （一回のクエリで全て取得する）
-        executed_tasks: List[ExecutedTask] = self.executed_task_repo.find_by_condition(
+        # 予定タスク名に一致する実績タスクを全て取得する（100件ずつ分割してリクエスト）
+        executed_tasks: List[ExecutedTask] = []
+        batch_size = 100
+
+        for i in range(0, len(scheduled_task_names), batch_size):
+            batch_names = scheduled_task_names[i:i + batch_size]
+            batch_executed_tasks = self.executed_task_repo.find_by_condition(
             TaskSearchConditions().or_(
                 *(
-                    map(
-                        lambda name: TaskSearchConditions().where_name(
-                            operator=TextOperator.EQUALS,
-                            name=name
-                        ),
-                        scheduled_task_names
-                    )
-                ),
-                *(
-                    map(
-                        lambda id: TaskSearchConditions().where_id(
-                            id=id
-                        ),
-                        scheduled_task_ids
-                    )
+                map(
+                    lambda name: TaskSearchConditions().where_name(
+                    operator=TextOperator.EQUALS,
+                    name=name
+                    ),
+                    batch_names
                 )
+                ),
             ),
             on_error=lambda e, data: self.logger.error(
                 f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
             )
-        )
+            )
+            executed_tasks.extend(batch_executed_tasks)
 
         # 実績タスクにIDを付与する（未付与のもののみ）
         self.executed_task_service.add_id_tag(
@@ -119,7 +116,7 @@ class TaskApplicationService:
 
         # 予定タスクの工数を計算
         for scheduled_task in scheduled_tasks:
-            scheduled_task.aggregate_executed_man_days()
+            scheduled_task.aggregate_executed_man_hours()
 
         # 実績タスクのプロパティを予定タスクからコピーする
         for scheduled_task in scheduled_tasks:

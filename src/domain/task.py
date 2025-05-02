@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, List
 
+from domain.name_labels.man_hours_label import ManHoursLabel
 from domain.task_name import TaskName
 from domain.value_objects.notion_id import NotionId
 from domain.value_objects.page_id import PageId
@@ -9,7 +10,6 @@ from domain.value_objects.tag import Tag
 
 if TYPE_CHECKING:
     from domain.name_labels.id_label import IdLabel
-    from domain.name_labels.man_days_label import ManDaysLabel
 
 @dataclass
 class Task:
@@ -27,12 +27,12 @@ class Task:
         self.tags = tags
         self.id = id
         self.status = status
-    
-    def update_man_days_label(self, man_days_label: 'ManDaysLabel'):
+      
+    def update_man_hours_label(self, man_hours_label: 'ManHoursLabel'):
         '''工数ラベルを登録し、is_updatedをTrueにする'''
-        if self.name.man_days_label != man_days_label:
+        if self.name.man_hours_label != man_hours_label:
             self.is_updated = True
-            self.name.man_days_label = man_days_label
+            self.name.man_hours_label = man_hours_label
 
     def update_id_label(self, label: 'IdLabel'):
         '''IDラベルを登録し、is_updatedをTrueにする'''

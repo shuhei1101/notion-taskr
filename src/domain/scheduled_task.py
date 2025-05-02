@@ -2,10 +2,10 @@ from dataclasses import dataclass
 
 from domain.executed_task import ExecutedTask
 from domain.name_labels.id_label import IdLabel
-from domain.name_labels.man_days_label import ManDaysLabel
+from domain.name_labels.man_hours_label import ManHoursLabel
 from domain.task import Task
 from domain.task_name import TaskName
-from domain.value_objects.man_days import ManDays
+from domain.value_objects.man_hours import ManHours
 from domain.value_objects.notion_id import NotionId
 from domain.value_objects.page_id import PageId
 from domain.value_objects.status import Status
@@ -13,8 +13,8 @@ from domain.value_objects.status import Status
 @dataclass
 class ScheduledTask(Task):
     '''予定タスクモデル'''
-    scheduled_man_days: ManDays = None
-    executed_man_days: ManDays = None
+    scheduled_man_hours: ManHours = None
+    executed_man_hours: ManHours = None
     executed_tasks: list[ExecutedTask] = None  # 紐づいている実績タスク
 
     @classmethod
@@ -41,8 +41,8 @@ class ScheduledTask(Task):
                 tags=map(lambda tag: tag['name'], data['properties']['タグ']['multi_select']),
                 id=notion_id,
                 status=status,
-                scheduled_man_days=ManDays(data['properties']['人日(予)']['number']),
-                executed_man_days=ManDays(data['properties']['人日(実)']['number']),
+                scheduled_man_hours=ManHours(data['properties']['人時(予)']['number']),
+                executed_man_hours=ManHours(data['properties']['人時(実)']['number']),
             )
 
             # IDラベルを更新
@@ -68,22 +68,31 @@ class ScheduledTask(Task):
         '''
         if self.executed_tasks is None:
             raise ValueError('実績タスクが存在しません。')
+        
         for executed_task in self.executed_tasks:
-            executed_task.name = self.name
-            executed_task.status = self.status
+            executed_task.update_name(self.name)
+            executed_task.update_status(self.status)
 
-    def aggregate_executed_man_days(self):
+    def aggregate_executed_man_hours(self):
         '''実績工数を集計し、ラベルを更新する'''
         if self.executed_tasks is None:
-            self.executed_man_days = ManDays(0)
+            self.executed_man_hours = ManHours(0)
         else:
-            self.executed_man_days = ManDays(sum(map(
-                    lambda executed_task: executed_task.man_days.value,
-                    self.executed_tasks
-            )))
-        
-        # 実績工数ラベルを更新する
-        self.update_man_days_label(ManDaysLabel.from_man_days(
-            executed_man_days=self.executed_man_days,
-            scheduled_man_days=self.scheduled_man_days
+            man_hours_total = 0
+
+            for executed_task in self.executed_tasks:
+                man_hours_total += executed_task.man_hours.value
+
+            self.update_executed_man_hours(ManHours(man_hours_total))
+
+        # 実績人時ラベルを更新する
+        self.update_man_hours_label(ManHoursLabel.from_man_hours(
+            executed_man_hours=self.executed_man_hours,
+            scheduled_man_hours=self.scheduled_man_hours
         ))
+
+    def update_executed_man_hours(self, executed_man_hours: ManHours):
+        '''実績人日を更新する'''
+        if self.executed_man_hours != executed_man_hours:
+            self.is_updated = True
+            self.executed_man_hours = executed_man_hours

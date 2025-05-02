@@ -79,7 +79,7 @@ class ScheduledTaskRepository:
 
         properties = TaskUpdateProperties() \
             .set_name(scheduled_task.get_display_name()) \
-            .set_executed_man_days(scheduled_task.executed_man_days.value) \
+            .set_executed_man_hours(scheduled_task.executed_man_hours.value) \
             .build()
 
         self.client.pages.update(
