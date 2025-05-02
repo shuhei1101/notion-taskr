@@ -1,29 +1,28 @@
 from typing import Callable, List
 from domain.value_objects.page_id import PageId
+from infrastructure.id_findable import IdFindable
 from infrastructure.scheduled_task_update_properties import ScheduledTaskUpdateProperties
 from notion_client import Client
 
 import config
-from domain.task import Task
 from domain.scheduled_task import ScheduledTask
 from infrastructure.operator import CheckboxOperator
-from infrastructure.task_search_condition import TaskSearchConditions
-from infrastructure.task_update_properties import TaskUpdateProperties
+from infrastructure.task_search_condition import TaskSearchCondition
 
-class ScheduledTaskRepository:
+class ScheduledTaskRepository(IdFindable):
     def __init__(self, token, db_id):
         self.client = Client(
             auth=token,
         )
         self.db_id = db_id
-        self.filter = TaskSearchConditions()
+        self.filter = TaskSearchCondition()
 
-    def find_all(self,
+    async def find_all(self,
                  on_error: Callable[[Exception, dict[str]], None]
                  ) -> List[ScheduledTask]:
         '''全ての予定を取得する'''
-        filter = TaskSearchConditions().and_(
-            TaskSearchConditions().where_scheduled_flag(
+        filter = TaskSearchCondition().and_(
+            TaskSearchCondition().where_scheduled_flag(
                 operator=CheckboxOperator.EQUALS,
                 is_scheduled=True
             ),
@@ -47,13 +46,13 @@ class ScheduledTaskRepository:
                 
         return scheduled_tasks
 
-    def find_by_condition(self, condition: TaskSearchConditions,
+    async def find_by_condition(self, condition: TaskSearchCondition,
                           on_error: Callable[[Exception, dict[str]], None]
                           ) -> List[ScheduledTask]:
         '''タスクDBの指定タグの予定を全て取得する'''
 
-        filter = TaskSearchConditions().and_(
-            TaskSearchConditions().where_scheduled_flag(
+        filter = TaskSearchCondition().and_(
+            TaskSearchCondition().where_scheduled_flag(
                 operator=CheckboxOperator.EQUALS,
                 is_scheduled=True
             ),
@@ -78,29 +77,39 @@ class ScheduledTaskRepository:
 
         return scheduled_tasks
     
-    def find_by_page_id(self, page_id: PageId) -> Task:
+    async def find_by_page_id(self, page_id: PageId) -> ScheduledTask:
         '''ページIDから1件のページ情報を取得する'''
         try:
-            response_data = self.client.pages.retrieve(page_id=page_id.value)
-            return ScheduledTask.from_response_data(response_data)
+            response_data = self.client.pages.retrieve(page_id=str(page_id))
+            task = ScheduledTask.from_response_data(response_data)
+            return task
         
         except Exception as e:
             raise RuntimeError(f"ページ取得失敗: {e}")
 
-    def update(self, scheduled_task: ScheduledTask):
+    async def update(self, scheduled_task: ScheduledTask,
+                     on_success: Callable[[ScheduledTask], None],
+                     on_error: Callable[[Exception, ScheduledTask], None]
+                     ):
         '''予定タスクを更新する'''
 
-        properties = ScheduledTaskUpdateProperties(task=scheduled_task) \
-            .set_name() \
-            .set_executed_man_hours() \
-            .build()
+        try:
+            properties = ScheduledTaskUpdateProperties(task=scheduled_task) \
+                .set_name() \
+                .set_executed_man_hours() \
+                .build()
 
-        self.client.pages.update(
-            **{
-                'page_id': str(scheduled_task.page_id),
-                'properties': properties
-            }
-        )
+            self.client.pages.update(
+                **{
+                    'page_id': str(scheduled_task.page_id),
+                    'properties': properties
+                }
+            )
+            on_success(scheduled_task)
+        except Exception as e:
+            on_error(e, scheduled_task)
+
+        
 
 # 動作確認用
 if __name__ == '__main__':

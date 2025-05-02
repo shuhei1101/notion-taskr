@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from logging import Logger
 from typing import List
@@ -6,16 +7,16 @@ import config as config
 from app_logger import AppLogger
 from app_timer import AppTimer
 from domain.executed_task_service import ExecutedTaskService
-from domain.name_labels.parent_id_label import ParentIdLabel
 from domain.scheduled_task_service import ScheduledTaskService
 from domain.executed_task import ExecutedTask
 from domain.scheduled_task import ScheduledTask
 from domain.task_service import TaskService
 from domain.value_objects.status import Status
 from infrastructure.executed_task_repository import ExecutedTaskRepository
+from infrastructure.scheduled_task_cache import ScheduledTaskCache
 from infrastructure.scheduled_task_repository import ScheduledTaskRepository
 from infrastructure.operator import *
-from infrastructure.task_search_condition import TaskSearchConditions
+from infrastructure.task_search_condition import TaskSearchCondition
 
 
 class TaskApplicationService:
@@ -29,22 +30,23 @@ class TaskApplicationService:
             config.NOTION_TOKEN,
             config.TASK_DB_ID,
         )
+        self.scheduled_task_cache = ScheduledTaskCache(repo=self.scheduled_task_repo)
         self.task_service = TaskService()
         self.scheduled_task_service = ScheduledTaskService()
         self.executed_task_service = ExecutedTaskService()
 
-    def regular_task(self, condition: TaskSearchConditions = None):
+    async def regular_task(self, condition: TaskSearchCondition = None):
         '''予定タスクのIDを持つ実績タスクにIDを付与する'''
 
         main_timer = AppTimer.init_and_start()
 
         # 条件作成（過去一ヶ月〜未来）
         if condition is None:
-            condition = TaskSearchConditions().or_(
-                    TaskSearchConditions().where_date(
+            condition = TaskSearchCondition().or_(
+                    TaskSearchCondition().where_date(
                         operator=DateOperator.PAST_YEAR,
                     ),
-                    TaskSearchConditions().where_date(
+                    TaskSearchCondition().where_date(
                         date=datetime.now().strftime('%Y-%m-%d'),
                         operator=DateOperator.ON_OR_AFTER
                     ),
@@ -53,7 +55,7 @@ class TaskApplicationService:
         create_scheduled_timer = AppTimer.init_and_start()
 
         # 条件にあう予定タスクを全て取得する
-        scheduled_tasks: List[ScheduledTask] = self.scheduled_task_repo.find_by_condition(
+        scheduled_tasks: List[ScheduledTask] = await self.scheduled_task_repo.find_by_condition(
             condition=condition,
             on_error=lambda e, data: self.logger.error(
                 f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
@@ -64,40 +66,20 @@ class TaskApplicationService:
         update_parent_id_timer = AppTimer.init_and_start()
 
         # 予定タスクの親アイテムの取得を行う
+        tasks = []
         for scheduled_task in list(filter(lambda task: task.status != Status('完了'),
             scheduled_tasks)):
             if scheduled_task.parent_task_page_id is None: continue
-            try:
-                # 現在取得している予定タスクから親アイテムのページIDを取得し、実績タスクを取得する
-                scheduled_task.parent_task = next(
-                    filter(
-                        lambda task: task.page_id == scheduled_task.parent_task_page_id,
-                        scheduled_tasks
-                    ),
-                    None
+            tasks.append(self.scheduled_task_service.update_parent_id(
+                scheduled_task=scheduled_task,
+                scheduled_tasks=scheduled_tasks,
+                scheduled_task_repo=self.scheduled_task_cache,
+                on_error=lambda e, task: self.logger.error(
+                    f"予定タスク[{task.id.number}]の親アイテムの取得に失敗。エラー内容: {e}"
                 )
+            ))
 
-                # リポジトリから親アイテムのページIDを取得する
-                if scheduled_task.parent_task is None:
-                    scheduled_task.parent_task = self.scheduled_task_repo.find_by_page_id(
-                        page_id=scheduled_task.parent_task_page_id,
-                    )
-                    # 取得した親アイテムをキャッシュとしてscheduled_taskに格納する
-                    scheduled_tasks.append(scheduled_task.parent_task)
-                    self.logger.debug(f"キャッシュとして予定タスク[{scheduled_task.parent_task.id.number}]を格納しました。")
-            
-                # 親アイテムラベルを更新する
-                scheduled_task.update_parent_id_label(
-                    parent_id_label=ParentIdLabel.from_property(
-                        parent_id=scheduled_task.parent_task.id,
-                    )
-                )
-                
-            except Exception as e:
-                self.logger.error(
-                    f"予定タスク[{scheduled_task.id.number}]の親アイテムの取得に失敗。エラー内容: {e}"
-                )
-                continue
+        await asyncio.gather(*tasks)
 
         self.logger.debug(f"【処理時間】親アイテムの取得: {update_parent_id_timer.get_elapsed_time()}秒")
         add_executed_id_timer = AppTimer.init_and_start()
@@ -108,24 +90,18 @@ class TaskApplicationService:
             scheduled_tasks
         ))
 
-        # 予定タスクIDを配列に格納する
-        # scheduled_task_ids = list(map(
-        #     lambda task: task.id.number,
-        #     scheduled_tasks
-        # ))
-
-
         # 予定タスク名に一致する実績タスクを全て取得する（100件ずつ分割してリクエスト）
         executed_tasks: List[ExecutedTask] = []
-        batch_size = 100
+        BATCH_SIZE = 100
 
-        for i in range(0, len(scheduled_task_names), batch_size):
-            batch_names = scheduled_task_names[i:i + batch_size]
-            batch_executed_tasks = self.executed_task_repo.find_by_condition(
-                TaskSearchConditions().or_(
+        tasks = []
+        for i in range(0, len(scheduled_task_names), BATCH_SIZE):
+            batch_names = scheduled_task_names[i:i + BATCH_SIZE]
+            tasks.append(self.executed_task_repo.find_by_condition(
+                TaskSearchCondition().or_(
                     *(
                     map(
-                        lambda name: TaskSearchConditions().where_name(
+                        lambda name: TaskSearchCondition().where_name(
                         operator=TextOperator.EQUALS,
                         name=name
                         ),
@@ -136,8 +112,8 @@ class TaskApplicationService:
                 on_error=lambda e, data: self.logger.error(
                     f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
                 )
-            )
-            executed_tasks.extend(batch_executed_tasks)
+            ))
+        await asyncio.gather(*tasks)
 
         # 実績タスクにIDを付与する（未付与のもののみ）
         self.executed_task_service.add_id_tag(
@@ -145,8 +121,8 @@ class TaskApplicationService:
             source=scheduled_tasks
         )
 
-        # 更新
-        self._update_executed_tasks(executed_tasks)
+        # 非同期で更新
+        asyncio.create_task(self._update_executed_tasks(executed_tasks))
 
         self.logger.debug(f"【処理時間】実績タスクのID付与: {add_executed_id_timer.get_elapsed_time()}秒")
         culc_man_hours_timer = AppTimer.init_and_start()
@@ -154,7 +130,7 @@ class TaskApplicationService:
         # 予定タスクと実績タスクの紐づけ
         self.scheduled_task_service.add_executed_tasks_to_scheduled(
             to=scheduled_tasks,
-            source=self.executed_task_repo.find_by_condition(
+            source=await self.executed_task_repo.find_by_condition(
                 condition=condition,
                 on_error=lambda e, data: self.logger.error(
                     f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
@@ -179,36 +155,52 @@ class TaskApplicationService:
                 )
 
         # 更新
-        self._update_scheduled_tasks(scheduled_tasks)
-        self._update_executed_tasks([
+        tasks = []
+        tasks.append(self._update_scheduled_tasks(scheduled_tasks))
+        tasks.append(self._update_executed_tasks([
             executed_task
             for scheduled_task in scheduled_tasks
-            for executed_task in scheduled_task.executed_tasks
-        ])
+            for executed_task in scheduled_task.executed_tasks if scheduled_task.executed_tasks
+        ]))
+
+        await asyncio.gather(*tasks)
 
         self.logger.debug(f"【処理時間】実績タスクの工数計算: {culc_man_hours_timer.get_elapsed_time()}秒")
         self.logger.debug(f"【処理時間】合計: {main_timer.get_elapsed_time()}秒")
         
-    def _update_scheduled_tasks(self, scheduled_tasks: list[ScheduledTask],):
+    async def _update_scheduled_tasks(self, scheduled_tasks: list[ScheduledTask],):
         '''予定タスクの実績工数を更新するメソッド'''
         updated_scheduled_tasks = self.task_service.get_updated_tasks(scheduled_tasks)
+        tasks = []
         for updated_scheduled_task in updated_scheduled_tasks:
-            try:
-                self.scheduled_task_repo.update(updated_scheduled_task)
-                self.logger.info(f"予定タスク[{updated_scheduled_task.id.number}]の更新: {updated_scheduled_task.update_contents}")
-            except Exception as e:
-                self.logger.error(f"予定タスク[{updated_scheduled_task.id.number}]の更新に失敗しました。 エラー内容: {e}")
+            tasks.append(self.scheduled_task_repo.update(
+                scheduled_task=updated_scheduled_task,
+                on_success=lambda task: self.logger.info(
+                    f"予定タスク[{task.id.number}]の更新: {task.update_contents}"
+                ),
+                on_error=lambda e, task: self.logger.error(
+                    f"予定タスク[{task.id.number}]の更新に失敗しました。 エラー内容: {e}"
+                )
+            ))
+        await asyncio.gather(*tasks)
 
-    def _update_executed_tasks(self, executed_tasks: list[ExecutedTask],):
+    async def _update_executed_tasks(self, executed_tasks: list[ExecutedTask],):
         '''実績タスクの予定タスクIDを更新するメソッド'''
         updated_executed_tasks = self.task_service.get_updated_tasks(executed_tasks)
+        tasks = []
         for updated_executed_task in updated_executed_tasks:
-            try:
-                self.executed_task_repo.update(updated_executed_task)
-                self.logger.info(f"実績タスク[{updated_executed_task.id.number}]の更新: {updated_executed_task.update_contents}")
-            except Exception as e:
-                self.logger.error(f"実績タスク[{updated_executed_task.id.number}]の更新に失敗しました。 エラー内容: {e}")
+            tasks.append(self.executed_task_repo.update(
+                executed_task=updated_executed_task,
+                on_success=lambda task: self.logger.info(
+                    f"実績タスク[{task.id.number}]の更新: {task.update_contents}"
+                ),
+                on_error=lambda e, task: self.logger.error(
+                    f"実績タスク[{task.id.number}]の更新に失敗しました。 エラー内容: {e}"
+                )
+            ))
+
+        await asyncio.gather(*tasks)
 
 if __name__ == '__main__':
     service = TaskApplicationService()
-    service.regular_task()
+    asyncio.run(service.regular_task())

@@ -46,6 +46,7 @@ class ScheduledTask(Task):
                 ) if data['properties']['親アイテム']['relation'] else None,
                 scheduled_man_hours=ManHours(data['properties']['人時(予)']['number']),
                 executed_man_hours=ManHours(data['properties']['人時(実)']['number']),
+                executed_tasks=[],
             )
 
             # IDラベルを更新

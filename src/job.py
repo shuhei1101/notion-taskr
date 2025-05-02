@@ -1,21 +1,22 @@
+import asyncio
 from datetime import datetime
 from application.task_application_service import TaskApplicationService
 from infrastructure.operator import DateOperator
-from infrastructure.task_search_condition import TaskSearchConditions
+from infrastructure.task_search_condition import TaskSearchCondition
 
 def run_job():
-    condition = TaskSearchConditions().or_(
-                    TaskSearchConditions().where_date(
-                        operator=DateOperator.PAST_WEEK,
+    condition = TaskSearchCondition().or_(
+                    TaskSearchCondition().where_date(
+                        operator=DateOperator.PAST_MONTH,
                     ),
-                    TaskSearchConditions().where_date(
+                    TaskSearchCondition().where_date(
                         date=datetime.now().strftime('%Y-%m-%d'),
                         operator=DateOperator.ON_OR_AFTER
                     ),
                 )
     
     service = TaskApplicationService()
-    service.regular_task(condition=condition)
+    asyncio.run(service.regular_task(condition=condition))
  
 if __name__ == "__main__":
     run_job()
