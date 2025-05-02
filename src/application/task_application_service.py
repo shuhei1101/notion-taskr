@@ -1,9 +1,10 @@
+from datetime import datetime
 from logging import Logger
 from typing import List
 
+import config as config
 from app_logger import AppLogger
 from app_timer import AppTimer
-import config as config
 from domain.executed_task_service import ExecutedTaskService
 from domain.scheduled_task_service import ScheduledTaskService
 from domain.executed_task import ExecutedTask
@@ -13,18 +14,18 @@ from infrastructure.executed_task_repository import ExecutedTaskRepository
 from infrastructure.scheduled_task_repository import ScheduledTaskRepository
 from infrastructure.operator import *
 from infrastructure.task_search_condition import TaskSearchConditions
-from datetime import datetime
+
 
 class TaskApplicationService:
     def __init__(self, logger: Logger=AppLogger()):
         self.logger = logger
         self.executed_task_repo = ExecutedTaskRepository(
             config.NOTION_TOKEN,
-            config.TASK_DB_ID
+            config.TASK_DB_ID,
         )
         self.scheduled_task_repo = ScheduledTaskRepository(
-            config.NOTION_TOKEN, 
-            config.TASK_DB_ID
+            config.NOTION_TOKEN,
+            config.TASK_DB_ID,
         )
         self.task_service = TaskService()
         self.scheduled_task_service = ScheduledTaskService()
