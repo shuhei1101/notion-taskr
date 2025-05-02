@@ -23,10 +23,10 @@ class AppLogger:
             self.logger.addHandler(sh)
             
             # TimedRotatingFileHandler
-            trfh = TimedRotatingFileHandler(config.LOG_PATH, when="midnight", interval=1, backupCount=7)
-            trfh_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-            trfh.setFormatter(trfh_formatter)
-            self.logger.addHandler(trfh)
+            # trfh = TimedRotatingFileHandler(config.LOG_PATH, when="midnight", interval=1, backupCount=7)
+            # trfh_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            # trfh.setFormatter(trfh_formatter)
+            # self.logger.addHandler(trfh)
             
             self._initialized = True
 

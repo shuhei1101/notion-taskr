@@ -33,21 +33,22 @@ class TaskApplicationService:
         self.scheduled_task_service = ScheduledTaskService()
         self.executed_task_service = ExecutedTaskService()
 
-    def regular_task(self):
+    def regular_task(self, condition: TaskSearchConditions = None):
         '''予定タスクのIDを持つ実績タスクにIDを付与する'''
 
         main_timer = AppTimer.init_and_start()
 
         # 条件作成（過去一ヶ月〜未来）
-        condition = TaskSearchConditions().or_(
-                TaskSearchConditions().where_date(
-                    operator=DateOperator.PAST_YEAR,
-                ),
-                TaskSearchConditions().where_date(
-                    date=datetime.now().strftime('%Y-%m-%d'),
-                    operator=DateOperator.ON_OR_AFTER
-                ),
-            )
+        if condition is None:
+            condition = TaskSearchConditions().or_(
+                    TaskSearchConditions().where_date(
+                        operator=DateOperator.PAST_YEAR,
+                    ),
+                    TaskSearchConditions().where_date(
+                        date=datetime.now().strftime('%Y-%m-%d'),
+                        operator=DateOperator.ON_OR_AFTER
+                    ),
+                )
         
         create_scheduled_timer = AppTimer.init_and_start()
 
