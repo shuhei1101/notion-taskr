@@ -1,13 +1,21 @@
-class TaskUpdateProperties:
+
+
+from abc import ABC
+
+from domain.task import Task
+
+
+class TaskUpdateProperties(ABC):
     '''タスクの更新用プロパティ辞書を生成するクラス'''
 
-    def __init__(self):
+    def __init__(self, task: Task):
+        self.task = task
         self.properties = {}
 
-    def set_name(self, name: str):
+    def set_name(self):
         '''名前の更新'''
         self.properties['名前'] = {
-            'title': [{'text': {'content': name}}]
+            'title': [{'text': {'content': self.task.get_display_name()}}]
         }
         return self
 
@@ -16,9 +24,9 @@ class TaskUpdateProperties:
         self.properties['人時(実)'] = {'number': executed_man_hour}
         return self
 
-    def set_status(self, status: str):
+    def set_status(self):
         '''ステータスの更新'''
-        self.properties['ステータス'] = {'select': {'equals': status}}
+        self.properties['ステータス'] = {'status': {'name': str(self.task.status)}}
         return self
 
     def set_scheduled_flag(self, scheduled_flag: bool):

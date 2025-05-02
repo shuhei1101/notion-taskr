@@ -1,4 +1,5 @@
 from typing import Callable, List
+from infrastructure.executed_task_update_properties import ExecutedTaskUpdateProperties
 from notion_client import Client
 
 from domain.executed_task import ExecutedTask
@@ -75,13 +76,14 @@ class ExecutedTaskRepository:
     def update(self, executed_task: ExecutedTask):
         '''実績タスクを更新する'''
 
-        properties = TaskUpdateProperties() \
-            .set_name(executed_task.get_display_name()) \
+        properties = ExecutedTaskUpdateProperties(task=executed_task) \
+            .set_name() \
+            .set_status() \
             .build()
         
         self.client.pages.update(
             **{
-                'page_id': executed_task.page_id.value,
+                'page_id': str(executed_task.page_id),
                 'properties': properties
             }
         )

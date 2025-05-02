@@ -1,5 +1,6 @@
 from typing import Callable, List
 from domain.value_objects.page_id import PageId
+from infrastructure.scheduled_task_update_properties import ScheduledTaskUpdateProperties
 from notion_client import Client
 
 import config
@@ -89,14 +90,14 @@ class ScheduledTaskRepository:
     def update(self, scheduled_task: ScheduledTask):
         '''予定タスクを更新する'''
 
-        properties = TaskUpdateProperties() \
-            .set_name(scheduled_task.get_display_name()) \
-            .set_executed_man_hours(scheduled_task.executed_man_hours.value) \
+        properties = ScheduledTaskUpdateProperties(task=scheduled_task) \
+            .set_name() \
+            .set_executed_man_hours() \
             .build()
 
         self.client.pages.update(
             **{
-                'page_id': scheduled_task.page_id.value,
+                'page_id': str(scheduled_task.page_id),
                 'properties': properties
             }
         )

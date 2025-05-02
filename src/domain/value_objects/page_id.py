@@ -8,3 +8,8 @@ class PageId:
         if not value:
             raise ValueError(f"Page IDは必須です。")
         self.value = str(value)
+
+    def __str__(self):
+        return self.value
+    
+    

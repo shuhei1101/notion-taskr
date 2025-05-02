@@ -9,6 +9,9 @@ class Status:
             raise ValueError(f"Statusは必須です。")
         self.value = str(value)
 
+    def __str__(self):
+        return self.value
+
     def __eq__(self, other: 'Status'):
         if not isinstance(other, Status):
             return False
