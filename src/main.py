@@ -1,8 +1,6 @@
 from flask import Flask, render_template
 import logging
 
-from application.task_application_service import TaskApplicationService
-
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.DEBUG)
