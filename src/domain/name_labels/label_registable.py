@@ -18,3 +18,8 @@ class LabelRegistable(ABC):
     def register_man_hours_label(self, label: 'ManHoursLabel'):
         '''人時ラベルを登録するメソッド'''
         pass
+
+    @abstractmethod
+    def register_parent_id_label(self, label: 'IdLabel'):
+        '''親IDラベルを登録するメソッド'''
+        pass
