@@ -15,6 +15,7 @@ class TaskName(LabelRegistable):
     task_name: str  # タスク名
     id_label: 'IdLabel' = None  # IDラベル
     man_hours_label: 'ManHoursLabel' = None  # 人時ラベル
+    register_parent_id_label: 'IdLabel' = None  # 親IDラベル
 
     @classmethod
     def from_raw_task_name(cls, raw_task_name: str):
