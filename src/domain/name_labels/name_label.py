@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import List
 
 from domain.name_labels.label_registable import LabelRegistable
+from domain.name_labels.parent_id_label import ParentIdLabel
 from util.converter import remove_variant_selectors
 
 @dataclass
@@ -26,7 +27,6 @@ class NameLabel(ABC):
     def parse_and_register(cls, key: str, value: str, delegate: 'LabelRegistable'):
         '''ラベルを解析してdelegeteのメンバへ登録する'''
         pass
-    
 
     @staticmethod
     def parse_labels(label: str, delegate: 'LabelRegistable'):
@@ -46,6 +46,8 @@ class NameLabel(ABC):
         handlers: List['NameLabel'] = [
             IdLabel,
             ManHoursLabel,
+            ManHoursLabel,
+            ParentIdLabel,
         ]
     
         # ID以外のラベルを登録
