@@ -4,9 +4,7 @@ from notion_client import Client
 
 from domain.executed_task import ExecutedTask
 from infrastructure.operator import CheckboxOperator
-from infrastructure.task_search_condition import TaskSearchConditions
-from infrastructure.task_update_properties import TaskUpdateProperties
-
+from infrastructure.task_search_condition import TaskSearchCondition
 
 class ExecutedTaskRepository:
     def __init__(self, token, db_id):
@@ -14,14 +12,14 @@ class ExecutedTaskRepository:
             auth=token,
         )
         self.db_id = db_id
-        self.filter = TaskSearchConditions()
+        self.filter = TaskSearchCondition()
 
-    def find_all(self,
+    async def find_all(self,
                  on_error: Callable[[Exception, dict[str]], None]
                  ) -> List[ExecutedTask]:
         '''全ての実績を取得する'''
-        filter = TaskSearchConditions().and_(
-            TaskSearchConditions().where_scheduled_flag(
+        filter = TaskSearchCondition().and_(
+            TaskSearchCondition().where_scheduled_flag(
                 operator=CheckboxOperator.EQUALS, 
                 is_scheduled=False
             ),
@@ -43,13 +41,13 @@ class ExecutedTaskRepository:
                 on_error(e, data)
         return executed_tasks
 
-    def find_by_condition(self, condition: TaskSearchConditions,
+    async def find_by_condition(self, condition: TaskSearchCondition,
                           on_error: Callable[[Exception, dict[str]], None]
                           ) -> List[ExecutedTask]:
         '''指定した実績を全て取得する'''
 
-        filter = TaskSearchConditions().and_(
-            TaskSearchConditions().where_scheduled_flag(
+        filter = TaskSearchCondition().and_(
+            TaskSearchCondition().where_scheduled_flag(
                 operator=CheckboxOperator.EQUALS, 
                 is_scheduled=False
             ),
@@ -73,20 +71,28 @@ class ExecutedTaskRepository:
 
         return executed_tasks
     
-    def update(self, executed_task: ExecutedTask):
+    async def update(self, executed_task: ExecutedTask,
+               on_success: Callable[[ExecutedTask], None],
+               on_error: Callable[[Exception, ExecutedTask], None]
+               ) -> None:
         '''実績タスクを更新する'''
 
-        properties = ExecutedTaskUpdateProperties(task=executed_task) \
-            .set_name() \
-            .set_status() \
-            .build()
-        
-        self.client.pages.update(
-            **{
-                'page_id': str(executed_task.page_id),
-                'properties': properties
-            }
-        )
+        try:
+            properties = ExecutedTaskUpdateProperties(task=executed_task) \
+                .set_name() \
+                .set_status() \
+                .build()
+            
+            self.client.pages.update(
+                **{
+                    'page_id': str(executed_task.page_id),
+                    'properties': properties
+                }
+            )
+            on_success(executed_task)
+        except Exception as e:
+            on_error(e, executed_task)
+            return
 
 
 

@@ -1,6 +1,6 @@
 from infrastructure.operator import *
 
-class TaskSearchConditions:
+class TaskSearchCondition:
     '''Notionのフィルターを生成するクラス'''
     def __init__(self):
         self.conditions = {}
@@ -9,7 +9,7 @@ class TaskSearchConditions:
         """最終的な条件を返す"""
         return self.conditions
 
-    def and_(self, *conditions: 'TaskSearchConditions'):
+    def and_(self, *conditions: 'TaskSearchCondition'):
         """AND 条件で結合"""
         if not conditions:
             raise ValueError("conditions is empty")
@@ -21,7 +21,7 @@ class TaskSearchConditions:
         }
         return self
 
-    def or_(self, *conditions: 'TaskSearchConditions'):
+    def or_(self, *conditions: 'TaskSearchCondition'):
         """OR 条件で結合"""
         self.conditions = {
             'or': [
@@ -100,7 +100,7 @@ class TaskSearchConditions:
 
 if __name__ == "__main__":
     # テストコード
-    condition = TaskSearchConditions()
+    condition = TaskSearchCondition()
     condition.or_(
     condition.and_(
         condition.where_tag(MultiSelectOperator.CONTAINS, "test"),
