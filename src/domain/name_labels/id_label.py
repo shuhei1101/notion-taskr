@@ -32,11 +32,9 @@ class IdLabel(NameLabel):
         if label[0] == "✓":
             key = label[0]
             value = label[1:]
-
         elif not has_emoji(label):
             key = ""
             value = label
-
         else:
             raise ValueError(f'Unknown key: {key}')
         

@@ -11,3 +11,6 @@ if __name__ == "__main__":
     print(has_emoji("test"))  # False
     print(has_emoji("test⌛️"))  # True
     print(has_emoji("test test"))  # False
+    value = emoji.emojize(":timer_clock:")
+    print(value)  # ⏲️
+    print(has_emoji(value))  # True

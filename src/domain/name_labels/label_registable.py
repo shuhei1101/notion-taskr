@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from domain.name_labels.id_label import IdLabel
-    from domain.name_labels.man_days_label import ManDaysLabel
+    from domain.name_labels.man_hours_label import ManHoursLabel
 
 class LabelRegistable(ABC):
     '''ラベルを登録するクラスのインターフェース'''
@@ -14,6 +15,6 @@ class LabelRegistable(ABC):
         pass
 
     @abstractmethod
-    def register_man_days_label(self, label: 'ManDaysLabel'):
-        '''工数ラベルを登録するメソッド'''
+    def register_man_hours_label(self, label: 'ManHoursLabel'):
+        '''人時ラベルを登録するメソッド'''
         pass

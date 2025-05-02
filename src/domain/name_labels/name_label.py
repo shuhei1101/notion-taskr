@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import List
 
 from domain.name_labels.label_registable import LabelRegistable
-from util.validator import has_emoji
+from util.converter import remove_variant_selectors
 
 @dataclass
 class NameLabel(ABC):
@@ -35,15 +35,17 @@ class NameLabel(ABC):
         chain of responsibleパターンで検索する
         '''
         from domain.name_labels.id_label import IdLabel
-        from domain.name_labels.man_days_label import ManDaysLabel
+        from domain.name_labels.man_hours_label import ManHoursLabel
+
+        label = remove_variant_selectors(label)  # バリアントセレクタを除去
 
         key = label[0]  # 最初の文字をキーとする
-        value = label[1:]  # 2文字目以降を値とする
+        value = remove_variant_selectors(label[1:])  # 2文字目以降を値とする
 
         # 検索対象のクラスを配列に格納
         handlers: List['NameLabel'] = [
             IdLabel,
-            ManDaysLabel,
+            ManHoursLabel,
         ]
     
         # ID以外のラベルを登録
@@ -53,4 +55,10 @@ class NameLabel(ABC):
                 return
             except ValueError:
                 continue
+
+
+if __name__ == '__main__':
+    import emoji
+    print(emoji.emojize(':timer_clock:'))
+    print(emoji.demojize('⏲️'))
 
