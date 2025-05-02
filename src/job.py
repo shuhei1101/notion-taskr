@@ -7,7 +7,7 @@ from infrastructure.task_search_condition import TaskSearchCondition
 def run_job():
     condition = TaskSearchCondition().or_(
                     TaskSearchCondition().where_date(
-                        operator=DateOperator.PAST_WEEK,
+                        operator=DateOperator.PAST_MONTH,
                     ),
                     TaskSearchCondition().where_date(
                         date=datetime.now().strftime('%Y-%m-%d'),
