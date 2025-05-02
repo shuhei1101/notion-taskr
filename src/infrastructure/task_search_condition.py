@@ -89,6 +89,13 @@ class TaskSearchConditions:
             }
         }
         return self
+    
+    def where_page_id(self, page_id: str):
+        '''NotionのページIDのフィルターを生成する
+        
+        例: 1875ffa1-def1-4c34-8875-e559eb6e5853
+        '''
+        pass
 
 
 if __name__ == "__main__":

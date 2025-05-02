@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import List
 
 from domain.name_labels.label_registable import LabelRegistable
-from domain.name_labels.parent_id_label import ParentIdLabel
 from util.converter import remove_variant_selectors
 
 @dataclass
@@ -36,6 +35,7 @@ class NameLabel(ABC):
         '''
         from domain.name_labels.id_label import IdLabel
         from domain.name_labels.man_hours_label import ManHoursLabel
+        from domain.name_labels.parent_id_label import ParentIdLabel
 
         label = remove_variant_selectors(label)  # バリアントセレクタを除去
 

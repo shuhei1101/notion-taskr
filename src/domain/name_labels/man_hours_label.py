@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 import config
+import emoji
+from util.validator import is_emoji_matches
 
 
 if TYPE_CHECKING:
@@ -26,14 +28,13 @@ class ManHoursLabel(NameLabel):
     @classmethod
     def parse_and_register(cls, key: str, value: str, delegate: 'LabelRegistable'):
         '''ラベルを解析して登録する'''
-        if key == config.MAN_HOURS_EMOJI:
-            delegate.register_man_hours_label(cls(
-                key=key,
-                value=str(value),
-            ))
-
-        else:
+        if not is_emoji_matches(key, config.MAN_HOURS_EMOJI):
             raise ValueError(f'Unknown key: {key}')
+        
+        delegate.register_man_hours_label(cls(
+            key=key,
+            value=str(value),
+        ))
 
     def __eq__(self, other):
         if not isinstance(other, ManHoursLabel):
@@ -41,3 +42,9 @@ class ManHoursLabel(NameLabel):
         if self.value == other.value:
             return True
         return False
+    
+# 動作確認用
+if __name__ == '__main__':
+    value1=emoji.demojize('⏱')
+    value2=emoji.demojize(config.MAN_HOURS_EMOJI)
+    print(value1 == value2)

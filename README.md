@@ -179,6 +179,12 @@ Notion apiで取得したデータをScheduledTaskなどのドメインに変換
 4. 左のタブ`Docker` > `Containers` > `notion-api`の折りたたみを開く
 5. `notion-api`を右クリック > `Attach Shell`もしくは`Visual Studio Codeをアタッチする`を選択
 
+### ラベル追加回収時の対応方法
+1. ○○Labelクラスを追加する
+2. NameLabelクラスの`parse_labels`メソッドのhandlersに1.で追加したクラスを追加する
+3. TaskNameクラスの`__eq__`メソッドにラベルの比較処理を追加する
+
+
 ## 8. 参考
 
 https://chatgpt.com/share/67d66038-0148-8001-9b2c-8f8f5c03c450

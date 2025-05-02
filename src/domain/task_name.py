@@ -2,10 +2,11 @@ from dataclasses import dataclass
 import re
 from typing import TYPE_CHECKING
 
-from domain.name_labels.man_hours_label import ManHoursLabel
 
 if TYPE_CHECKING:
     from domain.name_labels.id_label import IdLabel
+    from domain.name_labels.man_hours_label import ManHoursLabel
+    from domain.name_labels.parent_id_label import ParentIdLabel
 from domain.name_labels.label_registable import LabelRegistable
 from domain.name_labels.name_label import NameLabel
 
@@ -15,7 +16,7 @@ class TaskName(LabelRegistable):
     task_name: str  # タスク名
     id_label: 'IdLabel' = None  # IDラベル
     man_hours_label: 'ManHoursLabel' = None  # 人時ラベル
-    register_parent_id_label: 'IdLabel' = None  # 親IDラベル
+    parent_id_label: 'ParentIdLabel' = None  # 親IDラベル
 
     @classmethod
     def from_raw_task_name(cls, raw_task_name: str):
@@ -53,6 +54,7 @@ class TaskName(LabelRegistable):
         if self.id_label: display_strs.append(self.id_label.get_display_str())
         display_strs.append(self.task_name)
         if self.man_hours_label: display_strs.append(self.man_hours_label.get_display_str())
+        if self.parent_id_label: display_strs.append(self.parent_id_label.get_display_str())
 
         # 文字列を結合
         return ' '.join(display_strs)
@@ -62,6 +64,8 @@ class TaskName(LabelRegistable):
             return False
         return self.task_name == other.task_name \
             and self.id_label == other.id_label \
+            and self.man_hours_label == other.man_hours_label \
+            and self.parent_id_label == other.parent_id_label \
         
     def register_id_label(self, label: 'IdLabel'):
         '''IDラベルを登録するメソッド'''
@@ -70,3 +74,7 @@ class TaskName(LabelRegistable):
     def register_man_hours_label(self, label: 'ManHoursLabel'):
         '''工数ラベルを登録するメソッド'''
         self.man_hours_label = label
+
+    def register_parent_id_label(self, parent_id_label: 'ParentIdLabel'):
+        '''親IDラベルを登録するメソッド'''
+        self.parent_id_label = parent_id_label
