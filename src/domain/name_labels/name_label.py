@@ -46,7 +46,6 @@ class NameLabel(ABC):
         handlers: List['NameLabel'] = [
             IdLabel,
             ManHoursLabel,
-            ManHoursLabel,
             ParentIdLabel,
         ]
     
