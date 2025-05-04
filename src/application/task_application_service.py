@@ -97,7 +97,7 @@ class TaskApplicationService:
         tasks = []
         for i in range(0, len(scheduled_task_names), BATCH_SIZE):
             batch_names = scheduled_task_names[i:i + BATCH_SIZE]
-            tasks.append(self.executed_task_repo.find_by_condition(
+            executed_tasks = await self.executed_task_repo.find_by_condition(
                 TaskSearchCondition().or_(
                     *(
                     map(
@@ -112,8 +112,7 @@ class TaskApplicationService:
                 on_error=lambda e, data: self.logger.error(
                     f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
                 )
-            ))
-        await asyncio.gather(*tasks)
+            )
 
         # 実績タスクにIDを付与する（未付与のもののみ）
         self.executed_task_service.add_id_tag(
