@@ -284,7 +284,7 @@ class TaskApplicationService:
 
         # pickleに保存する
         self.scheduled_task_cache.save(
-            tasks=all_scheduled_task_data.values(),
+            tasks=list(all_scheduled_task_data.values()),
             on_success=lambda: self.logger.info("Pickleの保存に成功しました。"),
             on_error=lambda e: self.logger.error(f"Pickleの保存に失敗。エラー内容: {e}")
         )
