@@ -181,7 +181,7 @@ class TaskApplicationService:
             # 1分前~
             TaskSearchCondition().where_last_edited_time(
                 operator=DateOperator.ON_OR_AFTER,
-                date=to_isoformat(datetime.now() - timedelta(minutes=1))
+                date=to_isoformat(datetime.now() - timedelta(minutes=2))
             ),
             # ~現在
             TaskSearchCondition().where_last_edited_time(
