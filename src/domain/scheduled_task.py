@@ -34,11 +34,14 @@ class ScheduledTask(Task):
             )
 
             status = Status(data['properties']['ステータス']['status']['name'])
-            
+            tags = []
+            for tag in data['properties']['タグ']['multi_select']:
+                tags.append(tag['name'])
+
             instance = cls(
                 page_id=PageId(data['id']),
                 name=task_name,
-                tags=map(lambda tag: tag['name'], data['properties']['タグ']['multi_select']),
+                tags=tags,
                 id=notion_id,
                 status=status,
                 parent_task_page_id=PageId(

@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from logging import Logger
 from typing import List
 
@@ -12,12 +12,12 @@ from domain.executed_task import ExecutedTask
 from domain.scheduled_task import ScheduledTask
 from domain.task_service import TaskService
 from domain.value_objects.status import Status
+from gcs_handler import GCSHandler
 from infrastructure.executed_task_repository import ExecutedTaskRepository
-from infrastructure.scheduled_task_cache import ScheduledTaskCache
 from infrastructure.scheduled_task_repository import ScheduledTaskRepository
 from infrastructure.operator import *
 from infrastructure.task_search_condition import TaskSearchCondition
-
+from infrastructure.scheduled_task_cache import ScheduledTaskCache
 
 class TaskApplicationService:
     def __init__(self, logger: Logger=AppLogger()):
@@ -30,25 +30,105 @@ class TaskApplicationService:
             config.NOTION_TOKEN,
             config.TASK_DB_ID,
         )
-        self.scheduled_task_cache = ScheduledTaskCache(repo=self.scheduled_task_repo)
         self.task_service = TaskService()
         self.scheduled_task_service = ScheduledTaskService()
         self.executed_task_service = ExecutedTaskService()
+        self.scheduled_task_cache = ScheduledTaskCache()
+        self.gcs_handler = GCSHandler(
+            bucket_name=config.BUCKET_NAME,
+            on_error=lambda e: self.logger.error(
+                f"GCSの初期化に失敗。エラー内容: {e}",
+            )
+        )
+
+    async def daily_task(self):
+        '''毎日0時に実行されるタスク'''
+
+        # notionから過去一年分の情報を取得し、Pickleに保存する
+
+        main_timer = AppTimer.init_and_start()
+        self.logger.info("実績タスクのキャッシュを更新します。")
+
+        # 過去一年分の実績タスクを取得
+        # 条件作成(過去一年~未来)
+        condition = TaskSearchCondition().or_(
+            TaskSearchCondition().where_date(
+                operator=DateOperator.PAST_YEAR,
+            ),
+            TaskSearchCondition().where_date(
+                date=datetime.now().strftime('%Y-%m-%d'),
+                operator=DateOperator.ON_OR_AFTER
+            ),
+        )
+
+        # 実績タスクを全て取得する
+        executed_tasks = await self.executed_task_repo.find_by_condition(
+            condition=condition,
+            on_error=lambda e, data: self.logger.error(
+                f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+            )
+        )
+
+        # 予定タスクをすべて取得する
+        scheduled_tasks = await self.scheduled_task_repo.find_by_condition(
+            condition=condition,
+            on_error=lambda e, data: self.logger.error(
+                f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+            )
+        )
+
+        # 予定タスクに実績タスクを紐づける
+        self.scheduled_task_service.add_executed_tasks(
+            to=scheduled_tasks,
+            source=executed_tasks,
+            on_error=lambda e, task: self.logger.error(
+                f"予定タスク[{task.id.number}]と実績タスクの紐づけに失敗。エラー内容: {e}"
+            ),
+        )
+
+        # pickleに保存する
+        self.scheduled_task_cache.save(scheduled_tasks)
+
+        # pickleをGCSにアップロードする
+        self.gcs_handler.upload(
+            from_=self.scheduled_task_cache.save_path,
+            to=config.BUCKET_SCHEDULED_PICKLE_PATH,
+            on_upload_error=lambda e: self.logger.error(
+                f"PickleのGCSへのアップロードに失敗。エラー内容: {e}"
+            )
+        )
+
+        self.logger.info("処理時間: " + str(main_timer.get_elapsed_time()) + "秒")
 
     async def regular_task(self, condition: TaskSearchCondition = None):
         '''予定タスクのIDを持つ実績タスクにIDを付与する'''
 
         main_timer = AppTimer.init_and_start()
 
-        # 条件作成（過去一ヶ月〜未来）
+        # バケットからPickleをダウンロードする
+        self.gcs_handler.download(
+            from_=config.BUCKET_SCHEDULED_PICKLE_PATH,
+            to=self.scheduled_task_cache.save_path,
+            on_download_error=lambda e: self.logger.error(
+                f"PickleのGCSからのダウンロードに失敗。エラー内容: {e}"
+            )
+        )
+
+        # Pickleから予定タスクを読み込む
+        scheduled_tasks = self.scheduled_task_cache.load()
+
+        # 条件作成(一分前~現在)
         if condition is None:
-            condition = TaskSearchCondition().or_(
+            condition = TaskSearchCondition().and_(
+                    # 1分前~
                     TaskSearchCondition().where_date(
-                        operator=DateOperator.PAST_YEAR,
+                        operator=DateOperator.ON_OR_AFTER,
+                        date=(datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
                     ),
+                    # ~現在
                     TaskSearchCondition().where_date(
+                        operator=DateOperator.ON_OR_BEFORE,
                         date=datetime.now().strftime('%Y-%m-%d'),
-                        operator=DateOperator.ON_OR_AFTER
                     ),
                 )
         
@@ -84,13 +164,13 @@ class TaskApplicationService:
         self.logger.debug(f"【処理時間】親アイテムの取得: {update_parent_id_timer.get_elapsed_time()}秒")
         add_executed_id_timer = AppTimer.init_and_start()
 
-        # 予定タスク名を配列に格納する（タグ部分と頭と末尾の空白を除去）
+        # 予定タスク名を配列に格納する(タグ部分と頭と末尾の空白を除去)
         scheduled_task_names = list(map(
             lambda task: task.name.task_name,
             scheduled_tasks
         ))
 
-        # 予定タスク名に一致する実績タスクを全て取得する（100件ずつ分割してリクエスト）
+        # 予定タスク名に一致する実績タスクを全て取得する(100件ずつ分割してリクエスト)
         executed_tasks: List[ExecutedTask] = []
         BATCH_SIZE = 100
 
@@ -114,7 +194,7 @@ class TaskApplicationService:
                 )
             )
 
-        # 実績タスクにIDを付与する（未付与のもののみ）
+        # 実績タスクにIDを付与する(未付与のもののみ)
         self.executed_task_service.add_id_tag(
             to=executed_tasks,
             source=scheduled_tasks
@@ -127,7 +207,7 @@ class TaskApplicationService:
         culc_man_hours_timer = AppTimer.init_and_start()
 
         # 予定タスクと実績タスクの紐づけ
-        self.scheduled_task_service.add_executed_tasks_to_scheduled(
+        self.scheduled_task_service.add_executed_tasks(
             to=scheduled_tasks,
             source=await self.executed_task_repo.find_by_condition(
                 condition=condition,
@@ -202,4 +282,6 @@ class TaskApplicationService:
 
 if __name__ == '__main__':
     service = TaskApplicationService()
-    asyncio.run(service.regular_task())
+    # asyncio.run(service.regular_task())
+    asyncio.run(service.daily_task())
+    

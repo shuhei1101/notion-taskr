@@ -36,10 +36,14 @@ class ExecutedTask(Task):
                 end=end_date_str,
             )
 
+            tags = []
+            for tag in data['properties']['タグ']['multi_select']:
+                tags.append(tag['name'])
+
             return cls(
                 page_id=PageId(data['id']),
                 name=task_name,
-                tags=map(lambda tag: Tag(tag['name']), data['properties']['タグ']['multi_select']),
+                tags=tags,
                 id=NotionId(
                     number=task_number,
                     prefix=data['properties']['ID']['unique_id']['prefix'],

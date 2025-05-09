@@ -33,19 +33,20 @@ class MultiSelectOperator(Enum):
 class DateOperator(Enum):
     '''日付検索の演算子
     
-    演算子	意味
-    equals	完全一致
-    before	指定日より前
-    after	指定日より後
-    on_or_before	指定日以前
-    on_or_after	指定日以降
-    past_week	直近1週間
-    past_month	直近1か月
-    past_year	直近1年
-    next_week	次の1週間
-    next_month	次の1か月
-    next_year	次の1年
-    this_week	今週
+    ### Notion APIのドキュメントに記載されている演算子一覧
+    (演算子: 意味)
+    - equals: 完全一致
+    - before: 指定日より前
+    - after: 指定日より後
+    - on_or_before: 指定日以前
+    - on_or_after: 指定日以降
+    - past_week: 直近1週間
+    - past_month: 直近1か月
+    - past_year: 直近1年
+    - next_week: 次の1週間
+    - next_month: 次の1か月
+    - next_year: 次の1年
+    - this_week: 今週
     '''
     # 完全一致
     EQUALS = "equals"

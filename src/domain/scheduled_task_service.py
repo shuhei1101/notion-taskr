@@ -8,7 +8,7 @@ from infrastructure.scheduled_task_repository import ScheduledTaskRepository
 class ScheduledTaskService():
     '''ScheduledTaskのドメインサービスクラス'''
     
-    def add_executed_tasks_to_scheduled(self, to: list[ScheduledTask], source: list[ExecutedTask], 
+    def add_executed_tasks(self, to: list[ScheduledTask], source: list[ExecutedTask], 
                                        on_error: Callable[[Exception, ScheduledTask], None],
                                        ) -> None: 
         '''予定タスクに実績タスクを追加する'''
