@@ -282,13 +282,21 @@ class TaskApplicationService:
 
         await asyncio.gather(*tasks)
 
-        # pickleに保存する
-        self.scheduled_task_cache.save(
-            tasks=list(all_scheduled_task_data.values()),
-            on_success=lambda: self.logger.info("Pickleの保存に成功しました。"),
-            on_error=lambda e: self.logger.error(f"Pickleの保存に失敗。エラー内容: {e}")
-        )
-
+        try:
+            # コールバック関数を定義
+            def handle_error(e): raise ValueError(e)
+            
+            # pickleに保存する
+            self.scheduled_task_cache.save(
+                tasks=list(all_scheduled_task_data.values()),
+                on_success=lambda: self.logger.info("Pickleの保存に成功しました。"),
+                on_error=handle_error
+            )
+        except Exception as e:
+            self.logger.critical(f"Pickleの保存に失敗。エラー内容: {e}")
+            self.logger.critical("処理を終了します。")
+            return
+        
         # pickleをGCSにアップロードする
         self.gcs_handler.upload(
             from_=self.scheduled_task_cache.save_path,
