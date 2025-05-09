@@ -7,7 +7,6 @@ from domain.value_objects.notion_date import NotionDate
 from domain.value_objects.notion_id import NotionId
 from domain.value_objects.page_id import PageId
 from domain.value_objects.status import Status
-from domain.value_objects.tag import Tag
 
 @dataclass
 class ExecutedTask(Task):
@@ -36,10 +35,14 @@ class ExecutedTask(Task):
                 end=end_date_str,
             )
 
+            tags = []
+            for tag in data['properties']['タグ']['multi_select']:
+                tags.append(tag['name'])
+
             return cls(
                 page_id=PageId(data['id']),
                 name=task_name,
-                tags=map(lambda tag: Tag(tag['name']), data['properties']['タグ']['multi_select']),
+                tags=tags,
                 id=NotionId(
                     number=task_number,
                     prefix=data['properties']['ID']['unique_id']['prefix'],
@@ -50,6 +53,9 @@ class ExecutedTask(Task):
                 scheduled_task_id=NotionId(
                     number=task_name.id_label.value,
                 ) if task_name.id_label else None,
+                parent_task_page_id=PageId(
+                    value=data['properties']['親アイテム(予)']['relation'][0]['id'],
+                ) if data['properties']['親アイテム(予)']['relation'] else None,
             )
         except KeyError as e:
             raise ValueError(f'In ExecutedTask[{task_number}] initialize error, {e}')
@@ -59,6 +65,6 @@ class ExecutedTask(Task):
     def update_scheduled_task_id(self, scheduled_task_id: NotionId):
         '''予定タスクIDを更新するメソッド'''
         if self.scheduled_task_id != scheduled_task_id:
-            self.toggle_is_updated(f'予定タスクID: {self.scheduled_task_id} -> {scheduled_task_id}')
+            self._toggle_is_updated(f'予定タスクID: {self.scheduled_task_id} -> {scheduled_task_id}')
             self.scheduled_task_id = scheduled_task_id
 

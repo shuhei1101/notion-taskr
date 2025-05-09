@@ -9,16 +9,11 @@ logging.basicConfig(level=logging.DEBUG)
 def index():
     return render_template("index.html")
 
-@app.route("/update-executed-task-id")
+@app.route("/run-deployment-tasks")
 def update_executed_task_id():
     '''実績タスクのIDを付与する'''
-    pass
-    # try:
-    #     TaskApplicationService().add_id_to_executed_task()
-    #     return "Task ID updated successfully!"
-    # except Exception as e:
-    #     app.logger.error(f"Error occurred while updating task ID: {str(e)}")
-    #     return f"An error occurred: {str(e)}", 500
+    from job import run_deployment_tasks
+    run_deployment_tasks()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

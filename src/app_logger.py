@@ -1,6 +1,4 @@
 import logging
-from logging.handlers import TimedRotatingFileHandler
-
 import config
 
 class AppLogger:

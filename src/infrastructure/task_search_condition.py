@@ -80,6 +80,16 @@ class TaskSearchCondition:
         }
         return self
     
+    def where_last_edited_time(self, operator: DateOperator, date: str={}):
+        '''最終更新日時のフィルターを生成する'''
+        self.conditions = {
+            'property': '最終更新日時',
+            "last_edited_time": {
+                operator.value: date
+            }
+        }
+        return self
+    
     def where_id(self, id: str):
         '''IDのフィルターを生成する'''
         self.conditions = {

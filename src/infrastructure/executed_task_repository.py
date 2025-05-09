@@ -81,6 +81,7 @@ class ExecutedTaskRepository:
             properties = ExecutedTaskUpdateProperties(task=executed_task) \
                 .set_name() \
                 .set_status() \
+                .set_parent_task_page_id() \
                 .build()
             
             self.client.pages.update(
