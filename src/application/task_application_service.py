@@ -177,19 +177,18 @@ class TaskApplicationService:
             return
         
         # 条件作成(最終更新日が1分前~現在。formatは`2025-05-09T14:40:00.000Z`ISO 8601形式)
-        if condition is None:
-            condition = TaskSearchCondition().and_(
-                    # 1分前~
-                    TaskSearchCondition().where_last_edited_time(
-                        operator=DateOperator.ON_OR_AFTER,
-                        date=to_isoformat(datetime.now() - timedelta(minutes=1))
-                    ),
-                    # ~現在
-                    TaskSearchCondition().where_last_edited_time(
-                        operator=DateOperator.ON_OR_BEFORE,
-                        date=to_isoformat(datetime.now())
-                    ),
-                )
+        condition = TaskSearchCondition().and_(
+            # 1分前~
+            TaskSearchCondition().where_last_edited_time(
+                operator=DateOperator.ON_OR_AFTER,
+                date=to_isoformat(datetime.now() - timedelta(minutes=1))
+            ),
+            # ~現在
+            TaskSearchCondition().where_last_edited_time(
+                operator=DateOperator.ON_OR_BEFORE,
+                date=to_isoformat(datetime.now())
+            ),
+        )
         
         fetch_scheduled_task_timer = AppTimer.init_and_start()
 
