@@ -1,29 +1,33 @@
 from typing import Callable
 from domain.executed_task import ExecutedTask
 from domain.scheduled_task import ScheduledTask
+from domain.task_service import TaskService
 
 class ScheduledTaskService():
     '''ScheduledTaskのドメインサービスクラス'''
     
-    def add_executed_tasks(self, scheduled_tasks: list[ScheduledTask], executed_tasks: list[ExecutedTask], 
+    @staticmethod
+    def add_executed_tasks(scheduled_tasks: list[ScheduledTask], executed_tasks: list[ExecutedTask], 
                                        on_error: Callable[[Exception, ScheduledTask], None],
                                        ) -> None: 
         '''予定タスクに実績タスクを追加する
         
         - **注意**: 本メソッドは予定タスクが直接変更される。
         '''
-        for scheduled_task in scheduled_tasks:
+        for executed_task in executed_tasks:
             try:
-                # 予定タスクのIDを持つ実績タスクをフィルタリング
-                scheduled_task.update_executed_tasks(list(filter(
-                    lambda executed_task: scheduled_task.id == executed_task.scheduled_task_id,
-                    executed_tasks
-                )))
+                for scheduled_task in scheduled_tasks:
+                    # 実績タスクのIDと予定タスクのIDが一致する場合
+                    if executed_task.scheduled_task_id == scheduled_task.id:
+                        # 予定タスクに実績タスクを追加
+                        TaskService.upsert_tasks(scheduled_task.executed_tasks, executed_task)
+                        break
 
             except Exception as e:
-                on_error(e, scheduled_task)
-
-    def add_child_tasks(self, child_tasks: list[ScheduledTask], parent_tasks: list[ScheduledTask],
+                on_error(e, executed_task)
+         
+    @staticmethod
+    def add_child_tasks(child_tasks: list[ScheduledTask], parent_tasks: list[ScheduledTask],
                                 on_error: Callable[[Exception, ScheduledTask], None],
                                 ) -> None:
         '''予定タスクにサブアイテムを追加する
@@ -42,7 +46,8 @@ class ScheduledTaskService():
             except Exception as e:
                 on_error(e, parent_task)
 
-    def get_tasks_appended_child_tasks(self, child_tasks: list[ScheduledTask], 
+    @staticmethod
+    def get_tasks_appended_child_tasks(child_tasks: list[ScheduledTask], 
                              parent_tasks: list[ScheduledTask],
                              on_error: Callable[[Exception, ScheduledTask], None],
                              ) -> list[ScheduledTask]:
@@ -57,8 +62,8 @@ class ScheduledTaskService():
                     # サブアイテムの親IDと親タスクのIDが一致する場合
                     if child_task.parent_task_page_id == parent_task.page_id:
                         # 親タスクにサブアイテムを追加
-                        parent_task.child_tasks.append(child_task)
-                        updated_tasks.append(parent_task)
+                        TaskService.upsert_tasks(parent_task.child_tasks, child_task)
+                        TaskService.upsert_tasks(updated_tasks, parent_task)
                         break
                     
             except Exception as e:

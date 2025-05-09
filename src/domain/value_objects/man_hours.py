@@ -25,7 +25,6 @@ class ManHours:
     
     def __eq__(self, other):
         if not isinstance(other, ManHours):
-            return NotImplemented
-        if self.value == other.value:
-            return True
-        return False
+            return False
+        return self.value == other.value
+    

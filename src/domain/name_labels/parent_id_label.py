@@ -30,6 +30,5 @@ class ParentIdLabel(NameLabel):
     def __eq__(self, other):
         if not isinstance(other, ParentIdLabel):
             return NotImplemented
-        if self.value == other.value:
-            return True
-        return False
+        return self.value == other.value
+    

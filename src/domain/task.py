@@ -48,7 +48,7 @@ class Task:
         '''IDラベルを登録し、is_updatedをTrueにする'''
         if self.name.id_label != label:
             self._toggle_is_updated(f'IDラベル: {self.name.id_label} -> {label}')
-            self.name.id_label = label  
+            self.name.id_label = label 
 
     def update_parent_id_label(self, parent_id_label: 'ParentIdLabel'):
         '''親IDラベルを更新する'''

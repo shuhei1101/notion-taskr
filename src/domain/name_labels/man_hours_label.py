@@ -38,10 +38,8 @@ class ManHoursLabel(NameLabel):
 
     def __eq__(self, other):
         if not isinstance(other, ManHoursLabel):
-            return NotImplemented
-        if self.value == other.value:
-            return True
-        return False
+            return False
+        return self.value == other.value
     
 # 動作確認用
 if __name__ == '__main__':

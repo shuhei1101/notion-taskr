@@ -30,9 +30,6 @@ class TaskApplicationService:
             config.NOTION_TOKEN,
             config.TASK_DB_ID,
         )
-        self.task_service = TaskService()
-        self.scheduled_task_service = ScheduledTaskService()
-        self.executed_task_service = ExecutedTaskService()
         self.scheduled_task_cache = ScheduledTaskCache(save_path=config.LOCAL_SCHEDULED_PICKLE_PATH)
         self.gcs_handler = GCSHandler(
             bucket_name=config.BUCKET_NAME,
@@ -78,13 +75,13 @@ class TaskApplicationService:
         )
 
         # 実績タスクにIDを付与する(未付与のもののみ)
-        self.executed_task_service.add_id_tag(
+        ExecutedTaskService.add_id_tag(
             to=executed_tasks,
             source=scheduled_tasks
         )
 
         # 予定タスクに実績タスクを紐づける
-        self.scheduled_task_service.add_executed_tasks(
+        ScheduledTaskService.add_executed_tasks(
             scheduled_tasks=scheduled_tasks,
             executed_tasks=executed_tasks,
             on_error=lambda e, task: self.logger.error(
@@ -93,7 +90,7 @@ class TaskApplicationService:
         )
 
         # 予定タスクにサブアイテムを紐づける
-        self.scheduled_task_service.add_child_tasks(
+        ScheduledTaskService.add_child_tasks(
             child_tasks=scheduled_tasks,
             parent_tasks=scheduled_tasks,
             on_error=lambda e, task: self.logger.error(
@@ -215,20 +212,23 @@ class TaskApplicationService:
 
         add_executed_id_timer = AppTimer.init_and_start()
 
-        all_scheduled_tasks = fetched_scheduled_tasks + cache_scheduled_tasks
+        all_scheduled_task_data = {
+            scheduled_task.id.number: scheduled_task
+            for scheduled_task in fetched_scheduled_tasks + cache_scheduled_tasks
+        }
 
         # 実績タスクにIDを付与する(未付与のもののみ)
-        self.executed_task_service.add_id_tag(
+        updated_scheduled_tasks = ExecutedTaskService.get_tasks_add_id_tag(
             to=fetched_executed_tasks,
-            source=all_scheduled_tasks
+            source=all_scheduled_task_data.values()
         )
 
         self.logger.debug(f"【処理時間】実績タスクのID付与: {add_executed_id_timer.get_elapsed_time()}秒")
         calc_man_hours_timer = AppTimer.init_and_start()
 
         # 予定タスクと実績タスクの紐づけ
-        self.scheduled_task_service.add_executed_tasks(
-            scheduled_tasks=all_scheduled_tasks,
+        ScheduledTaskService.add_executed_tasks(
+            scheduled_tasks=all_scheduled_task_data.values(),
             executed_tasks=fetched_executed_tasks,
             on_error=lambda e, task: self.logger.error(
                 f"予定タスク[{task.id.number}]と実績タスクの紐づけに失敗。エラー内容: {e}"
@@ -236,27 +236,30 @@ class TaskApplicationService:
         )
 
         # キャッシュから予定タスクの親IDに一致する予定タスクを検索し、紐づける
-        updated_parent_tasks = self.scheduled_task_service.get_tasks_appended_child_tasks(
+        updated_parent_tasks = ScheduledTaskService.get_tasks_appended_child_tasks(
             child_tasks=fetched_scheduled_tasks,
-            parent_tasks=all_scheduled_tasks,
+            parent_tasks=all_scheduled_task_data.values(),
             on_error=lambda e, task: self.logger.error(
                 f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {e}"
             ),
         )
         
         # 更新予定のタスクを作成
-        update_scheduled_task = fetched_scheduled_tasks + updated_parent_tasks
-        
+        update_scheduled_task_data = {
+            scheduled_task.id.number: scheduled_task
+            for scheduled_task in fetched_scheduled_tasks + updated_parent_tasks + updated_scheduled_tasks
+        }
+
         # 予定タスクの工数を計算
-        for scheduled_task in update_scheduled_task:
+        for scheduled_task in update_scheduled_task_data.values():
             scheduled_task.aggregate_executed_man_hours()
 
         # サブアイテムに親ラベルを付与する
-        for scheduled_task in update_scheduled_task:
+        for scheduled_task in update_scheduled_task_data.values():
             scheduled_task.update_child_tasks_properties()
 
         # 予定タスクが持つ実績タスクのプロパティを更新する
-        for scheduled_task in update_scheduled_task:
+        for scheduled_task in update_scheduled_task_data.values():
             try:
                 scheduled_task.update_executed_tasks_properties()
             except ValueError:
@@ -264,20 +267,24 @@ class TaskApplicationService:
                     f"予定タスク[{scheduled_task.id.number}]の実績タスクが存在しませんでした。"
                 )
 
+        # 既存データを辞書に変換
+        update_executed_task_data = {task.id.number: task for task in fetched_executed_tasks}
+
+        # 更新データを上書き
+        for scheduled_task in update_scheduled_task_data.values():
+            for executed_task in scheduled_task.executed_tasks:
+                update_executed_task_data[executed_task.id.number] = executed_task
+
         # 更新
         tasks = []
-        tasks.append(self._update_scheduled_tasks(update_scheduled_task))
-        tasks.append(self._update_executed_tasks([
-            executed_task
-            for scheduled_task in update_scheduled_task
-            for executed_task in scheduled_task.executed_tasks if scheduled_task.executed_tasks
-        ]))
+        tasks.append(self._update_scheduled_tasks(update_scheduled_task_data.values()))
+        tasks.append(self._update_executed_tasks(update_executed_task_data.values()))
 
         await asyncio.gather(*tasks)
 
         # pickleに保存する
         self.scheduled_task_cache.save(
-            tasks=all_scheduled_tasks,
+            tasks=all_scheduled_task_data,
             on_success=lambda: self.logger.info("Pickleの保存に成功しました。"),
             on_error=lambda e: self.logger.error(f"Pickleの保存に失敗。エラー内容: {e}")
         )
@@ -295,7 +302,7 @@ class TaskApplicationService:
         
     async def _update_scheduled_tasks(self, scheduled_tasks: list[ScheduledTask],):
         '''予定タスクの実績工数を更新するメソッド'''
-        updated_scheduled_tasks = self.task_service.get_updated_tasks(scheduled_tasks)
+        updated_scheduled_tasks = TaskService.get_updated_tasks(scheduled_tasks)
         tasks = []
         for updated_scheduled_task in updated_scheduled_tasks:
             tasks.append(self.scheduled_task_repo.update(
@@ -311,7 +318,7 @@ class TaskApplicationService:
 
     async def _update_executed_tasks(self, executed_tasks: list[ExecutedTask],):
         '''実績タスクの予定タスクIDを更新するメソッド'''
-        updated_executed_tasks = self.task_service.get_updated_tasks(executed_tasks)
+        updated_executed_tasks = TaskService.get_updated_tasks(executed_tasks)
         tasks = []
         for updated_executed_task in updated_executed_tasks:
             tasks.append(self.executed_task_repo.update(
