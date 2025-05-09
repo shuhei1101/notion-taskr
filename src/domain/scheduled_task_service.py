@@ -1,56 +1,67 @@
 from typing import Callable
 from domain.executed_task import ExecutedTask
-from domain.name_labels.parent_id_label import ParentIdLabel
 from domain.scheduled_task import ScheduledTask
-from infrastructure.id_findable import IdFindable
-from infrastructure.scheduled_task_repository import ScheduledTaskRepository
 
 class ScheduledTaskService():
     '''ScheduledTaskのドメインサービスクラス'''
     
-    def add_executed_tasks(self, to: list[ScheduledTask], source: list[ExecutedTask], 
+    def add_executed_tasks(self, scheduled_tasks: list[ScheduledTask], executed_tasks: list[ExecutedTask], 
                                        on_error: Callable[[Exception, ScheduledTask], None],
                                        ) -> None: 
-        '''予定タスクに実績タスクを追加する'''
-        for scheduled_task in to:
+        '''予定タスクに実績タスクを追加する
+        
+        - **注意**: 本メソッドは予定タスクが直接変更される。
+        '''
+        for scheduled_task in scheduled_tasks:
             try:
                 # 予定タスクのIDを持つ実績タスクをフィルタリング
                 scheduled_task.update_executed_tasks(list(filter(
                     lambda executed_task: scheduled_task.id == executed_task.scheduled_task_id,
-                    source
+                    executed_tasks
                 )))
 
             except Exception as e:
                 on_error(e, scheduled_task)
 
-    async def update_parent_id(self, scheduled_task: ScheduledTask,
-                                scheduled_tasks: list[ScheduledTask],
-                                scheduled_task_repo: IdFindable,
+    def add_child_tasks(self, child_tasks: list[ScheduledTask], parent_tasks: list[ScheduledTask],
                                 on_error: Callable[[Exception, ScheduledTask], None],
-                                ):
-        '''予定タスクの親アイテムのIDを更新するメソッド'''
-        try:
-            # 現在取得している予定タスクに親アイテムのページIDがあれば取得する
-            scheduled_task.parent_task = next(
-                filter(
-                    lambda task: task.page_id == scheduled_task.parent_task_page_id,
-                    scheduled_tasks
-                ),
-                None
-            )
-
-            # 上の処理で取得出来なかった場合、リポジトリから親アイテムのページIDを取得する
-            if scheduled_task.parent_task is None:
-                scheduled_task.parent_task = await scheduled_task_repo.find_by_page_id(
-                    page_id=scheduled_task.parent_task_page_id,
-                )
+                                ) -> None:
+        '''予定タスクにサブアイテムを追加する
         
-            # 親アイテムラベルを更新する
-            scheduled_task.update_parent_id_label(
-                parent_id_label=ParentIdLabel.from_property(
-                    parent_id=scheduled_task.parent_task.id,
-                )
-                )
-        except Exception as e:
-            on_error(e, scheduled_task)
-            return
+        - **注意**: 本メソッドは予定タスクが直接変更される。
+        '''
+        for parent_task in parent_tasks:
+            try:
+                # 親タスクのchild_task_page_idsに含まれるIDを持つ子タスクをフィルタリング
+                matched_tasks = list(filter(
+                    lambda child_task: child_task.page_id in parent_task.child_task_page_ids,
+                    child_tasks
+                ))
+                parent_task.update_child_tasks(matched_tasks)
+
+            except Exception as e:
+                on_error(e, parent_task)
+
+    def get_tasks_appended_child_tasks(self, child_tasks: list[ScheduledTask], 
+                             parent_tasks: list[ScheduledTask],
+                             on_error: Callable[[Exception, ScheduledTask], None],
+                             ) -> list[ScheduledTask]:
+        '''新たにサブアイテムが付与された予定タスクのみを取得する
+        
+        - **注意**: 本メソッドは予定タスクが直接変更される。
+        '''
+        updated_tasks = []
+        for child_task in child_tasks:
+            try:
+                for parent_task in parent_tasks:
+                    # サブアイテムの親IDと親タスクのIDが一致する場合
+                    if child_task.parent_task_page_id == parent_task.page_id:
+                        # 親タスクにサブアイテムを追加
+                        parent_task.child_tasks.append(child_task)
+                        updated_tasks.append(parent_task)
+                        break
+                    
+            except Exception as e:
+                on_error(e, child_task)
+                
+        return updated_tasks

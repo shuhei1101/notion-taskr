@@ -1,6 +1,19 @@
 import config as config
 import emoji
+from datetime import datetime
+from datetime import timedelta
 
+def to_isoformat(dt: datetime) -> str:
+    '''datetimeをISO8601形式に変換する
+    日本時間(JST)をUTCに変換してからISO8601形式に変換する
+    例: 2023-10-01T12:00:00.000Z
+    '''
+    try:
+        dt = dt - timedelta(hours=9)
+        # ISO形式に変換
+        return dt.strftime('%Y-%m-%dT%H:%M:%S.') + f"{dt.microsecond // 1000:03d}Z"
+    except Exception as e:
+        raise ValueError(f'Invalid datetime: {dt}. Error: {e}')
 def truncate_decimal(num: float) -> str:
     '''小数点以下を1桁に切り捨てる
     

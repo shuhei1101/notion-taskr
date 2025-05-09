@@ -23,6 +23,14 @@ class TaskUpdateProperties(ABC):
         '''実際の人日数の更新'''
         self.properties['人時(実)'] = {'number': executed_man_hour}
         return self
+    
+    def set_parent_task_page_id(self):
+        '''親タスクIDの更新'''
+        if self.task.parent_task_page_id:
+            self.properties['親アイテム(予)'] = {
+                'relation': [{'id': str(self.task.parent_task_page_id)}]
+            }
+        return self
 
     def set_status(self):
         '''ステータスの更新'''

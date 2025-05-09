@@ -117,7 +117,13 @@ if __name__ == '__main__':
     db_id = config.TASK_DB_ID
 
     scheduled_task_repo = ScheduledTaskRepository(token, db_id)
-    scheduled_task = scheduled_task_repo.find_by_page_id(
-        page_id='1875ffa1-def1-4c34-8875-e559eb6e5853'
+    # scheduled_task = scheduled_task_repo.find_by_page_id(
+    #     page_id='1875ffa1-def1-4c34-8875-e559eb6e5853'
+    # )
+    import asyncio
+    scheduled_task = asyncio.run(
+        scheduled_task_repo.find_all(
+            on_error=lambda e, data: print(f"Error: {e}, Data: {data}")
+        )
     )
     print(scheduled_task)

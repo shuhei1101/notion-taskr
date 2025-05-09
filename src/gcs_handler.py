@@ -13,7 +13,8 @@ class GCSHandler():
             on_error(e)
 
     def upload(self, from_: str, to: str,
-               on_upload_error: Callable[[Exception], None] = None,
+               on_success: Callable[[None], None] = None,
+               on_error: Callable[[Exception], None] = None,
                ):
         """GCSにファイルをアップロード
         
@@ -29,12 +30,14 @@ class GCSHandler():
         try:
             blob = self.bucket.blob(to)
             blob.upload_from_filename(from_)
+            on_success() if on_success else None
         except Exception as e:
-            on_upload_error(e,)
+            on_error(e,)
         
     def download(self, from_: str, to: str,
-                 on_download_error: Callable[[Exception], None] = None,
-                 ):
+                on_success: Callable[[None], None] = None,
+                on_error: Callable[[Exception], None] = None,
+                ):
         """GCSからファイルをダウンロード
         
         :param from_: ダウンロードするGCSのパス
@@ -46,6 +49,7 @@ class GCSHandler():
         try:
             blob = self.bucket.blob(from_)
             blob.download_to_filename(to)
+            on_success() if on_success else None
         except Exception as e:
-            on_download_error(e)
+            on_error(e)
         

@@ -1,22 +1,21 @@
 import asyncio
 from datetime import datetime
 from application.task_application_service import TaskApplicationService
-from infrastructure.operator import DateOperator
-from infrastructure.task_search_condition import TaskSearchCondition
 
 def run_job():
-    condition = TaskSearchCondition().or_(
-                    TaskSearchCondition().where_date(
-                        operator=DateOperator.PAST_MONTH,
-                    ),
-                    TaskSearchCondition().where_date(
-                        date=datetime.now().strftime('%Y-%m-%d'),
-                        operator=DateOperator.ON_OR_AFTER
-                    ),
-                )
-    
     service = TaskApplicationService()
-    asyncio.run(service.regular_task(condition=condition))
- 
+    # もし0時0分~0時1分ならdaily_taskを実行
+    now = datetime.now()
+    if now.hour == 0 and now.minute == 0:
+        # 0時00分~0時01分の間に実行
+        asyncio.run(service.daily_task())
+    else:
+        asyncio.run(service.regular_task())
+    
+def run_deployment_tasks():
+    """デプロイ時に実行するタスク"""
+    service = TaskApplicationService()
+    asyncio.run(service.daily_task())
+
 if __name__ == "__main__":
     run_job()

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from domain.executed_task import ExecutedTask
 from domain.name_labels.id_label import IdLabel
 from domain.name_labels.man_hours_label import ManHoursLabel
+from domain.name_labels.parent_id_label import ParentIdLabel
 from domain.task import Task
 from domain.task_name import TaskName
 from domain.value_objects.man_hours import ManHours
@@ -15,7 +16,9 @@ class ScheduledTask(Task):
     '''予定タスクモデル'''
     scheduled_man_hours: ManHours = None
     executed_man_hours: ManHours = None
-    executed_tasks: list[ExecutedTask] = None  # 紐づいている実績タスク
+    executed_tasks: list['ExecutedTask'] = None  # 紐づいている実績タスク
+    child_task_page_ids: list['PageId'] = None  # サブアイテムのページID
+    child_tasks: list['ScheduledTask'] = None  # サブアイテム
 
     @classmethod
     def from_response_data(cls, data: dict):
@@ -50,6 +53,8 @@ class ScheduledTask(Task):
                 scheduled_man_hours=ManHours(data['properties']['人時(予)']['number']),
                 executed_man_hours=ManHours(data['properties']['人時(実)']['number']),
                 executed_tasks=[],
+                child_task_page_ids=[PageId(relation['id']) for relation in data['properties']['サブアイテム']['relation']],
+                child_tasks=[],
             )
 
             # IDラベルを更新
@@ -79,11 +84,24 @@ class ScheduledTask(Task):
         for executed_task in self.executed_tasks:
             executed_task.update_name(self.name)
             executed_task.update_status(self.status)
+            executed_task.update_parent_task_page_id(self.parent_task_page_id)
+
+    def update_child_tasks(self, child_tasks: list['ScheduledTask']):
+        '''サブアイテムを付与する'''
+        self.child_tasks = child_tasks
+
+    def update_child_tasks_properties(self):
+        '''サブアイテムのプロパティを更新する'''
+        # サブアイテムの親IDラベルを更新する
+        for child_task in self.child_tasks:
+            child_task.update_parent_id_label(ParentIdLabel.from_property(
+                parent_id=self.id
+            ))
 
     def aggregate_executed_man_hours(self):
         '''実績工数を集計し、ラベルを更新する'''
         if self.executed_tasks is None:
-            self.executed_man_hours = ManHours(0)
+            self.executed_man_hours = self.update_executed_man_hours(ManHours(0))
         else:
             man_hours_total = 0
 
@@ -101,7 +119,7 @@ class ScheduledTask(Task):
     def update_executed_man_hours(self, executed_man_hours: ManHours):
         '''実績人日を更新する'''
         if self.executed_man_hours != executed_man_hours:
-            self.toggle_is_updated(f'実績人日: {self.executed_man_hours} -> {executed_man_hours}')
+            self._toggle_is_updated(f'実績人日: {self.executed_man_hours} -> {executed_man_hours}')
             self.executed_man_hours = executed_man_hours
 
 
