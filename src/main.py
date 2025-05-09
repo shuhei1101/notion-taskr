@@ -11,9 +11,10 @@ def index():
 
 @app.route("/run-deployment-tasks")
 def update_executed_task_id():
-    '''実績タスクのIDを付与する'''
+    '''デプロイ時に実行するタスクを実行する'''
     from job import run_deployment_tasks
     run_deployment_tasks()
+    return "Deployment tasks executed successfully!"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
