@@ -178,7 +178,7 @@ class TaskApplicationService:
             # 1分前~
             TaskSearchCondition().where_last_edited_time(
                 operator=DateOperator.ON_OR_AFTER,
-                date=to_isoformat(datetime.now() - timedelta(minutes=2))
+                date=to_isoformat(datetime.now() - timedelta(minutes=1, seconds=30))
             ),
             # ~現在
             TaskSearchCondition().where_last_edited_time(
@@ -284,7 +284,7 @@ class TaskApplicationService:
 
         # pickleに保存する
         self.scheduled_task_cache.save(
-            tasks=all_scheduled_task_data,
+            tasks=all_scheduled_task_data.values(),
             on_success=lambda: self.logger.info("Pickleの保存に成功しました。"),
             on_error=lambda e: self.logger.error(f"Pickleの保存に失敗。エラー内容: {e}")
         )
