@@ -1,0 +1,97 @@
+name: Deploy to Cloud Run
+  
+on:
+  push:
+    branches:
+      - main
+env:
+  SERVICE_NAME: ${{ secrets.SERVICE_NAME }}  # SERVICE_NAME はサービス名
+  SERVICE_ACCOUNT_NAME: ${{ secrets.SERVICE_ACCOUNT_NAME }}  # SERVICE_ACCOUNT_NAME はサービスアカウント名
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}  # GCP_PROJECT_ID はプロジェクト ID
+  GCP_REGION: ${{ secrets.GCP_REGION }}  # GCP_REGION は us-central1 といったリージョン名
+  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}  # GCP_SA_KEY はサービスアカウントキー
+  SERVICE_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ secrets.SERVICE_NAME }}-service  # サービス用のDockerイメージ名
+  JOB_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ secrets.SERVICE_NAME }}-job  # ジョブ用のDockerイメージ名
+  ALLOWED_EMAIL: ${{ secrets.ALLOWED_EMAIL }}
+  NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+  JOB_NAME: notion-api-job
+  CLOUD_RUN_JOB_TOPIC: notion-api-job-topic
+ 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - id: "auth"
+      uses: "google-github-actions/auth@v2"
+      with:
+        credentials_json: "${{ env.GCP_SA_KEY }}"
+
+    # gcloud の設定
+    - name: Configure docker to use the gcloud cli
+      run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+    # 古いイメージを削除
+    - name: Delete old service image
+      continue-on-error: true
+      run: gcloud artifacts docker images delete ${{ env.SERVICE_IMAGE }} --quiet
+
+    - name: Delete old job image
+      continue-on-error: true
+      run: gcloud artifacts docker images delete ${{ env.JOB_IMAGE }} --quiet
+
+    # Dockerイメージのビルド
+    - name: Build service docker image
+      run: |
+        docker build -t ${{ env.SERVICE_IMAGE }} -f Dockerfile.service --build-arg NOTION_TOKEN=${{ secrets.NOTION_TOKEN }} .
+
+    - name: Build job docker image
+      run: |
+        docker build -t ${{ env.JOB_IMAGE }} -f Dockerfile.job --build-arg NOTION_TOKEN=${{ secrets.NOTION_TOKEN }} .
+
+    # Dockerイメージをプッシュ
+    - name: Push service docker image
+      run: docker push ${{ env.SERVICE_IMAGE }}
+
+    - name: Push job docker image
+      run: docker push ${{ env.JOB_IMAGE }}
+
+    # Cloud Run にデプロイ
+    - name: Deploy to Cloud Run (Service)
+      run: |
+        gcloud run deploy $SERVICE_NAME \
+          --image $SERVICE_IMAGE \
+          --project $GCP_PROJECT_ID \
+          --region $GCP_REGION \
+          --service-account $SERVICE_ACCOUNT_NAME \
+          --platform managed \
+          --allow-unauthenticated
+
+    # ジョブをCloud Runにデプロイ（作成または更新） 
+    - name: Deploy Cloud Run Job (Create or Update)
+      run: |
+        if gcloud run jobs describe $SERVICE_NAME --region $GCP_REGION --project $GCP_PROJECT_ID > /dev/null 2>&1; then
+          echo "Updating existing job..."
+          gcloud run jobs update $SERVICE_NAME \
+            --image $JOB_IMAGE \
+            --project $GCP_PROJECT_ID \
+            --region $GCP_REGION \
+            --service-account $SERVICE_ACCOUNT_NAME \
+            --task-timeout=50s \
+            --max-retries=0 \
+            --tasks=1
+        else
+          echo "Creating new job..."
+          gcloud run jobs create $SERVICE_NAME \
+            --image $JOB_IMAGE \
+            --project $GCP_PROJECT_ID \
+            --region $GCP_REGION \
+            --service-account $SERVICE_ACCOUNT_NAME \
+            --task-timeout=50s \
+            --max-retries=0 \
+            --tasks=1
+        fi
+

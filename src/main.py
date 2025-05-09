@@ -1,0 +1,24 @@
+from flask import Flask, render_template
+import logging
+
+app = Flask(__name__)
+
+logging.basicConfig(level=logging.DEBUG)
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/update-executed-task-id")
+def update_executed_task_id():
+    '''実績タスクのIDを付与する'''
+    pass
+    # try:
+    #     TaskApplicationService().add_id_to_executed_task()
+    #     return "Task ID updated successfully!"
+    # except Exception as e:
+    #     app.logger.error(f"Error occurred while updating task ID: {str(e)}")
+    #     return f"An error occurred: {str(e)}", 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
