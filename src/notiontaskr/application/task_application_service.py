@@ -186,7 +186,7 @@ class TaskApplicationService:
                 date=to_isoformat(datetime.now())
             ),
         )
-        self.logger.debug(f"検索条件: {condition}")
+        self.logger.debug(f"検索条件: {condition.build()}")
         
         fetch_scheduled_task_timer = AppTimer.init_and_start()
 
