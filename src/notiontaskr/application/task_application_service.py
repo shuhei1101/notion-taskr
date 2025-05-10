@@ -343,6 +343,8 @@ class TaskApplicationService:
         scheduled_task.update_child_tasks_properties()
         # サブアイテムの工数を集計し、ラベルを更新する
         scheduled_task.aggregate_child_man_hours()
+        # 実績タスクのステータスを更新する
+        scheduled_task.check_child_task_status()
         # 予定タスクが持つ実績タスクのプロパティを更新する
         scheduled_task.update_executed_tasks_properties()
 
