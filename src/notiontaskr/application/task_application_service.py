@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from logging import Logger
 from typing import List
 
@@ -178,12 +178,12 @@ class TaskApplicationService:
             # 1分前~
             TaskSearchCondition().where_last_edited_time(
                 operator=DateOperator.ON_OR_AFTER,
-                date=to_isoformat(datetime.now() - timedelta(minutes=1, seconds=30))
+                date=to_isoformat(datetime.now(timezone.utc) - timedelta(minutes=1, seconds=30))
             ),
             # ~現在
             TaskSearchCondition().where_last_edited_time(
                 operator=DateOperator.ON_OR_BEFORE,
-                date=to_isoformat(datetime.now())
+                date=to_isoformat(datetime.now(timezone.utc))
             ),
         )
         self.logger.debug(f"検索条件: {condition.build()}")

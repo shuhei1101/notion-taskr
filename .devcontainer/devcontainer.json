@@ -4,6 +4,12 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
+  "mounts": [
+    // ホストのファイルをコンテナにマウント
+    // ${localWorkspaceFolder}はホストのワークスペースフォルダを指す
+    // targetはコンテナ内のパス
+    "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind,consistency=cached"
+  ],
   "forwardPorts": [8000],
   // ホストとUID/GIDを合わせてファイル権限問題を解消
   "updateRemoteUserUID": true,
