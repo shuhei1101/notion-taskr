@@ -11,6 +11,9 @@ class NotionId:
         self.number = str(number)
         self.prefix = str(prefix)
 
+    def __hash__(self):
+        return hash(self.number)
+
     def __eq__(self, other: 'NotionId'):
         if not isinstance(other, NotionId):
             return False
