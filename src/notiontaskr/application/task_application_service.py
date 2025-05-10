@@ -200,6 +200,7 @@ class TaskApplicationService:
             self.logger.info(
                 "取得した予定タスクと実績タスクがありません。処理を終了します。"
             )
+            self.logger.debug(f"【処理時間】合計: {main_timer.get_elapsed_time()}秒")
             return
 
         # バケットからPickleをダウンロードする
