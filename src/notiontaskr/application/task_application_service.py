@@ -48,13 +48,13 @@ class TaskApplicationService:
         main_timer = AppTimer.init_and_start()
         self.logger.info("実績タスクのキャッシュを更新します。")
 
-        # 過去一年分の実績タスクを取得
+        # 過去一年分のタスクを取得
         # 条件作成(過去一年~未来)
         condition = TaskSearchCondition().or_(
-            TaskSearchCondition().where_date(
+            TaskSearchCondition().where_last_edited_time(
                 operator=DateOperator.PAST_YEAR,
             ),
-            TaskSearchCondition().where_date(
+            TaskSearchCondition().where_last_edited_time(
                 date=datetime.now().strftime("%Y-%m-%d"),
                 operator=DateOperator.ON_OR_AFTER,
             ),
@@ -80,8 +80,10 @@ class TaskApplicationService:
         ExecutedTaskService.add_id_tag(to=executed_tasks, source=scheduled_tasks)
 
         # 予定タスクに実績タスクを紐づける
-        ScheduledTaskService.upsert_executed_tasks(
-            scheduled_tasks=scheduled_tasks,
+        _ = ScheduledTaskService.get_tasks_upserted_executed_tasks(
+            scheduled_tasks_by_id={
+                scheduled_task.id: scheduled_task for scheduled_task in scheduled_tasks
+            },
             executed_tasks=executed_tasks,
             on_error=lambda e, task: self.logger.error(
                 f"予定タスク[{task.id.number}]と実績タスクの紐づけに失敗。エラー内容: {e}"
@@ -89,9 +91,12 @@ class TaskApplicationService:
         )
 
         # 予定タスクにサブアイテムを紐づける
-        ScheduledTaskService.append_child_tasks(
+        _ = ScheduledTaskService.get_tasks_appended_child_tasks(
             child_tasks=scheduled_tasks,
-            parent_tasks=scheduled_tasks,
+            parent_tasks_by_page_id={
+                scheduled_task.page_id: scheduled_task
+                for scheduled_task in scheduled_tasks
+            },
             on_error=lambda e, task: self.logger.error(
                 f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {e}"
             ),
@@ -105,14 +110,9 @@ class TaskApplicationService:
         for scheduled_task in scheduled_tasks:
             scheduled_task.update_child_tasks_properties()
 
-        # 実績タスクのプロパティを予定タスクからコピーする
+        # 予定タスクが持つ実績タスクのプロパティを更新する
         for scheduled_task in scheduled_tasks:
-            try:
-                scheduled_task.update_executed_tasks_properties()
-            except ValueError:
-                self.logger.debug(
-                    f"予定タスク[{scheduled_task.id.number}]の実績タスクが存在しませんでした。"
-                )
+            scheduled_task.update_executed_tasks_properties()
 
         # 更新
         tasks = []
@@ -264,7 +264,10 @@ class TaskApplicationService:
         # キャッシュから予定タスクの親IDに一致する予定タスクを検索し、紐づける
         updated_parent_tasks = ScheduledTaskService.get_tasks_appended_child_tasks(
             child_tasks=fetched_scheduled_tasks,
-            parent_tasks_by_id=scheduled_tasks_by_id,
+            parent_tasks_by_page_id={
+                scheduled_task.page_id: scheduled_task
+                for scheduled_task in list(scheduled_tasks_by_id.values())
+            },
             on_error=lambda e, task: self.logger.error(
                 f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {e}"
             ),
@@ -391,5 +394,5 @@ class TaskApplicationService:
 
 if __name__ == "__main__":
     service = TaskApplicationService()
-    # asyncio.run(service.daily_task())
-    asyncio.run(service.regular_task())
+    asyncio.run(service.daily_task())
+    # asyncio.run(service.regular_task())
