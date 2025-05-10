@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from util.calculator import get_hours_diff
+from notiontaskr.util.calculator import get_hours_diff
 
 class TestCalculator():
     def test_get_hours_diff(self):

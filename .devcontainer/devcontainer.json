@@ -8,6 +8,7 @@
   // ホストとUID/GIDを合わせてファイル権限問題を解消
   "updateRemoteUserUID": true,
   // 拡張機能
+  
   "customizations": {
     "vscode": {
       "extensions": [

@@ -1,7 +1,7 @@
 import unittest
 
-from domain.executed_task_service import ExecutedTaskService
-from domain.executed_task import ExecutedTask
+from notiontaskr.domain.executed_task_service import ExecutedTaskService
+from notiontaskr.domain.executed_task import ExecutedTask
 
 class ExecutedTestTaskService(unittest.TestCase):
     pass

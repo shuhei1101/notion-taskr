@@ -2,10 +2,10 @@
 
 FROM python:3.12-slim
 
-WORKDIR /app
+WORKDIR /workspaces
 
 COPY . .
-RUN rm -rf build dist *.egg-info src/*.egg-info
+RUN rm -rf build dist *.egg-info src/notiontaskr/*.egg-info
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir -r requirements.dev.txt
 

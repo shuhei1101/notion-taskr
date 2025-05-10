@@ -1,5 +1,5 @@
-from domain.name_label import NameLabel
-from domain.task_name import TaskName
+from notiontaskr.domain.name_label import NameLabel
+from notiontaskr.domain.task_name import TaskName
 
 class TestTaskName:
     def test_task_name(self):

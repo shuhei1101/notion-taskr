@@ -5,8 +5,8 @@ FROM python:3.12-slim
  
 WORKDIR /app
 COPY . .
-RUN rm -rf build dist *.egg-info src/*.egg-info
+RUN rm -rf build dist *.egg-info src/notiontaskr/*.egg-info
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "src/job.py"]
+CMD ["python", "src/notiontaskr/job.py"]
 
