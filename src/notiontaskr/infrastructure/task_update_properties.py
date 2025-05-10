@@ -30,14 +30,6 @@ class TaskUpdateProperties(ABC):
             }
         return self
 
-    def set_scheduled_task_page_id(self):
-        """予定タスクの更新"""
-        if self.task.scheduled_task_page_id:
-            self.properties["予定タスク"] = {
-                "relation": [{"id": str(self.task.scheduled_task_page_id)}]
-            }
-        return self
-
     def set_status(self):
         """ステータスの更新"""
         self.properties["ステータス"] = {"status": {"name": str(self.task.status)}}

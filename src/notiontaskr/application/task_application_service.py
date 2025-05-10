@@ -102,17 +102,9 @@ class TaskApplicationService:
             ),
         )
 
-        # 予定タスクの工数を計算
+        # 予定タスクのプロパティを更新
         for scheduled_task in scheduled_tasks:
-            scheduled_task.aggregate_executed_man_hours()
-
-        # サブアイテムに親ラベルを付与する
-        for scheduled_task in scheduled_tasks:
-            scheduled_task.update_child_tasks_properties()
-
-        # 予定タスクが持つ実績タスクのプロパティを更新する
-        for scheduled_task in scheduled_tasks:
-            scheduled_task.update_executed_tasks_properties()
+            self._update_scheduled_task_properties(scheduled_task)
 
         # 更新
         tasks = []
@@ -282,17 +274,9 @@ class TaskApplicationService:
             + updated_parent_tasks
         }
 
-        # 予定タスクの工数を計算
+        # 予定タスクのプロパティを更新
         for scheduled_task in list(scheduled_tasks_to_update_by_id.values()):
-            scheduled_task.aggregate_executed_man_hours()
-
-        # サブアイテムに親ラベルを付与する
-        for scheduled_task in list(scheduled_tasks_to_update_by_id.values()):
-            scheduled_task.update_child_tasks_properties()
-
-        # 予定タスクが持つ実績タスクのプロパティを更新する
-        for scheduled_task in list(scheduled_tasks_to_update_by_id.values()):
-            scheduled_task.update_executed_tasks_properties()
+            self._update_scheduled_task_properties(scheduled_task)
 
         # 既存データを辞書に変換
         update_executed_task_data = {task.id: task for task in fetched_executed_tasks}
@@ -347,6 +331,17 @@ class TaskApplicationService:
             f"【処理時間】実績タスクの工数計算: {calc_man_hours_timer.get_elapsed_time()}秒"
         )
         self.logger.debug(f"【処理時間】合計: {main_timer.get_elapsed_time()}秒")
+
+    def _update_scheduled_task_properties(self, scheduled_task: ScheduledTask):
+        """予定タスクのプロパティを更新するメソッド"""
+        # 予定タスクの工数を計算
+        scheduled_task.aggregate_executed_man_hours()
+        # サブアイテムに親ラベルを付与する
+        scheduled_task.update_child_tasks_properties()
+        # サブアイテムの工数を集計し、ラベルを更新する
+        scheduled_task.aggregate_sub_man_hours()
+        # 予定タスクが持つ実績タスクのプロパティを更新する
+        scheduled_task.update_executed_tasks_properties()
 
     async def _update_scheduled_tasks(
         self,

@@ -106,6 +106,25 @@ class ScheduledTask(Task):
                 ParentIdLabel.from_property(parent_id=self.id)
             )
 
+    def aggregate_sub_man_hours(self):
+        """サブアイテムの工数を集計し、ラベルを更新する"""
+        if self.child_tasks is None or len(self.child_tasks) == 0:
+            return
+        total_scheduled_man_hours = 0
+        total_executed_man_hours = 0
+        for child_task in self.child_tasks:
+            child_task.aggregate_sub_man_hours()
+            total_scheduled_man_hours += child_task.scheduled_man_hours.value
+            total_executed_man_hours += child_task.executed_man_hours.value
+        self.update_executed_man_hours(ManHours(total_executed_man_hours))
+        self.update_scheduled_man_hours(ManHours(total_scheduled_man_hours))
+        self.update_man_hours_label(
+            ManHoursLabel.from_man_hours(
+                executed_man_hours=ManHours(total_executed_man_hours),
+                scheduled_man_hours=ManHours(total_scheduled_man_hours),
+            )
+        )
+
     def aggregate_executed_man_hours(self):
         """実績工数を集計し、ラベルを更新する"""
         if self.executed_tasks is None:
@@ -133,3 +152,11 @@ class ScheduledTask(Task):
                 f"実績人日: {self.executed_man_hours} -> {executed_man_hours}"
             )
             self.executed_man_hours = executed_man_hours
+
+    def update_scheduled_man_hours(self, scheduled_man_hours: ManHours):
+        """予定人日を更新する"""
+        if self.scheduled_man_hours != scheduled_man_hours:
+            self._toggle_is_updated(
+                f"予定人日: {self.scheduled_man_hours} -> {scheduled_man_hours}"
+            )
+        self.scheduled_man_hours = scheduled_man_hours

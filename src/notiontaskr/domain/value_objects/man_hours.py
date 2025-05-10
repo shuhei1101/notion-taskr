@@ -11,7 +11,7 @@ class ManHours:
             value = 0  # デフォルト値を0に設定
         if value < 0:
             raise ValueError(f"ManHours`{value}`は負の数であってはいけません。")
-        
+
         self.value = float(value)
 
     @classmethod
@@ -22,9 +22,8 @@ class ManHours:
                 end_date=date.end,
             )
         )
-    
+
     def __eq__(self, other):
         if not isinstance(other, ManHours):
             return False
         return self.value == other.value
-    

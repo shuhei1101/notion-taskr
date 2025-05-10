@@ -16,6 +16,7 @@ class ExecutedTask(Task):
     date: NotionDate = None
     man_hours: ManHours = None
     scheduled_task_id: NotionId = None  # 紐づいている予定タスクのID
+    scheduled_task_page_id: PageId = None  # 紐づいている予定タスクのページID
 
     @classmethod
     def from_response_data(cls, data):

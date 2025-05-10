@@ -25,7 +25,6 @@ class Task:
     status: Status = None
     parent_task_page_id: "PageId" = None  # 親タスクId
     update_contents: List[str] = None  # （デバッグ用）更新内容を保存
-    scheduled_task_page_id: PageId = None  # 紐づいている予定タスクのページID
 
     def __init__(
         self,
