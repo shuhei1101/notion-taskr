@@ -152,6 +152,56 @@ class TaskApplicationService:
 
         main_timer = AppTimer.init_and_start()
 
+        # 条件作成(最終更新日が1分前~現在。formatは`2025-05-09T14:40:00.000Z`ISO 8601形式)
+        condition = TaskSearchCondition().and_(
+            # 1分前~
+            TaskSearchCondition().where_last_edited_time(
+                operator=DateOperator.ON_OR_AFTER,
+                date=to_isoformat(
+                    datetime.now(timezone.utc) - timedelta(minutes=1, seconds=30)
+                ),
+            ),
+            # ~現在
+            TaskSearchCondition().where_last_edited_time(
+                operator=DateOperator.ON_OR_BEFORE,
+                date=to_isoformat(datetime.now(timezone.utc)),
+            ),
+        )
+        self.logger.debug(f"検索条件: {condition.build()}")
+
+        fetch_scheduled_task_timer = AppTimer.init_and_start()
+
+        # 条件にあう予定タスクを全て取得する
+        fetched_scheduled_tasks = await self.scheduled_task_repo.find_by_condition(
+            condition=condition,
+            on_error=lambda e, data: self.logger.error(
+                f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+            ),
+        )
+        self.logger.debug(
+            f"【処理時間】予定タスクの取得: {fetch_scheduled_task_timer.get_elapsed_time()}秒"
+        )
+        self.logger.info(f"取得した予定タスクの数: {len(fetched_scheduled_tasks)}")
+
+        fetch_executed_task_timer = AppTimer.init_and_start()
+        # 条件にあう実績タスクを全て取得する
+        fetched_executed_tasks = await self.executed_task_repo.find_by_condition(
+            condition=condition,
+            on_error=lambda e, data: self.logger.error(
+                f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+            ),
+        )
+        self.logger.debug(
+            f"【処理時間】実績タスクの取得: {fetch_executed_task_timer.get_elapsed_time()}秒"
+        )
+        self.logger.info(f"取得した実績タスクの数: {len(fetched_executed_tasks)}")
+
+        if len(fetched_scheduled_tasks) == 0 and len(fetched_executed_tasks) == 0:
+            self.logger.info(
+                "取得した予定タスクと実績タスクがありません。処理を終了します。"
+            )
+            return
+
         # バケットからPickleをダウンロードする
         self.gcs_handler.download(
             from_=config.BUCKET_SCHEDULED_PICKLE_PATH,
@@ -178,57 +228,9 @@ class TaskApplicationService:
             self.logger.critical(f"Pickleの読み込みに失敗。エラー内容: {e}")
             self.logger.critical("処理を終了します。")
             return
-
-        # 条件作成(最終更新日が1分前~現在。formatは`2025-05-09T14:40:00.000Z`ISO 8601形式)
-        condition = TaskSearchCondition().and_(
-            # 1分前~
-            TaskSearchCondition().where_last_edited_time(
-                operator=DateOperator.ON_OR_AFTER,
-                date=to_isoformat(
-                    datetime.now(timezone.utc) - timedelta(minutes=1, seconds=30)
-                ),
-            ),
-            # ~現在
-            TaskSearchCondition().where_last_edited_time(
-                operator=DateOperator.ON_OR_BEFORE,
-                date=to_isoformat(datetime.now(timezone.utc)),
-            ),
-        )
-        self.logger.debug(f"検索条件: {condition.build()}")
-
-        fetch_scheduled_task_timer = AppTimer.init_and_start()
-
-        # 条件にあう予定タスクを全て取得する
-        fetched_scheduled_tasks: list[ScheduledTask] = (
-            await self.scheduled_task_repo.find_by_condition(
-                condition=condition,
-                on_error=lambda e, data: self.logger.error(
-                    f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
-                ),
-            )
-        )
-        self.logger.debug(
-            f"【処理時間】予定タスクの取得: {fetch_scheduled_task_timer.get_elapsed_time()}秒"
-        )
-        self.logger.info(f"取得した予定タスクの数: {len(fetched_scheduled_tasks)}")
-
-        fetch_executed_task_timer = AppTimer.init_and_start()
-        # 条件にあう実績タスクを全て取得する
-        fetched_executed_tasks: list[ExecutedTask] = (
-            await self.executed_task_repo.find_by_condition(
-                condition=condition,
-                on_error=lambda e, data: self.logger.error(
-                    f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
-                ),
-            )
-        )
-        self.logger.debug(
-            f"【処理時間】実績タスクの取得: {fetch_executed_task_timer.get_elapsed_time()}秒"
-        )
-        self.logger.info(f"取得した実績タスクの数: {len(fetched_executed_tasks)}")
-
         add_executed_id_timer = AppTimer.init_and_start()
 
+        # キャッシュと取得した予定タスクをマージする
         scheduled_tasks_by_id = {
             scheduled_task.id: scheduled_task
             for scheduled_task in fetched_scheduled_tasks + cache_scheduled_tasks
