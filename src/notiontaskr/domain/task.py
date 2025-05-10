@@ -69,7 +69,7 @@ class Task:
             )
             self.name.parent_id_label = parent_id_label
 
-    def update_status(self, status: Status):
+    def check_child_task_status(self, status: Status):
         """ステータスを更新し、is_updatedをTrueにする"""
         if self.status != status:
             self._toggle_is_updated(f"ステータス: {self.status} -> {status}")
@@ -96,6 +96,15 @@ class Task:
                 f"予定タスクページID: {self.scheduled_task_page_id} -> {scheduled_task_page_id}"
             )
             self.scheduled_task_page_id = scheduled_task_page_id
+
+    def update_status(self, status: Status):
+        """ステータスを更新し、is_updatedをTrueにする"""
+        if self.status != status:
+            self._toggle_is_updated(f"ステータス: {self.status} -> {status}")
+            self.status = status
+            self.update_id_label(
+                self.name.id_label.from_property(id=self.id, status=status)
+            )
 
     def get_display_name(self) -> str:
         """表示用のタスク名を取得する

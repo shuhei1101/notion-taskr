@@ -90,7 +90,7 @@ class ScheduledTask(Task):
         """実績タスクのプロパティを更新する"""
         for executed_task in self.executed_tasks:
             executed_task.update_name(self.name)
-            executed_task.update_status(self.status)
+            executed_task.check_child_task_status(self.status)
             executed_task.update_parent_task_page_id(self.parent_task_page_id)
             executed_task.update_scheduled_task_page_id(self.page_id)
 
@@ -106,14 +106,14 @@ class ScheduledTask(Task):
                 ParentIdLabel.from_property(parent_id=self.id)
             )
 
-    def aggregate_sub_man_hours(self):
+    def aggregate_child_man_hours(self):
         """サブアイテムの工数を集計し、ラベルを更新する"""
         if self.child_tasks is None or len(self.child_tasks) == 0:
             return
         total_scheduled_man_hours = 0
         total_executed_man_hours = 0
         for child_task in self.child_tasks:
-            child_task.aggregate_sub_man_hours()
+            child_task.aggregate_child_man_hours()
             total_scheduled_man_hours += child_task.scheduled_man_hours.value
             total_executed_man_hours += child_task.executed_man_hours.value
         self.update_executed_man_hours(ManHours(total_executed_man_hours))
@@ -124,6 +124,24 @@ class ScheduledTask(Task):
                 scheduled_man_hours=ManHours(total_scheduled_man_hours),
             )
         )
+
+    def check_child_task_status(self):
+        """サブアイテムのステータスを確認し、すべて完了の場合は親タスクのステータスを完了にする"""
+        if self.child_tasks is None or len(self.child_tasks) == 0:
+            return
+        is_all_completed = True
+        for child_task in self.child_tasks:
+            if child_task.status != Status("完了"):
+                is_all_completed = False
+                break
+        if is_all_completed:
+            self.update_status(Status("完了"))
+            self.update_id_label(
+                IdLabel.from_property(
+                    id=self.id,
+                    status=self.status,
+                )
+            )
 
     def aggregate_executed_man_hours(self):
         """実績工数を集計し、ラベルを更新する"""
