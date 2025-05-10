@@ -92,6 +92,7 @@ class ScheduledTask(Task):
             executed_task.update_name(self.name)
             executed_task.update_status(self.status)
             executed_task.update_parent_task_page_id(self.parent_task_page_id)
+            executed_task.update_scheduled_task_page_id(self.page_id)
 
     def update_child_tasks(self, child_tasks: list["ScheduledTask"]):
         """サブアイテムを付与する"""
