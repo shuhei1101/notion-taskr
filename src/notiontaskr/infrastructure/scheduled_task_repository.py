@@ -104,6 +104,7 @@ class ScheduledTaskRepository(IdFindable):
             properties = (
                 ScheduledTaskUpdateProperties(task=scheduled_task)
                 .set_name()
+                .set_status()
                 .set_scheduled_man_hours()
                 .set_executed_man_hours()
                 .build()
