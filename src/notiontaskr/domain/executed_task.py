@@ -50,7 +50,9 @@ class ExecutedTask(Task):
                     number=task_number,
                     prefix=data["properties"]["ID"]["unique_id"]["prefix"],
                 ),
-                status=Status(data["properties"]["ステータス"]["status"]["name"]),
+                status=Status.from_str(
+                    data["properties"]["ステータス"]["status"]["name"]
+                ),
                 date=notion_date,
                 man_hours=ManHours.from_notion_date(notion_date),
                 scheduled_task_id=(

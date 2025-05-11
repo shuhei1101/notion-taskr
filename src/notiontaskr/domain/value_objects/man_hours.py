@@ -1,7 +1,9 @@
+from dataclasses import dataclass
 from notiontaskr.domain.value_objects.notion_date import NotionDate
 from notiontaskr.util.calculator import get_hours_diff
 
 
+@dataclass
 class ManHours:
     value: float
 

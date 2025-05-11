@@ -12,7 +12,7 @@ class IdLabel(NameLabel):
     @classmethod
     def from_property(cls, id: NotionId, status: Status) -> "IdLabel":
         """IDラベルを生成する"""
-        if status == Status("完了"):
+        if status == Status.COMPLETED:
             key = "✓"
         else:
             key = ""

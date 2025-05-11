@@ -107,6 +107,7 @@ class ScheduledTaskRepository(IdFindable):
                 .set_status()
                 .set_scheduled_man_hours()
                 .set_executed_man_hours()
+                .set_progress_rate()
                 .build()
             )
 

@@ -46,7 +46,6 @@ class TaskApplicationService:
         # notionから過去一年分の情報を取得し、Pickleに保存する
 
         main_timer = AppTimer.init_and_start()
-        self.logger.info("実績タスクのキャッシュを更新します。")
 
         # 過去一年分のタスクを取得
         # 条件作成(過去一年~未来)
@@ -345,6 +344,8 @@ class TaskApplicationService:
         scheduled_task.aggregate_child_man_hours()
         # 実績タスクのステータスを更新する
         scheduled_task.check_child_task_status()
+        # 進捗率を更新する
+        scheduled_task.calc_progress_rate()
         # 予定タスクが持つ実績タスクのプロパティを更新する
         scheduled_task.update_executed_tasks_properties()
 

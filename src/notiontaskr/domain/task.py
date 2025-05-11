@@ -102,9 +102,6 @@ class Task:
         if self.status != status:
             self._toggle_is_updated(f"ステータス: {self.status} -> {status}")
             self.status = status
-            self.update_id_label(
-                self.name.id_label.from_property(id=self.id, status=status)
-            )
 
     def get_display_name(self) -> str:
         """表示用のタスク名を取得する

@@ -9,6 +9,7 @@ from notiontaskr.domain.task_name import TaskName
 from notiontaskr.domain.value_objects.man_hours import ManHours
 from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.page_id import PageId
+from notiontaskr.domain.value_objects.progress_rate import ProgressRate
 from notiontaskr.domain.value_objects.status import Status
 
 
@@ -21,6 +22,7 @@ class ScheduledTask(Task):
     executed_tasks: list["ExecutedTask"] = None  # 紐づいている実績タスク
     child_task_page_ids: list["PageId"] = None  # サブアイテムのページID
     child_tasks: list["ScheduledTask"] = None  # サブアイテム
+    progress_rate: ProgressRate = 0  # 進捗率
 
     @classmethod
     def from_response_data(cls, data: dict):
@@ -40,7 +42,7 @@ class ScheduledTask(Task):
                 number=task_number,
             )
 
-            status = Status(data["properties"]["ステータス"]["status"]["name"])
+            status = Status.from_str(data["properties"]["ステータス"]["status"]["name"])
             tags = []
             for tag in data["properties"]["タグ"]["multi_select"]:
                 tags.append(tag["name"])
@@ -66,6 +68,7 @@ class ScheduledTask(Task):
                     for relation in data["properties"]["サブアイテム"]["relation"]
                 ],
                 child_tasks=[],
+                progress_rate=ProgressRate(data["properties"]["進捗率"]["number"]),
             )
 
             # IDラベルを更新
@@ -126,22 +129,56 @@ class ScheduledTask(Task):
         )
 
     def check_child_task_status(self):
-        """サブアイテムのステータスを確認し、すべて完了の場合は親タスクのステータスを完了にする"""
-        if self.child_tasks is None or len(self.child_tasks) == 0:
+        """サブタスクのステータスに応じて親タスクのステータスを更新する。"""
+        if not self.child_tasks:
             return
-        is_all_completed = True
-        for child_task in self.child_tasks:
-            if child_task.status != Status("完了"):
-                is_all_completed = False
-                break
-        if is_all_completed:
-            self.update_status(Status("完了"))
-            self.update_id_label(
-                IdLabel.from_property(
-                    id=self.id,
-                    status=self.status,
-                )
+
+        statuses = [task.status for task in self.child_tasks]
+
+        if any(status == Status.IN_PROGRESS for status in statuses):
+            self.update_status(Status.IN_PROGRESS)
+        elif all(status == Status.COMPLETED for status in statuses):
+            self.update_status(Status.COMPLETED)
+
+        self.update_id_label(
+            IdLabel.from_property(
+                id=self.id,
+                status=self.status,
             )
+        )
+
+    def calc_progress_rate(self):
+        """
+        完了済みサブタスクの予定人時合計 / 全サブタスクの予定人時合計 で進捗率を計算する。
+        進捗率は 0.0〜1.0 の float で保存する。
+        """
+        if not self.child_tasks:
+            self.update_progress_rate(ProgressRate(0.0))
+            return
+
+        done_tasks = [
+            task for task in self.child_tasks if task.status == Status.COMPLETED
+        ]
+
+        total_scheduled_hours = sum(
+            task.scheduled_man_hours.value for task in self.child_tasks
+        )
+        if total_scheduled_hours == 0:
+            self.update_progress_rate(ProgressRate(0.0))
+            return
+
+        done_scheduled_hours = sum(
+            task.scheduled_man_hours.value for task in done_tasks
+        )
+
+        progress = done_scheduled_hours / total_scheduled_hours
+        self.update_progress_rate(ProgressRate(progress))
+
+    def update_progress_rate(self, progress_rate: ProgressRate):
+        """進捗率を更新する"""
+        if self.progress_rate != progress_rate:
+            self._toggle_is_updated(f"進捗率: {self.progress_rate} -> {progress_rate}")
+            self.progress_rate = progress_rate
 
     def aggregate_executed_man_hours(self):
         """実績工数を集計し、ラベルを更新する"""
@@ -164,17 +201,17 @@ class ScheduledTask(Task):
         )
 
     def update_executed_man_hours(self, executed_man_hours: ManHours):
-        """実績人日を更新する"""
+        """実績人時を更新する"""
         if self.executed_man_hours != executed_man_hours:
             self._toggle_is_updated(
-                f"実績人日: {self.executed_man_hours} -> {executed_man_hours}"
+                f"実績人時: {self.executed_man_hours} -> {executed_man_hours}"
             )
             self.executed_man_hours = executed_man_hours
 
     def update_scheduled_man_hours(self, scheduled_man_hours: ManHours):
-        """予定人日を更新する"""
+        """予定人時を更新する"""
         if self.scheduled_man_hours != scheduled_man_hours:
             self._toggle_is_updated(
-                f"予定人日: {self.scheduled_man_hours} -> {scheduled_man_hours}"
+                f"予定人時: {self.scheduled_man_hours} -> {scheduled_man_hours}"
             )
         self.scheduled_man_hours = scheduled_man_hours

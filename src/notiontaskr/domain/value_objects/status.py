@@ -1,19 +1,19 @@
-from dataclasses import dataclass
+from enum import Enum
 
 
-@dataclass
-class Status:
-    value: str
+class Status(Enum):
+    NOT_STARTED = "未着手"
+    CANCELED = "中止"
+    IN_PROGRESS = "進行中"
+    DELAYED = "遅延"
+    COMPLETED = "完了"
 
-    def __init__(self, value: str):
-        if not value:
-            raise ValueError(f"Statusは必須です。")
-        self.value = str(value)
+    @staticmethod
+    def from_str(label: str) -> "Status":
+        for status in Status:
+            if status.value == label:
+                return status
+        raise ValueError(f"無効なステータスです: {label}")
 
     def __str__(self):
         return self.value
-
-    def __eq__(self, other: "Status"):
-        if not isinstance(other, Status):
-            return False
-        return self.value == other.value
