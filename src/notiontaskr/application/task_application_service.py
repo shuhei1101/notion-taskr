@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from logging import Logger
 
 import notiontaskr.config as config
+from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
 from notiontaskr.util.converter import to_isoformat
 from notiontaskr.app_logger import AppLogger
 from notiontaskr.app_timer import AppTimer
@@ -90,8 +91,8 @@ class TaskApplicationService:
         )
 
         # 予定タスクにサブアイテムを紐づける
-        _ = ScheduledTaskService.get_tasks_appended_child_tasks(
-            child_tasks=scheduled_tasks,
+        _ = ScheduledTaskService.get_tasks_appended_sub_tasks(
+            sub_tasks=scheduled_tasks,
             parent_tasks_by_page_id={
                 scheduled_task.page_id: scheduled_task
                 for scheduled_task in scheduled_tasks
@@ -230,11 +231,17 @@ class TaskApplicationService:
             return
         add_executed_id_timer = AppTimer.init_and_start()
 
-        # キャッシュと取得した予定タスクをマージする
+        # キャッシュの予定タスクを辞書に変換
         scheduled_tasks_by_id = {
             scheduled_task.id: scheduled_task
-            for scheduled_task in fetched_scheduled_tasks + cache_scheduled_tasks
+            for scheduled_task in cache_scheduled_tasks
         }
+
+        # キャッシュと取得した予定タスクをマージする
+        scheduled_tasks_by_id = ScheduledTaskService.merge_scheduled_tasks(
+            scheduled_tasks_by_id=scheduled_tasks_by_id,
+            sources=fetched_scheduled_tasks,
+        )
 
         # 実績タスクにIDを付与し、付与した予定タスクを取得(未付与のもののみ)
         scheduled_tasks_id_added = ExecutedTaskService.get_tasks_add_id_tag(
@@ -256,8 +263,8 @@ class TaskApplicationService:
         )
 
         # キャッシュから予定タスクの親IDに一致する予定タスクを検索し、紐づける
-        updated_parent_tasks = ScheduledTaskService.get_tasks_appended_child_tasks(
-            child_tasks=fetched_scheduled_tasks,
+        updated_parent_tasks = ScheduledTaskService.get_tasks_appended_sub_tasks(
+            sub_tasks=fetched_scheduled_tasks,
             parent_tasks_by_page_id={
                 scheduled_task.page_id: scheduled_task
                 for scheduled_task in list(scheduled_tasks_by_id.values())
@@ -336,16 +343,21 @@ class TaskApplicationService:
 
     def _update_scheduled_task_properties(self, scheduled_task: ScheduledTask):
         """予定タスクのプロパティを更新するメソッド"""
-        # 予定タスクの工数を計算
-        scheduled_task.aggregate_executed_man_hours()
-        # サブアイテムに親ラベルを付与する
-        scheduled_task.update_child_tasks_properties()
+        # サブアイテムに親IDラベルを付与する
+        scheduled_task.update_sub_tasks_properties()
         # サブアイテムの工数を集計し、ラベルを更新する
-        scheduled_task.aggregate_child_man_hours()
+        scheduled_task.aggregate_man_hours()
         # 実績タスクのステータスを更新する
-        scheduled_task.check_child_task_status()
+        scheduled_task.check_sub_task_status()
         # 進捗率を更新する
         scheduled_task.calc_progress_rate()
+        # 実績人時ラベルを更新する
+        scheduled_task.update_man_hours_label(
+            ManHoursLabel.from_man_hours(
+                executed_man_hours=scheduled_task.executed_man_hours,
+                scheduled_man_hours=scheduled_task.scheduled_man_hours,
+            )
+        )
         # 予定タスクが持つ実績タスクのプロパティを更新する
         scheduled_task.update_executed_tasks_properties()
 

@@ -34,8 +34,8 @@ class ScheduledTaskService:
         return updated_tasks
 
     @staticmethod
-    def get_tasks_appended_child_tasks(
-        child_tasks: list[ScheduledTask],
+    def get_tasks_appended_sub_tasks(
+        sub_tasks: list[ScheduledTask],
         parent_tasks_by_page_id: dict[PageId, ScheduledTask],
         on_error: Callable[[Exception, ScheduledTask], None],
     ) -> list[ScheduledTask]:
@@ -44,17 +44,38 @@ class ScheduledTaskService:
         - **注意**: 本メソッドは予定タスクが直接変更される。
         """
         updated_tasks = []
-        for child_task in child_tasks:
+        for sub_task in sub_tasks:
             try:
-                target_task = parent_tasks_by_page_id.get(
-                    child_task.parent_task_page_id
-                )
+                target_task = parent_tasks_by_page_id.get(sub_task.parent_task_page_id)
                 if target_task is None:
                     continue
-                TaskService.upsert_tasks(target_task.child_tasks, child_task)
+                TaskService.upsert_tasks(target_task.sub_tasks, sub_task)
                 TaskService.upsert_tasks(updated_tasks, target_task)
 
             except Exception as e:
-                on_error(e, child_task)
+                on_error(e, sub_task)
 
         return updated_tasks
+
+    @staticmethod
+    def merge_scheduled_tasks(
+        scheduled_tasks_by_id: dict[NotionId, ScheduledTask],
+        sources: list[ScheduledTask],
+    ) -> dict[NotionId, ScheduledTask]:
+        """キャッシュと取得した予定タスクをマージする
+
+        マージする際、task.executed_tasksはマージ先に引き継ぐ
+        """
+        for source in sources:
+            if source.id in scheduled_tasks_by_id:
+                # 既存のタスクに実績タスクをマージする
+                source.update_executed_tasks(
+                    scheduled_tasks_by_id[source.id].executed_tasks
+                )
+                source.update_sub_tasks(scheduled_tasks_by_id[source.id].sub_tasks)
+                scheduled_tasks_by_id[source.id] = source
+            else:
+                # 新しいタスクを追加する
+                scheduled_tasks_by_id[source.id] = source
+
+        return scheduled_tasks_by_id

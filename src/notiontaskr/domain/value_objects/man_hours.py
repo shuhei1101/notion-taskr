@@ -16,6 +16,14 @@ class ManHours:
 
         self.value = float(value)
 
+    def __add__(self, other):
+        if not isinstance(other, ManHours):
+            raise NotImplementedError(f"ManHours同士の加算のみサポートしています。")
+        return ManHours(self.value + other.value)
+
+    def __float__(self):
+        return self.value
+
     @classmethod
     def from_notion_date(cls, date: NotionDate):
         return cls(

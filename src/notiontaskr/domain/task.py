@@ -69,7 +69,7 @@ class Task:
             )
             self.name.parent_id_label = parent_id_label
 
-    def check_child_task_status(self, status: Status):
+    def check_sub_task_status(self, status: Status):
         """ステータスを更新し、is_updatedをTrueにする"""
         if self.status != status:
             self._toggle_is_updated(f"ステータス: {self.status} -> {status}")
