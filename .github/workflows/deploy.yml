@@ -18,6 +18,7 @@ env:
   DAILY_JOB_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ vars.DAILY_JOB_NAME }}-daily_job  # ジョブ用のDockerイメージ名
   NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
   TASK_DB_ID: ${{ secrets.TASK_DB_ID }}  # NotionのデータベースID
+  TEST_VAR: ${{ secrets.TEST_VAR }}  # テスト用の環境変数
  
 jobs:
   deploy:
@@ -54,6 +55,7 @@ jobs:
       run: |
         docker build -t ${{ env.SERVICE_IMAGE }} -f Dockerfile.service \
         --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
+        --build-arg TEST_VAR=${{ env.TEST_VAR }} \
         --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
 
     # レギュラージョブのビルド
@@ -61,6 +63,7 @@ jobs:
       run: |
         docker build -t ${{ env.REGULAR_JOB_IMAGE }} -f Dockerfile.regular.job \
         --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
+        --build-arg TEST_VAR=${{ env.TEST_VAR }} \
         --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
 
     # デイリージョブのビルド
@@ -68,6 +71,7 @@ jobs:
       run: |
         docker build -t ${{ env.DAILY_JOB_IMAGE }} -f Dockerfile.daily.job \
         --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
+        --build-arg TEST_VAR=${{ env.TEST_VAR }} \
         --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
 
     # Dockerイメージをプッシュ
