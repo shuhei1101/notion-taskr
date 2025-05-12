@@ -49,7 +49,6 @@ jobs:
       continue-on-error: true
       run: gcloud artifacts docker images delete ${{ env.DAILY_JOB_IMAGE }} --quiet
 
-    # Dockerイメージのビルド
     # サービスジョブのビルド
     - name: Build service docker image
       run: |
