@@ -5,5 +5,5 @@ COPY . .
 RUN rm -rf build dist *.egg-info notiontaskr/*.egg-info
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD gunicorn notiontaskr.main_service:app --bind 0.0.0.0:$PORT --workers 2 --threads 4
+CMD ["python", "notiontaskr/main_regular_job.py"]
 
