@@ -93,7 +93,7 @@ class ScheduledTask(Task):
         """実績タスクのプロパティを更新する"""
         for executed_task in self.executed_tasks:
             executed_task.update_name(self.name)
-            executed_task.check_sub_task_status(self.status)
+            executed_task.update_status_to(self.status)
             executed_task.update_parent_task_page_id(self.parent_task_page_id)
             executed_task.update_scheduled_task_page_id(self.page_id)
 
@@ -109,17 +109,32 @@ class ScheduledTask(Task):
                 ParentIdLabel.from_property(parent_id=self.id)
             )
 
-    def check_sub_task_status(self):
-        """サブタスクのステータスに応じて親タスクのステータスを更新する。"""
+    def update_status_to_check_properties(self):
+        """タスクのプロパティに応じてステータスを更新する"""
+
+        if self.status == Status.NOT_STARTED and self.executed_tasks:
+            self.update_status(Status.IN_PROGRESS)
+        elif self.status == Status.IN_PROGRESS and not self.executed_tasks:
+            self.update_status(Status.NOT_STARTED)
+
         if not self.sub_tasks:
             return
 
-        statuses = [task.status for task in self.sub_tasks]
+        # サブアイテムのステータスを更新し、ステータスを集計する
+        statuses = []
+        for sub_task in self.sub_tasks:
+            sub_task.update_status_to_check_properties()
+            statuses.append(sub_task.status)
 
         if any(status == Status.IN_PROGRESS for status in statuses):
+            # 進行中のサブアイテムがある場合、親タスクは進行中にする
             self.update_status(Status.IN_PROGRESS)
         elif all(status == Status.COMPLETED for status in statuses):
+            # 全てのサブアイテムが完了している場合、親タスクは完了にする
             self.update_status(Status.COMPLETED)
+        else:
+            # それ以外は未着手にする
+            self.update_status(Status.NOT_STARTED)
 
         self.update_id_label(
             IdLabel.from_property(
