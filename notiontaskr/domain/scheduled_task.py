@@ -1,8 +1,8 @@
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.domain.name_labels.id_label import IdLabel
-from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
 from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
 from notiontaskr.domain.task import Task
 from notiontaskr.domain.task_name import TaskName
@@ -85,10 +85,6 @@ class ScheduledTask(Task):
         except ValueError as e:
             raise ValueError(f"In ScheduledTask[{task_number}] initialize error, {e}")
 
-    def update_executed_tasks(self, executed_tasks: list[ExecutedTask]):
-        """実績タスク配列を付与する"""
-        self.executed_tasks = executed_tasks
-
     def update_executed_tasks_properties(self):
         """実績タスクのプロパティを更新する"""
         for executed_task in self.executed_tasks:
@@ -96,10 +92,6 @@ class ScheduledTask(Task):
             executed_task.update_status_to(self.status)
             executed_task.update_parent_task_page_id(self.parent_task_page_id)
             executed_task.update_scheduled_task_page_id(self.page_id)
-
-    def update_sub_tasks(self, sub_tasks: list["ScheduledTask"]):
-        """サブアイテムを付与する"""
-        self.sub_tasks = sub_tasks
 
     def update_sub_tasks_properties(self):
         """サブアイテムのプロパティを更新する"""
@@ -109,13 +101,30 @@ class ScheduledTask(Task):
                 ParentIdLabel.from_property(parent_id=self.id)
             )
 
+    def _update_status_to_check_executed_tasks(self):
+        """実績タスクの進捗を確認し、ステータスを更新する"""
+        if not self.executed_tasks:
+            return
+
+        # 現在時刻
+        now = datetime.now(timezone.utc)
+        # もし、自身のステータスが未着手かつ
+        # 実績タスクの開始時間が現在時刻よりも前のものが一件でもあれば、進行中にする
+        if self.status == Status.NOT_STARTED and any(
+            executed_task.date.start < now for executed_task in self.executed_tasks
+        ):
+            self.update_status(Status.IN_PROGRESS)
+        # もし実績タスクの終了時間が現在時刻よりも前のものが一件もなければ、未着手にする
+        elif self.status == Status.IN_PROGRESS and all(
+            executed_task.date.end > now for executed_task in self.executed_tasks
+        ):
+            self.update_status(Status.NOT_STARTED)
+
     def update_status_to_check_properties(self):
         """タスクのプロパティに応じてステータスを更新する"""
 
-        if self.status == Status.NOT_STARTED and self.executed_tasks:
-            self.update_status(Status.IN_PROGRESS)
-        elif self.status == Status.IN_PROGRESS and not self.executed_tasks:
-            self.update_status(Status.NOT_STARTED)
+        # 実績タスクのステータスを確認し、ステータスを更新する
+        self._update_status_to_check_executed_tasks()
 
         if not self.sub_tasks:
             return

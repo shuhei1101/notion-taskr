@@ -68,11 +68,14 @@ class ScheduledTaskService:
         """
         for source in sources:
             if source.id in scheduled_tasks_by_id:
-                # 既存のタスクに実績タスクをマージする
-                source.update_executed_tasks(
-                    scheduled_tasks_by_id[source.id].executed_tasks
+                # 既存のタスクに実績タスクをマージす
+                TaskService.upsert_tasks(
+                    source.executed_tasks,
+                    scheduled_tasks_by_id[source.id].executed_tasks,
                 )
-                source.update_sub_tasks(scheduled_tasks_by_id[source.id].sub_tasks)
+                TaskService.upsert_tasks(
+                    source.sub_tasks, scheduled_tasks_by_id[source.id].sub_tasks
+                )
                 scheduled_tasks_by_id[source.id] = source
             else:
                 # 新しいタスクを追加する

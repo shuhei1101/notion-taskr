@@ -348,7 +348,7 @@ class TaskApplicationService:
         # サブアイテムの工数を集計し、ラベルを更新する
         scheduled_task.aggregate_man_hours()
         # 実績タスクのステータスを更新する
-        scheduled_task.update_status_to()
+        scheduled_task.update_status_to_check_properties()
         # 進捗率を更新する
         scheduled_task.calc_progress_rate()
         # 実績人時ラベルを更新する
