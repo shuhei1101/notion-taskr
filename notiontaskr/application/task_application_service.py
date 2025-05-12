@@ -308,12 +308,12 @@ class TaskApplicationService:
 
         await asyncio.gather(*tasks)
 
+        # pickleに保存する
         try:
             # コールバック関数を定義
             def handle_error(e):
                 raise ValueError(e)
 
-            # pickleに保存する
             self.scheduled_task_cache.save(
                 tasks=list(scheduled_tasks_by_id.values()),
                 on_success=lambda: self.logger.info("Pickleの保存に成功しました。"),
