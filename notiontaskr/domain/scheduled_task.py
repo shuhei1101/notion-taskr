@@ -116,7 +116,7 @@ class ScheduledTask(Task):
             self.update_status(Status.IN_PROGRESS)
         # もし実績タスクの終了時間が現在時刻よりも前のものが一件もなければ、未着手にする
         elif self.status == Status.IN_PROGRESS and all(
-            executed_task.date.end > now for executed_task in self.executed_tasks
+            executed_task.date.start > now for executed_task in self.executed_tasks
         ):
             self.update_status(Status.NOT_STARTED)
 
