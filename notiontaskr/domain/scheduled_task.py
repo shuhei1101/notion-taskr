@@ -116,7 +116,7 @@ class ScheduledTask(Task):
             self.update_status(Status.IN_PROGRESS)
         # もし実績タスクの終了時間が現在時刻よりも前のものが一件もなければ、未着手にする
         elif self.status == Status.IN_PROGRESS and all(
-            executed_task.date.start > now for executed_task in self.executed_tasks
+            now < executed_task.date.start for executed_task in self.executed_tasks
         ):
             self.update_status(Status.NOT_STARTED)
 
@@ -156,7 +156,14 @@ class ScheduledTask(Task):
         """
         完了済みサブタスクの予定人時合計 / 全サブタスクの予定人時合計 で進捗率を計算する。
         進捗率は 0.0〜1.0 の float で保存する。
+
+        ただし、自身のステータスが完了の場合は、進捗率を 1.0 にする。
         """
+        # 自身のステータスが完了の場合は、進捗率を 1.0 にする
+        if self.status == Status.COMPLETED:
+            self.update_progress_rate(ProgressRate(1.0))
+            return
+        # サブアイテムがない場合は進捗率を 0.0 にする
         if not self.sub_tasks:
             self.update_progress_rate(ProgressRate(0.0))
             return
