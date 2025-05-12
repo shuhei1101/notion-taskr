@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
 from logging import Logger
+from typing import Callable
 
 import notiontaskr.config as config
 from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
@@ -18,7 +19,6 @@ from notiontaskr.infrastructure.scheduled_task_repository import ScheduledTaskRe
 from notiontaskr.infrastructure.operator import *
 from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
 from notiontaskr.infrastructure.scheduled_task_cache import ScheduledTaskCache
-from notiontaskr.infrastructure.paginatable_repository import Paginatable
 
 
 class TaskApplicationService:
@@ -42,23 +42,6 @@ class TaskApplicationService:
             ),
         )
 
-    async def fetch_all_tasks_with_pagination(
-        self, repo: Paginatable, condition, on_error
-    ):
-        """ページネーション対応で全タスクを取得する（repoはPaginatableRepositoryを実装している必要あり）"""
-        all_tasks = []
-        start_cursor = None
-        has_more = True
-        while has_more:
-            tasks, next_cursor, has_more = await repo.find_by_condition_with_cursor(
-                condition=condition,
-                on_error=on_error,
-                start_cursor=start_cursor,
-            )
-            all_tasks.extend(tasks)
-            start_cursor = next_cursor
-        return all_tasks
-
     async def daily_task(self):
         """毎日0時に実行されるタスク"""
 
@@ -79,8 +62,7 @@ class TaskApplicationService:
         )
 
         # 予定タスクをすべて取得する
-        scheduled_tasks = await self.fetch_all_tasks_with_pagination(
-            repo=self.scheduled_task_repo,
+        scheduled_tasks = await self.scheduled_task_repo.find_all_by_condition(
             condition=condition,
             on_error=lambda e, data: self.logger.error(
                 f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
@@ -88,8 +70,7 @@ class TaskApplicationService:
         )
 
         # 実績タスクを全て取得する
-        executed_tasks = await self.fetch_all_tasks_with_pagination(
-            repo=self.executed_task_repo,
+        executed_tasks = await self.executed_task_repo.find_all_by_condition(
             condition=condition,
             on_error=lambda e, data: self.logger.error(
                 f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
@@ -427,5 +408,5 @@ class TaskApplicationService:
 
 if __name__ == "__main__":
     service = TaskApplicationService()
-    # asyncio.run(service.daily_task())
-    asyncio.run(service.regular_task())
+    asyncio.run(service.daily_task())
+    # asyncio.run(service.regular_task())

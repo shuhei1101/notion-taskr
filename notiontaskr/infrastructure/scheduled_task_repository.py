@@ -9,10 +9,9 @@ from notiontaskr import config
 from notiontaskr.domain.scheduled_task import ScheduledTask
 from notiontaskr.infrastructure.operator import CheckboxOperator
 from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
-from .paginatable_repository import Paginatable
 
 
-class ScheduledTaskRepository(Paginatable):
+class ScheduledTaskRepository:
     def __init__(self, token, db_id):
         self.client = Client(
             auth=token,
@@ -55,7 +54,6 @@ class ScheduledTaskRepository(Paginatable):
         on_error: Callable[[Exception, dict[str]], None],
     ) -> List[ScheduledTask]:
         """タスクDBの指定タグの予定を全て取得する"""
-
         filter = (
             TaskSearchCondition()
             .and_(
@@ -82,7 +80,26 @@ class ScheduledTaskRepository(Paginatable):
 
         return scheduled_tasks
 
-    async def find_by_condition_with_cursor(
+    async def find_all_by_condition(
+        self,
+        condition: TaskSearchCondition,
+        on_error: Callable[[Exception, dict[str]], None],
+    ) -> List[ScheduledTask]:
+        """指定した条件に一致する全ての予定タスクをページネーションを考慮して取得する"""
+        all_tasks = []
+        start_cursor = None
+        has_more = True
+        while has_more:
+            tasks, next_cursor, has_more = await self._find_by_condition_with_cursor(
+                condition=condition,
+                on_error=on_error,
+                start_cursor=start_cursor,
+            )
+            all_tasks.extend(tasks)
+            start_cursor = next_cursor
+        return all_tasks
+
+    async def _find_by_condition_with_cursor(
         self,
         condition: TaskSearchCondition,
         on_error: Callable[[Exception, dict[str]], None],

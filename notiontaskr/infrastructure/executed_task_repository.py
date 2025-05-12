@@ -7,10 +7,9 @@ from notion_client import Client
 from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.infrastructure.operator import CheckboxOperator
 from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
-from .paginatable_repository import Paginatable
 
 
-class ExecutedTaskRepository(Paginatable):
+class ExecutedTaskRepository:
     def __init__(self, token, db_id):
         self.client = Client(
             auth=token,
@@ -77,7 +76,26 @@ class ExecutedTaskRepository(Paginatable):
 
         return executed_tasks
 
-    async def find_by_condition_with_cursor(
+    async def find_all_by_condition(
+        self,
+        condition: TaskSearchCondition,
+        on_error: Callable[[Exception, dict[str]], None],
+    ) -> List[ExecutedTask]:
+        """指定した条件に一致する全ての実績タスクをページネーションを考慮して取得する"""
+        all_tasks = []
+        start_cursor = None
+        has_more = True
+        while has_more:
+            tasks, next_cursor, has_more = await self._find_by_condition_with_cursor(
+                condition=condition,
+                on_error=on_error,
+                start_cursor=start_cursor,
+            )
+            all_tasks.extend(tasks)
+            start_cursor = next_cursor
+        return all_tasks
+
+    async def _find_by_condition_with_cursor(
         self,
         condition: TaskSearchCondition,
         on_error: Callable[[Exception, dict[str]], None],
