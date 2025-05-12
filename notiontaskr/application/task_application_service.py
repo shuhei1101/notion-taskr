@@ -18,6 +18,7 @@ from notiontaskr.infrastructure.scheduled_task_repository import ScheduledTaskRe
 from notiontaskr.infrastructure.operator import *
 from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
 from notiontaskr.infrastructure.scheduled_task_cache import ScheduledTaskCache
+from notiontaskr.infrastructure.paginatable_repository import Paginatable
 
 
 class TaskApplicationService:
@@ -41,6 +42,23 @@ class TaskApplicationService:
             ),
         )
 
+    async def fetch_all_tasks_with_pagination(
+        self, repo: Paginatable, condition, on_error
+    ):
+        """ページネーション対応で全タスクを取得する（repoはPaginatableRepositoryを実装している必要あり）"""
+        all_tasks = []
+        start_cursor = None
+        has_more = True
+        while has_more:
+            tasks, next_cursor, has_more = await repo.find_by_condition_with_cursor(
+                condition=condition,
+                on_error=on_error,
+                start_cursor=start_cursor,
+            )
+            all_tasks.extend(tasks)
+            start_cursor = next_cursor
+        return all_tasks
+
     async def daily_task(self):
         """毎日0時に実行されるタスク"""
 
@@ -61,7 +79,8 @@ class TaskApplicationService:
         )
 
         # 予定タスクをすべて取得する
-        scheduled_tasks = await self.scheduled_task_repo.find_by_condition(
+        scheduled_tasks = await self.fetch_all_tasks_with_pagination(
+            repo=self.scheduled_task_repo,
             condition=condition,
             on_error=lambda e, data: self.logger.error(
                 f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
@@ -69,7 +88,8 @@ class TaskApplicationService:
         )
 
         # 実績タスクを全て取得する
-        executed_tasks = await self.executed_task_repo.find_by_condition(
+        executed_tasks = await self.fetch_all_tasks_with_pagination(
+            repo=self.executed_task_repo,
             condition=condition,
             on_error=lambda e, data: self.logger.error(
                 f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
@@ -263,7 +283,7 @@ class TaskApplicationService:
         )
 
         # キャッシュから予定タスクの親IDに一致する予定タスクを検索し、紐づける
-        updated_parent_tasks = ScheduledTaskService.get_tasks_appended_sub_tasks(
+        parent_tasks_appended_child = ScheduledTaskService.get_tasks_appended_sub_tasks(
             sub_tasks=fetched_scheduled_tasks,
             parent_tasks_by_page_id={
                 scheduled_task.page_id: scheduled_task
@@ -280,7 +300,7 @@ class TaskApplicationService:
             for scheduled_task in fetched_scheduled_tasks
             + scheduled_tasks_id_added
             + scheduled_tasks_upserted_executed
-            + updated_parent_tasks
+            + parent_tasks_appended_child
         }
 
         # 予定タスクのプロパティを更新
@@ -407,5 +427,5 @@ class TaskApplicationService:
 
 if __name__ == "__main__":
     service = TaskApplicationService()
-    asyncio.run(service.daily_task())
-    # asyncio.run(service.regular_task())
+    # asyncio.run(service.daily_task())
+    asyncio.run(service.regular_task())

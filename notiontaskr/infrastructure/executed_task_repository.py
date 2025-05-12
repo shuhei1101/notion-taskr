@@ -7,9 +7,10 @@ from notion_client import Client
 from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.infrastructure.operator import CheckboxOperator
 from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
+from .paginatable_repository import Paginatable
 
 
-class ExecutedTaskRepository:
+class ExecutedTaskRepository(Paginatable):
     def __init__(self, token, db_id):
         self.client = Client(
             auth=token,
@@ -75,6 +76,38 @@ class ExecutedTaskRepository:
                 on_error(e, data)
 
         return executed_tasks
+
+    async def find_by_condition_with_cursor(
+        self,
+        condition: TaskSearchCondition,
+        on_error: Callable[[Exception, dict[str]], None],
+        start_cursor: str = None,
+    ) -> tuple[list[ExecutedTask], str, bool]:
+        """タスクDBの指定タグの実績を全て取得する（ページネーション対応）"""
+        filter = (
+            TaskSearchCondition()
+            .and_(
+                TaskSearchCondition().where_scheduled_flag(
+                    operator=CheckboxOperator.EQUALS, is_scheduled=False
+                ),
+                condition,
+            )
+            .build()
+        )
+        query_params = {"database_id": self.db_id, "filter": filter}
+        if start_cursor:
+            query_params["start_cursor"] = start_cursor
+
+        response_data = self.client.databases.query(**query_params)
+        executed_tasks = []
+        for data in response_data["results"]:
+            try:
+                executed_tasks.append(ExecutedTask.from_response_data(data))
+            except Exception as e:
+                on_error(e, data)
+        next_cursor = response_data.get("next_cursor")
+        has_more = response_data.get("has_more", False)
+        return executed_tasks, next_cursor, has_more
 
     async def update(
         self,

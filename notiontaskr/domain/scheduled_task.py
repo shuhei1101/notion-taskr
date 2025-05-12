@@ -123,10 +123,15 @@ class ScheduledTask(Task):
     def update_status_to_check_properties(self):
         """タスクのプロパティに応じてステータスを更新する"""
 
+        if self.status == Status.CANCELED:
+            # ステータスが中止の場合は、何もしない
+            return
+
         # 実績タスクのステータスを確認し、ステータスを更新する
         self._update_status_to_check_executed_tasks()
 
-        if not self.sub_tasks:
+        if not self.sub_tasks or len(self.sub_tasks) == 0:
+            # サブアイテムがない場合、処理を終了する
             return
 
         # サブアイテムのステータスを更新し、ステータスを集計する
