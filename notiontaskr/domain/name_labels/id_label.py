@@ -12,8 +12,16 @@ class IdLabel(NameLabel):
     @classmethod
     def from_property(cls, id: NotionId, status: Status) -> "IdLabel":
         """IDラベルを生成する"""
-        if status == Status.COMPLETED:
+        if status == Status.NOT_STARTED:
+            key = ""
+        elif status == Status.COMPLETED:
             key = "✓"
+        elif status == Status.IN_PROGRESS:
+            key = "→"
+        elif status == Status.DELAYED:
+            key = "!"
+        elif status == Status.CANCELED:
+            key = "×"
         else:
             key = ""
 
@@ -30,12 +38,14 @@ class IdLabel(NameLabel):
 
         if文の順番に注意。"✓"は絵文字に含まれないため、最初に判定する。
         """
-        label = key + value  # 文字列を結合する
+        label = key + value  # 一度文字列を結合する
+
+        key_value_symbols = ["→", "!", "✓", "×"]
 
         if label[0].isdigit():
             key = ""
             value = label
-        elif label[0] == "✓":
+        elif label[0] in key_value_symbols:
             key = label[0]
             value = label[1:]
         else:
