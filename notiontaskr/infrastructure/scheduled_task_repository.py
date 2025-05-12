@@ -1,6 +1,5 @@
 from typing import Callable, List
 from notiontaskr.domain.value_objects.page_id import PageId
-from notiontaskr.infrastructure.id_findable import IdFindable
 from notiontaskr.infrastructure.scheduled_task_update_properties import (
     ScheduledTaskUpdateProperties,
 )
@@ -12,7 +11,7 @@ from notiontaskr.infrastructure.operator import CheckboxOperator
 from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
 
 
-class ScheduledTaskRepository(IdFindable):
+class ScheduledTaskRepository:
     def __init__(self, token, db_id):
         self.client = Client(
             auth=token,
