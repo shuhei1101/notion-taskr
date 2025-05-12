@@ -135,12 +135,14 @@ class ScheduledTask(Task):
             sub_task.update_status_to_check_properties()
             statuses.append(sub_task.status)
 
-        if any(status == Status.IN_PROGRESS for status in statuses):
-            # 進行中のサブアイテムがある場合、親タスクは進行中にする
-            self.update_status(Status.IN_PROGRESS)
-        elif all(status == Status.COMPLETED for status in statuses):
+        if all(status == Status.COMPLETED for status in statuses):
             # 全てのサブアイテムが完了している場合、親タスクは完了にする
             self.update_status(Status.COMPLETED)
+        elif any(status == Status.IN_PROGRESS for status in statuses) or any(
+            status == Status.COMPLETED for status in statuses
+        ):
+            # 一つ以上の進行中もしくは完了のサブアイテムがある場合、親タスクは進行中にする
+            self.update_status(Status.IN_PROGRESS)
         else:
             # それ以外は未着手にする
             self.update_status(Status.NOT_STARTED)
@@ -168,10 +170,12 @@ class ScheduledTask(Task):
             self.update_progress_rate(ProgressRate(0.0))
             return
 
+        # サブアイテムのステータスが完了のものを取得する
         done_tasks = [
             task for task in self.sub_tasks if task.status == Status.COMPLETED
         ]
 
+        # サブアイテムの予定人時合計を取得する
         total_scheduled_hours = sum(
             task.scheduled_man_hours.value for task in self.sub_tasks
         )
@@ -179,10 +183,12 @@ class ScheduledTask(Task):
             self.update_progress_rate(ProgressRate(0.0))
             return
 
+        # 完了済みサブアイテムの予定人時合計を取得する
         done_scheduled_hours = sum(
             task.scheduled_man_hours.value for task in done_tasks
         )
 
+        # 進捗率を計算する
         progress = done_scheduled_hours / total_scheduled_hours
         self.update_progress_rate(ProgressRate(progress))
 
