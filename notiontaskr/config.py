@@ -36,9 +36,6 @@ ID_EMOJI = emoji.emojize(":label:")
 MAN_HOURS_EMOJI = emoji.emojize(":stopwatch:")
 PARENT_ID_EMOJI = emoji.emojize(":deciduous_tree:")
 
-print("テストプリント環境変数========================")
-print(os.getenv("TEST_VAR"))
-
 # 動作確認用
 if __name__ == "__main__":
     print(emoji.demojize("🏷️"))
