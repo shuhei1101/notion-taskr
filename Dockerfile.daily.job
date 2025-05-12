@@ -5,5 +5,5 @@ COPY . .
 RUN rm -rf build dist *.egg-info notiontaskr/*.egg-info
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "notiontaskr/main_deploy.py"]
+CMD ["python", "notiontaskr/daily_job.py"]
 
