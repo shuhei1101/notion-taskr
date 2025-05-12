@@ -20,8 +20,6 @@ LOG_PATH = os.path.join(LOG_DIR, "app.log")  # ログファイルの出力先
 # ------------- Notion API設定 -------------
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
 TASK_DB_ID = os.getenv("TASK_DB_ID")
-NOTION_TOKEN = "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"
-TASK_DB_ID = "1b08fe3c9ed280dab2f3c53738b9cdc8"
 
 # ------------- pickleファイル設定 -------------
 BUCKET_NAME = "notion-api-bucket"  # GCSバケット名
