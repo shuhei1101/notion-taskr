@@ -11,11 +11,10 @@ env:
   GCP_REGION: ${{ secrets.GCP_REGION }}  # GCP_REGION は us-central1 といったリージョン名
   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}  # GCP_SA_KEY はサービスアカウントキー
   SERVICE_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ secrets.SERVICE_NAME }}-service  # サービス用のDockerイメージ名
-  JOB_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ secrets.SERVICE_NAME }}-job  # ジョブ用のDockerイメージ名
-  ALLOWED_EMAIL: ${{ secrets.ALLOWED_EMAIL }}
+  REGULAR_JOB_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ secrets.SERVICE_NAME }}-regular_job  # ジョブ用のDockerイメージ名
+  DAILY_JOB_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ secrets.SERVICE_NAME }}-daily_job  # ジョブ用のDockerイメージ名
   NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-  JOB_NAME: notion-api-job
-  CLOUD_RUN_JOB_TOPIC: notion-api-job-topic
+  TASK_DB_ID: ${{ secrets.TASK_DB_ID }}  # NotionのデータベースID
  
 jobs:
   deploy:
@@ -41,23 +40,43 @@ jobs:
 
     - name: Delete old job image
       continue-on-error: true
-      run: gcloud artifacts docker images delete ${{ env.JOB_IMAGE }} --quiet
+      run: gcloud artifacts docker images delete ${{ env.REGULAR_JOB_IMAGE }} --quiet
+
+    - name: Delete old job image
+      continue-on-error: true
+      run: gcloud artifacts docker images delete ${{ env.DAILY_JOB_IMAGE }} --quiet
 
     # Dockerイメージのビルド
+    # サービスジョブのビルド
     - name: Build service docker image
       run: |
-        docker build -t ${{ env.SERVICE_IMAGE }} -f Dockerfile.service --build-arg NOTION_TOKEN=${{ secrets.NOTION_TOKEN }} .
+        docker build -t ${{ env.SERVICE_IMAGE }} -f Dockerfile.service \
+        --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
+        --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
 
+    # レギュラージョブのビルド
     - name: Build job docker image
       run: |
-        docker build -t ${{ env.JOB_IMAGE }} -f Dockerfile.job --build-arg NOTION_TOKEN=${{ secrets.NOTION_TOKEN }} .
+        docker build -t ${{ env.REGULAR_JOB_IMAGE }} -f Dockerfile.regular.job \
+        --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
+        --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
+
+    # デイリージョブのビルド
+    - name: Build job docker image
+      run: |
+        docker build -t ${{ env.DAILY_JOB_IMAGE }} -f Dockerfile.daily.job \
+        --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
+        --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
 
     # Dockerイメージをプッシュ
     - name: Push service docker image
       run: docker push ${{ env.SERVICE_IMAGE }}
 
     - name: Push job docker image
-      run: docker push ${{ env.JOB_IMAGE }}
+      run: docker push ${{ env.REGULAR_JOB_IMAGE }}
+
+    - name: Push job docker image
+      run: docker push ${{ env.DAILY_JOB_IMAGE }}
 
     # Cloud Run にデプロイ
     - name: Deploy to Cloud Run (Service)
@@ -76,7 +95,7 @@ jobs:
         if gcloud run jobs describe $SERVICE_NAME --region $GCP_REGION --project $GCP_PROJECT_ID > /dev/null 2>&1; then
           echo "Updating existing job..."
           gcloud run jobs update $SERVICE_NAME \
-            --image $JOB_IMAGE \
+            --image $REGULAR_JOB_IMAGE \
             --project $GCP_PROJECT_ID \
             --region $GCP_REGION \
             --service-account $SERVICE_ACCOUNT_NAME \
@@ -86,7 +105,32 @@ jobs:
         else
           echo "Creating new job..."
           gcloud run jobs create $SERVICE_NAME \
-            --image $JOB_IMAGE \
+            --image $REGULAR_JOB_IMAGE \
+            --project $GCP_PROJECT_ID \
+            --region $GCP_REGION \
+            --service-account $SERVICE_ACCOUNT_NAME \
+            --task-timeout=50s \
+            --max-retries=0 \
+            --tasks=1
+        fi
+
+    # ジョブをCloud Runにデプロイ（作成または更新） 
+    - name: Deploy Cloud Run Job (Create or Update)
+      run: |
+        if gcloud run jobs describe $SERVICE_NAME --region $GCP_REGION --project $GCP_PROJECT_ID > /dev/null 2>&1; then
+          echo "Updating existing job..."
+          gcloud run jobs update $SERVICE_NAME \
+            --image $DAILY_JOB_IMAGE \
+            --project $GCP_PROJECT_ID \
+            --region $GCP_REGION \
+            --service-account $SERVICE_ACCOUNT_NAME \
+            --task-timeout=50s \
+            --max-retries=0 \
+            --tasks=1
+        else
+          echo "Creating new job..."
+          gcloud run jobs create $SERVICE_NAME \
+            --image $DAILY_JOB_IMAGE \
             --project $GCP_PROJECT_ID \
             --region $GCP_REGION \
             --service-account $SERVICE_ACCOUNT_NAME \

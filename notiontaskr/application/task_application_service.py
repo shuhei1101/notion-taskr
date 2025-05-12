@@ -45,7 +45,7 @@ class TaskApplicationService:
         """毎日0時に実行されるタスク"""
 
         # notionから過去一年分の情報を取得し、Pickleに保存する
-
+        self.logger.info("デイリータスクを開始します。")
         main_timer = AppTimer.init_and_start()
 
         # 過去一年分のタスクを取得
@@ -149,7 +149,7 @@ class TaskApplicationService:
 
     async def regular_task(self):
         """予定タスクのIDを持つ実績タスクにIDを付与する"""
-
+        self.logger.info("レギュラータスクを開始します。")
         main_timer = AppTimer.init_and_start()
 
         # 条件作成(最終更新日が1分前~現在。formatは`2025-05-09T14:40:00.000Z`ISO 8601形式)
