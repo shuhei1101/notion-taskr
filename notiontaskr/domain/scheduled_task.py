@@ -235,3 +235,17 @@ class ScheduledTask(Task):
                 f"予定人時: {self.scheduled_man_hours} -> {scheduled_man_hours}"
             )
         self.scheduled_man_hours = scheduled_man_hours
+
+    def update_executed_tasks(
+        self,
+        executed_tasks: list["ExecutedTask"],
+    ):
+        """実績タスクを更新する"""
+        self.executed_tasks = executed_tasks
+
+    def update_sub_tasks(
+        self,
+        sub_tasks: list["ScheduledTask"],
+    ):
+        """サブアイテムを更新する"""
+        self.sub_tasks = sub_tasks
