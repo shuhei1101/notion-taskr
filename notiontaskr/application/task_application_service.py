@@ -169,31 +169,29 @@ class TaskApplicationService:
         )
         self.logger.debug(f"検索条件: {condition.build()}")
 
-        fetch_scheduled_task_timer = AppTimer.init_and_start()
+        fetch_tasks_timer = AppTimer.init_and_start()
 
-        # 条件にあう予定タスクを全て取得する
-        fetched_scheduled_tasks = await self.scheduled_task_repo.find_by_condition(
-            condition=condition,
-            on_error=lambda e, data: self.logger.error(
-                f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+        # 条件にあう予定タスクと実績タスクを並列で取得する
+        results = await asyncio.gather(
+            self.scheduled_task_repo.find_by_condition(
+                condition=condition,
+                on_error=lambda e, data: self.logger.error(
+                    f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+                ),
+            ),
+            self.executed_task_repo.find_by_condition(
+                condition=condition,
+                on_error=lambda e, data: self.logger.error(
+                    f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+                ),
             ),
         )
+        fetched_scheduled_tasks, fetched_executed_tasks = results[0], results[1]
+
         self.logger.debug(
-            f"【処理時間】予定タスクの取得: {fetch_scheduled_task_timer.get_elapsed_time()}秒"
+            f"【処理時間】予定タスクと実績タスクの取得: {fetch_tasks_timer.get_elapsed_time()}秒"
         )
         self.logger.info(f"取得した予定タスクの数: {len(fetched_scheduled_tasks)}")
-
-        fetch_executed_task_timer = AppTimer.init_and_start()
-        # 条件にあう実績タスクを全て取得する
-        fetched_executed_tasks = await self.executed_task_repo.find_by_condition(
-            condition=condition,
-            on_error=lambda e, data: self.logger.error(
-                f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
-            ),
-        )
-        self.logger.debug(
-            f"【処理時間】実績タスクの取得: {fetch_executed_task_timer.get_elapsed_time()}秒"
-        )
         self.logger.info(f"取得した実績タスクの数: {len(fetched_executed_tasks)}")
 
         if len(fetched_scheduled_tasks) == 0 and len(fetched_executed_tasks) == 0:
