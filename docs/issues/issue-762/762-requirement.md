@@ -158,22 +158,22 @@ classDiagram
 ## タスク
 - [ ] タスクリマインド機能の実装(12h)
   - [ ] タスク属性拡張の実装(2h)
-    - Taskクラスにremind_before_start_min属性（開始n分前通知）を追加
-    - Taskクラスにremind_before_end_min属性（終了n分前通知）を追加
+    - TaskクラスにTask.remind_before_start_min属性を追加
+    - TaskクラスにTask.remind_before_end_min属性を追加
     - タスク作成/更新時にリマインド設定をデフォルト値（開始5分前、終了5分前）で初期化
   - [ ] リマインド対象タスク抽出ロジックの実装(3h)
-    - 現在時刻から指定分数後（デフォルト5分後）に開始するタスクを抽出する機能の実装
-    - 現在時刻から指定分数後（デフォルト5分後）に終了するタスクを抽出する機能の実装
+    - TaskReminder.find_tasks_to_remind_start(current_time, minutes_before)の実装
+    - TaskReminder.find_tasks_to_remind_end(current_time, minutes_before)の実装
     - 期間指定でのタスク抽出機能の拡張（タグによるフィルタリング）
   - [ ] 通知サービスの実装(3h)
-    - Slackに通知を送信するサービスの実装
-    - 非同期処理での通知機能の実装
+    - NotificationService.send_slack_notification(message)の実装
+    - NotificationService.async_notify(message, service_type)の実装
     - エラーハンドリングとログ記録機能の実装
   - [ ] 定期実行ジョブの実装(3h)
-    - 1分間隔でのリマインド対象タスク抽出と通知実行機能の実装
-    - ジョブのスケジュール設定と実行管理機能の実装
+    - ReminderJob.run()メソッドの実装
+    - ReminderJob.schedule_job()メソッドの実装
   - [ ] ユーティリティ関数の実装(1h)
-    - to_hm(from: datetime)関数の実装：日時オブジェクトから時刻（HH:MM形式）を取得する機能
+    - TimeUtil.to_hm(from)関数の実装
 
 
 
