@@ -118,7 +118,13 @@
 - `async notify(message: str) -> bool`
   - 説明: Slackに通知を送信する
 
-### `ReminderJob`クラス(新規)
+### 8.6. `SlackAPIHandler`クラス(新規)
+#### 説明:
+- Slack APIを利用する責務を担うクラス
+- 今回は通知機能のみ実装するが、将来的に他のAPI機能も追加可能
+- Slack APIについては、以下ドキュメントを参考
+  - `docs/issues/issue-762/about-slack-api.md`
+
 #### メソッド: 
 - `run() -> None`
   - 説明: リマインド対象のタスクを抽出し、通知を送信する
