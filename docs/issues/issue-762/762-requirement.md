@@ -91,13 +91,13 @@
     - 終了リマインドが有効かどうかを判定する
     - `before_end_min`が0より大きい場合にTrueを返す
 
-### 7.2. `Task`クラス(既存)の拡張
+### 7.2. `ExecutedTask`クラス(既存)の拡張
 #### メンバ: 
 - `remind: Remind`
   - 説明: リマインド設定を保持するオブジェクト
 
 #### メソッド
-  - `from_response`
+  - `from_response`(既存)
     - 新規ラベル`通知ラベル`に対応するように修正(TaskNameクラスの修正等)
 
 ### 7.3. `TaskReminder`クラス(新規)
