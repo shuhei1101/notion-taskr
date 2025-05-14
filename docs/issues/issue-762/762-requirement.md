@@ -223,9 +223,17 @@ classDiagram
         +send_reminder(task: Task, is_start: bool): None
     }
     
-    class NotificationService {
-        +send_slack_notification(message: str): bool
-        +async_notify(message: str, service_type: str): None
+    class Notifier {
+        <<interface>>
+        +async notify(message: str): bool
+    }
+    
+    class SlackNotifier {
+        +async notify(message: str): bool
+    }
+    
+    class SlackAPIHandler {
+        +send_message(message: str, channel: str): bool
     }
     
     class ReminderJob {
@@ -239,7 +247,9 @@ classDiagram
     
     Task --> Remind: has
     ReminderJob --> TaskReminder: uses
-    TaskReminder --> NotificationService: uses
+    TaskReminder --> SlackNotifier: uses
+    SlackNotifier ..|> Notifier: implements
+    SlackNotifier --> SlackAPIHandler: uses
     TaskReminder --> Task: manages
     TaskReminder --> TimeUtil: uses
 ```
