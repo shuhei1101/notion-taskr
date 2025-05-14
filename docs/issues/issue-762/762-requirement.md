@@ -100,9 +100,10 @@
   - `from_response`(既存)
     - 新規ラベル`通知ラベル`に対応するように修正(TaskNameクラスの修正等)
 
-### 7.3. `TaskReminder`クラス(新規)
+### 7.3. `ExecutedTaskService`クラス(既存)
 #### 説明:
-- タスクのリマインドを管理するクラス
+- 既存の`ExecutedTask`クラスのドメインサービスクラス
+- 今回の通知機能は実績タスクにのみ適用する(予定タスク(ScheduledTask)には適用しない)
 - タスクの開始時刻や終了時刻に基づいて、リマインド対象のタスクを抽出する
 #### メソッド: 
 - `find_tasks_to_remind_start(current_time: datetime, minutes_before: int = 5) -> List[Task]`
