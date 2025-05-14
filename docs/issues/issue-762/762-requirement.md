@@ -109,11 +109,14 @@
   - 戻り値:
     - 成功した場合はTrue、失敗した場合はFalse
 
+### 8.5. `SlackNotifier(Notifier)`クラス(新規)
+#### 説明:
+- Slack通知サービスの実装
+- `Notifier`インターフェースを実装したSlack通知サービス
+
 #### メソッド: 
-- `send_slack_notification(message: str) -> bool`
+- `async notify(message: str) -> bool`
   - 説明: Slackに通知を送信する
-- `async_notify(message: str, service_type: str) -> None`
-  - 説明: 非同期で通知を送信する
 
 ### `ReminderJob`クラス(新規)
 #### メソッド: 
