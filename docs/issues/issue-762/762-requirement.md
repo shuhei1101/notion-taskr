@@ -6,6 +6,8 @@
   - 通知方法は、Slackに統一するため`Line`を削除しました。
 - 2025/5/14: 記載例の削除(変更者: ユーザ)
   - 記載例は、必要ないため削除しました。
+- 2025/5/14: Rimindクラスの追加(変更者: GitHub Copilot)
+  - ユーザからの要望を受けて、リマインド属性をラッピングするRimindクラスを追加しました。
 
 ## 用語
 - notiontaskr: 本プロジェクトの名称
@@ -40,12 +42,23 @@
 - asyncio (非同期処理用)
 
 ## クラス設計
+### `Remind`クラス(新規)
+#### メンバ:
+- `before_start_min: int`
+  - 説明: 開始n分前に通知を行うための設定値
+- `before_end_min: int`
+  - 説明: 終了n分前に通知を行うための設定値
+
+#### メソッド:
+- `is_start_reminder_enabled() -> bool`
+  - 説明: 開始リマインドが有効かどうかを判定する
+- `is_end_reminder_enabled() -> bool`
+  - 説明: 終了リマインドが有効かどうかを判定する
+
 ### `Task`クラス(既存)の拡張
 #### メンバ: 
-- `remind_before_start_min: int`
-  - 説明: 開始n分前に通知を行うための設定値
-- `remind_before_end_min: int`
-  - 説明: 終了n分前に通知を行うための設定値
+- `remind: Remind`
+  - 説明: リマインド設定を保持するオブジェクト
 
 ### `TaskReminder`クラス(新規)
 #### メソッド: 
@@ -124,9 +137,15 @@ sequenceDiagram
 ### クラス図
 ```mermaid
 classDiagram
+    class Remind {
+        +before_start_min: int
+        +before_end_min: int
+        +is_start_reminder_enabled(): bool
+        +is_end_reminder_enabled(): bool
+    }
+    
     class Task {
-        +remind_before_start_min: int
-        +remind_before_end_min: int
+        +remind: Remind
     }
     
     class TaskReminder {
@@ -149,6 +168,7 @@ classDiagram
         +to_hm(from: datetime): str
     }
     
+    Task --> Remind: has
     ReminderJob --> TaskReminder: uses
     TaskReminder --> NotificationService: uses
     TaskReminder --> Task: manages
@@ -157,9 +177,12 @@ classDiagram
 
 ## タスク
 - [ ] タスクリマインド機能の実装(12h)
+  - [ ] Remindドメインオブジェクトの実装(2h)
+    - Remind.before_start_min属性およびbefore_end_min属性の実装
+    - Remind.is_start_reminder_enabled()メソッドの実装
+    - Remind.is_end_reminder_enabled()メソッドの実装
   - [ ] タスク属性拡張の実装(2h)
-    - TaskクラスにTask.remind_before_start_min属性を追加
-    - TaskクラスにTask.remind_before_end_min属性を追加
+    - TaskクラスにTask.remind属性を追加
     - タスク作成/更新時にリマインド設定をデフォルト値（開始5分前、終了5分前）で初期化
   - [ ] リマインド対象タスク抽出ロジックの実装(3h)
     - TaskReminder.find_tasks_to_remind_start(current_time, minutes_before)の実装
