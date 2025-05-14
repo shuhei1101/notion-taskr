@@ -177,7 +177,8 @@
 sequenceDiagram
     participant Job as ReminderJob
     participant Reminder as TaskReminder
-    participant Service as NotificationService
+    participant Slack as SlackNotifier
+    participant API as SlackAPIHandler
     participant Task
     
     Job->>Reminder: find_tasks_to_remind_start(current_time, 5)
@@ -185,8 +186,10 @@ sequenceDiagram
     
     loop For each task
         Job->>Reminder: send_reminder(task, is_start=True)
-        Reminder->>Service: async_notify(message, service_type)
-        Service-->>Reminder: 
+        Reminder->>Slack: async notify(message)
+        Slack->>API: send_message(message, channel)
+        API-->>Slack: success/failure
+        Slack-->>Reminder: success/failure
     end
     
     Job->>Reminder: find_tasks_to_remind_end(current_time, 5)
@@ -194,8 +197,10 @@ sequenceDiagram
     
     loop For each task
         Job->>Reminder: send_reminder(task, is_start=False)
-        Reminder->>Service: async_notify(message, service_type)
-        Service-->>Reminder: 
+        Reminder->>Slack: async notify(message)
+        Slack->>API: send_message(message, channel)
+        API-->>Slack: success/failure
+        Slack-->>Reminder: success/failure
     end
 ```
 ### 8.2. クラス図
