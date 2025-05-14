@@ -69,7 +69,19 @@
 - `send_reminder(task: Task, is_start: bool) -> None`
   - 説明: タスクのリマインドを送信する
 
-### `NotificationService`クラス(新規)
+### 8.4. `Notifier`インターフェース(新規)
+#### 説明:
+- 通知サービスのインターフェース
+- 今後、Lineなど他の通知サービスを追加する際に利用する
+
+#### メソッド:
+- `async notify(message: str) -> bool`
+  - 説明: 通知を送信するメソッド
+  - 引数:
+    - `message`: 通知メッセージ
+  - 戻り値:
+    - 成功した場合はTrue、失敗した場合はFalse
+
 #### メソッド: 
 - `send_slack_notification(message: str) -> bool`
   - 説明: Slackに通知を送信する
