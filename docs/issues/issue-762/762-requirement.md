@@ -262,14 +262,16 @@ classDiagram
     - Remind.is_end_reminder_enabled()メソッドの実装
   - [ ] タスク属性拡張の実装(2h)
     - TaskクラスにTask.remind属性を追加
+    - Taskクラスのfrom_responseメソッドを新規ラベル（通知ラベル）に対応するように修正
     - タスク作成/更新時にリマインド設定をデフォルト値（開始5分前、終了5分前）で初期化
   - [ ] リマインド対象タスク抽出ロジックの実装(3h)
     - TaskReminder.find_tasks_to_remind_start(current_time, minutes_before)の実装
     - TaskReminder.find_tasks_to_remind_end(current_time, minutes_before)の実装
     - 期間指定でのタスク抽出機能の拡張（タグによるフィルタリング）
   - [ ] 通知サービスの実装(3h)
-    - NotificationService.send_slack_notification(message)の実装
-    - NotificationService.async_notify(message, service_type)の実装
+    - Notifierインターフェースの実装
+    - SlackNotifier.notify(message)メソッドの実装
+    - SlackAPIHandler.send_message(message, channel)メソッドの実装
     - エラーハンドリングとログ記録機能の実装
   - [ ] 定期実行ジョブの実装(3h)
     - ReminderJob.run()メソッドの実装
