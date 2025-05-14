@@ -75,12 +75,19 @@
     - 終了リマインドが有効かどうかを判定する
     - `before_end_min`が0より大きい場合にTrueを返す
 
-### `Task`クラス(既存)の拡張
+### 8.2. `Task`クラス(既存)の拡張
 #### メンバ: 
 - `remind: Remind`
   - 説明: リマインド設定を保持するオブジェクト
 
-### `TaskReminder`クラス(新規)
+#### メソッド
+  - `from_response`
+    - 新規ラベル`通知ラベル`に対応するように修正(TaskNameクラスの修正等)
+
+### 8.3. `TaskReminder`クラス(新規)
+#### 説明:
+- タスクのリマインドを管理するクラス
+- タスクの開始時刻や終了時刻に基づいて、リマインド対象のタスクを抽出する
 #### メソッド: 
 - `find_tasks_to_remind_start(current_time: datetime, minutes_before: int = 5) -> List[Task]`
   - 説明: 現在時刻から指定分数後に開始するタスクを抽出する
