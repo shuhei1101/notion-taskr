@@ -2,6 +2,8 @@
 
 ## 変更履歴
 - 2025/5/14: 初版作成(変更者: GitHub Copilot)
+- 2025/5/14: 通知方法`Line`の削除(変更者: ユーザ)
+  - 通知方法は、Slackに統一するため`Line`を削除しました。
 
 ## 用語
 - notiontaskr: 本プロジェクトの名称
@@ -23,15 +25,14 @@
 - 選択したIDのタスク全てにリマインドを設定できること
 - タスクの属性に「開始n分前通知」「終了n分前通知」を追加できること
 - デフォルトの通知タイミングは開始5分前、終了5分前であること
-- Slack／Lineでリマインドを送信できること
+- Slackでリマインドを送信できること
 
 ### 非機能要件
 - 1分間隔の定期実行で、タスクの開始5分前のタスクをすべて回収できること
-- 回収したタスクの通知をLine/Slackに非同期で送信できること
+- 回収したタスクの通知をSlackに非同期で送信できること
 - 通知処理は安定して動作し、エラーが発生してもログに記録されること
 
 ## 使用ツール/ライブラリ
-- Line Messaging API (Lineへの通知用)
 - Slack API (Slackへの通知用)
 - notionたskrの既存機能
 - asyncio (非同期処理用)
@@ -55,8 +56,6 @@
 
 ### `NotificationService`クラス(新規)
 #### メソッド: 
-- `send_line_notification(message: str) -> bool`
-  - 説明: Lineに通知を送信する
 - `send_slack_notification(message: str) -> bool`
   - 説明: Slackに通知を送信する
 - `async_notify(message: str, service_type: str) -> None`
@@ -135,7 +134,6 @@ classDiagram
     }
     
     class NotificationService {
-        +send_line_notification(message: str): bool
         +send_slack_notification(message: str): bool
         +async_notify(message: str, service_type: str): None
     }
@@ -166,7 +164,7 @@ classDiagram
     - 現在時刻から指定分数後（デフォルト5分後）に終了するタスクを抽出する機能の実装
     - 期間指定でのタスク抽出機能の拡張（タグによるフィルタリング）
   - [ ] 通知サービスの実装(3h)
-    - LineとSlackに通知を送信するサービスの実装
+    - Slackに通知を送信するサービスの実装
     - 非同期処理での通知機能の実装
     - エラーハンドリングとログ記録機能の実装
   - [ ] 定期実行ジョブの実装(3h)
