@@ -13,12 +13,11 @@ env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}  # GCP_PROJECT_ID はプロジェクト ID
   GCP_REGION: ${{ secrets.GCP_REGION }}  # GCP_REGION は us-central1 といったリージョン名
   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}  # GCP_SA_KEY はサービスアカウントキー
-  SERVICE_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ secrets.SERVICE_NAME }}-service  # サービス用のDockerイメージ名
+  SERVICE_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ vars.SERVICE_NAME }}-service  # サービス用のDockerイメージ名
   REGULAR_JOB_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ vars.REGULAR_JOB_NAME }}-regular_job  # ジョブ用のDockerイメージ名
   DAILY_JOB_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ vars.DAILY_JOB_NAME }}-daily_job  # ジョブ用のDockerイメージ名
   NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
   TASK_DB_ID: ${{ secrets.TASK_DB_ID }}  # NotionのデータベースID
-  TEST_VAR: ${{ secrets.TEST_VAR }}  # テスト用の環境変数
  
 jobs:
   deploy:
@@ -55,7 +54,6 @@ jobs:
       run: |
         docker build -t ${{ env.SERVICE_IMAGE }} -f Dockerfile.service \
         --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
-        --build-arg TEST_VAR=${{ env.TEST_VAR }} \
         --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
 
     # レギュラージョブのビルド
@@ -63,7 +61,6 @@ jobs:
       run: |
         docker build -t ${{ env.REGULAR_JOB_IMAGE }} -f Dockerfile.regular.job \
         --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
-        --build-arg TEST_VAR=${{ env.TEST_VAR }} \
         --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
 
     # デイリージョブのビルド
@@ -71,7 +68,6 @@ jobs:
       run: |
         docker build -t ${{ env.DAILY_JOB_IMAGE }} -f Dockerfile.daily.job \
         --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
-        --build-arg TEST_VAR=${{ env.TEST_VAR }} \
         --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
 
     # Dockerイメージをプッシュ
