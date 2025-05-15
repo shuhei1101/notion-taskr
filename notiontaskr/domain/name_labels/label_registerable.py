@@ -1,12 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
-
-
 if TYPE_CHECKING:
     from notiontaskr.domain.name_labels.id_label import IdLabel
     from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
+    from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
 
 
 class LabelRegisterable(ABC):
