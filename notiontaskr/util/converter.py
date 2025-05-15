@@ -3,7 +3,7 @@ from datetime import datetime
 
 def to_isoformat(dt: datetime) -> str:
     """datetimeをISO8601形式(UTC, Z付き)に変換する
-    
+
     dtはUTCのdatetimeを想定。JSTは受け付けない。
     例: 2023-10-01T12:00:00.000Z
     """
@@ -15,7 +15,7 @@ def to_isoformat(dt: datetime) -> str:
 
 def truncate_decimal(num: float) -> str:
     """小数点以下を1桁に切り捨てる
-    
+
     ただし、小数点以下が0の場合は整数部分のみ表示
     """
     try:
