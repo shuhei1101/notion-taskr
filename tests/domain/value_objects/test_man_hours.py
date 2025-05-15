@@ -33,3 +33,12 @@ class TestManHours:
         def test_引数がNotionDateのとき正常に初期化されること(self):
             date = NotionDate(datetime(2023, 1, 1), datetime(2023, 1, 2))
             assert ManHours.from_notion_date(date).value == 24.0
+
+    class Test_eqメソッド:
+        def test_引数が異なる型のときFalseを返すこと(self):
+            assert ManHours(1) != 1
+            assert ManHours(1) != "1"
+
+        def test_引数が同じ型でvalueが同じときTrueを返すこと(self):
+            assert ManHours(1) == ManHours(1)
+            assert ManHours(1.0) == ManHours(1)
