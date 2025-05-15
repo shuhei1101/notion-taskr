@@ -21,3 +21,8 @@ class TestManHours:
         def test_引数がManHoursでないときNotImplementedErrorが発生すること(self):
             with pytest.raises(NotImplementedError):
                 ManHours(1) + 1  # type: ignore
+
+    class Test_floatメソッド:
+        def test_ManHoursをfloatに変換できること(self):
+            assert float(ManHours(1)) == 1.0
+            assert float(ManHours(1.5)) == 1.5
