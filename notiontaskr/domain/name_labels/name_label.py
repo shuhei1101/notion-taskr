@@ -14,11 +14,6 @@ class NameLabel(ABC):
     key: str
     value: str
 
-    def __eq__(self, other: "object"):
-        if not isinstance(other, NameLabel):
-            return False
-        return self.key == other.key and self.value == other.value
-
     def get_display_str(self) -> str:
         """表示用の文字列を返す"""
         return f"[{self.key}{self.value}]"
@@ -59,6 +54,11 @@ class NameLabel(ABC):
                 return
             except ValueError:
                 continue
+
+    def __eq__(self, other: "object"):
+        if not isinstance(other, NameLabel):
+            return False
+        return self.key == other.key and self.value == other.value
 
 
 if __name__ == "__main__":
