@@ -44,10 +44,3 @@ class ManHoursLabel(NameLabel):
         if not isinstance(other, ManHoursLabel):
             return False
         return self.value == other.value
-
-
-# 動作確認用
-if __name__ == "__main__":
-    value1 = emoji.demojize("⏱")
-    value2 = emoji.demojize(config.MAN_HOURS_EMOJI)
-    print(value1 == value2)
