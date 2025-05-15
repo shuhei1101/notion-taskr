@@ -59,10 +59,3 @@ class NameLabel(ABC):
         if not isinstance(other, NameLabel):
             return False
         return self.key == other.key and self.value == other.value
-
-
-if __name__ == "__main__":
-    import emoji
-
-    print(emoji.emojize(":timer_clock:"))
-    print(emoji.demojize("⏲️"))
