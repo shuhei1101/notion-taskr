@@ -10,4 +10,4 @@ Pipfile.lock
 tmp/*
 .env
 .egg-info
-
+.coverage
