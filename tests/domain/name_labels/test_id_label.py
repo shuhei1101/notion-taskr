@@ -7,10 +7,10 @@ from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.status import Status
 
 
-class TestIdLabel:
+class Test_IdLabelのテスト:
 
-    class Test_Taskプロパティから初期化できる:
-        def test_from_propertyメソッドに未着手ステータス(self):
+    class Test_from_propertyメソッド:
+        def test_未着手ステータスで初期化できること(self):
             notion_id = NotionId(number="123")
             status = Status.NOT_STARTED
 
@@ -19,7 +19,7 @@ class TestIdLabel:
             assert label.key == ""
             assert label.value == "123"
 
-        def test_from_propertyメソッドに完了ステータス(self):
+        def test_完了ステータスで初期化できること(self):
             notion_id = NotionId(number="123")
             status = Status.COMPLETED
 
@@ -28,7 +28,7 @@ class TestIdLabel:
             assert label.key == "✓"
             assert label.value == "123"
 
-        def test_from_property_keyメソッドに進行中ステータス(self):
+        def test_進行中ステータスで初期化できること(self):
             notion_id = NotionId(number="123")
             status = Status.IN_PROGRESS
 
@@ -37,7 +37,7 @@ class TestIdLabel:
             assert label.key == "→"
             assert label.value == "123"
 
-        def test_from_property_keyメソッドに遅延ステータス(self):
+        def test_遅延ステータスで初期化できること(self):
             notion_id = NotionId(number="123")
             status = Status.DELAYED
 
@@ -46,7 +46,7 @@ class TestIdLabel:
             assert label.key == "!"
             assert label.value == "123"
 
-        def test_from_property_keyメソッドに中止ステータス(self):
+        def test_中止ステータスで初期化できること(self):
             notion_id = NotionId(number="123")
             status = Status.CANCELED
 
@@ -55,8 +55,8 @@ class TestIdLabel:
             assert label.key == "×"
             assert label.value == "123"
 
-    class Test_parse_and_registerメソッドのオーバーライド:
-        def test_parse_and_registerメソッドに数字のみのラベル(self):
+    class Test_parse_and_registerメソッド:
+        def test_数字のみのラベルでdelegateに登録ができること(self):
             key = "1"
             value = "23"
             mock_delegate = Mock(spec=LabelRegisterable)
@@ -68,7 +68,7 @@ class TestIdLabel:
             assert registered_label.key == ""
             assert registered_label.value == "123"
 
-        def test_parse_and_registerメソッドに進行中シンボル(self):
+        def test_進行中シンボルでdelegateに登録ができること(self):
             key = "→"
             value = "123"
             mock_delegate = Mock(spec=LabelRegisterable)
@@ -80,7 +80,7 @@ class TestIdLabel:
             assert registered_label.key == "→"
             assert registered_label.value == "123"
 
-        def test_parse_and_registerメソッドに遅延シンボル(self):
+        def test_遅延シンボルでdelegateに登録ができること(self):
             key = "!"
             value = "123"
             mock_delegate = Mock(spec=LabelRegisterable)
@@ -92,7 +92,7 @@ class TestIdLabel:
             assert registered_label.key == "!"
             assert registered_label.value == "123"
 
-        def test_parse_and_registerメソッドに完了シンボル(self):
+        def test_完了シンボルでdelegateに登録ができること(self):
             key = "✓"
             value = "123"
             mock_delegate = Mock(spec=LabelRegisterable)
@@ -104,7 +104,7 @@ class TestIdLabel:
             assert registered_label.key == "✓"
             assert registered_label.value == "123"
 
-        def test_parse_and_registerメソッドに中止シンボル(self):
+        def test_中止シンボルでdelegateに登録ができること(self):
             key = "×"
             value = "123"
             mock_delegate = Mock(spec=LabelRegisterable)
@@ -116,7 +116,7 @@ class TestIdLabel:
             assert registered_label.key == "×"
             assert registered_label.value == "123"
 
-        def test_parse_and_registerメソッドに未知のキー(self):
+        def test_未知のキーでdelegateに登録ができないこと(self):
             key = "?"  # 未知のキー
             value = "123"
             mock_delegate = Mock(spec=LabelRegisterable)
