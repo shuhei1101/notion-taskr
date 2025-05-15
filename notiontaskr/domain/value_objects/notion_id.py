@@ -8,7 +8,7 @@ class NotionId:
 
     def __init__(self, number: str, prefix: str = ""):
         if not number:
-            raise ValueError(f"IDのnumberは必須です。")
+            raise TypeError(f"NotionIdはstr型でなければなりません。")
         self.number = str(number)
         self.prefix = str(prefix)
 
