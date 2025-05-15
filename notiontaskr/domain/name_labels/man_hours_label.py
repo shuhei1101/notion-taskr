@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from notiontaskr import config
-import emoji
 from notiontaskr.util.validator import is_emoji_matches
 
 
