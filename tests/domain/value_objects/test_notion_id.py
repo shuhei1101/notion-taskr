@@ -28,3 +28,7 @@ class TestNotionId:
             notion_id1 = NotionId("1234567890")
             notion_id2 = NotionId("0987654321")
             assert notion_id1 != notion_id2
+
+        def test_異なる型のときFalseを返すこと(self):
+            notion_id = NotionId("1234567890")
+            assert notion_id != 1234567890
