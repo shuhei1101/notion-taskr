@@ -20,6 +20,6 @@ class LabelRegisterable(ABC):
         pass
 
     @abstractmethod
-    def register_parent_id_label(self, label: 'IdLabel'):
-        '''親IDラベルを登録するメソッド'''
+    def register_parent_id_label(self, label: "ParentIdLabel"):
+        """親IDラベルを登録するメソッド"""
         pass
