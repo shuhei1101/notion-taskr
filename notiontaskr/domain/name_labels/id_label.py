@@ -31,9 +31,7 @@ class IdLabel(NameLabel):
         )
 
     @classmethod
-    def parse_and_register(
-        cls, key: str, value: str, delegate: "LabelRegisterable"
-    ) -> "IdLabel":
+    def parse_and_register(cls, key: str, value: str, delegate: "LabelRegisterable"):
         """ラベルを解析して登録する
 
         if文の順番に注意。"✓"は絵文字に含まれないため、最初に判定する。
