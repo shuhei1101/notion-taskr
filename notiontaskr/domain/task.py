@@ -31,8 +31,8 @@ class Task:
         page_id: PageId,
         name: TaskName,
         tags: List[Tag],
-        id: NotionId = None,
-        status: Status = None,
+        id: NotionId,
+        status: Status,
     ):
         self.page_id = page_id
         self.name = name
