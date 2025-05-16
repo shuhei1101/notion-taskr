@@ -20,7 +20,8 @@ class ExecutedTaskService:
     def get_tasks_add_id_tag(
         to: list[ExecutedTask], source: list[ScheduledTask]
     ) -> list[ScheduledTask]:
-        """新たにIDが付与された予定タスクのみを返却する"""
+        """予定タスクと同じ名前を持つ実績タスクに同じIDを付与し、
+        新たにIDが付与された予定タスクのみを返却する"""
         updated_tasks = []
         for executed_task in to:
             if executed_task.name.id_label is not None:
