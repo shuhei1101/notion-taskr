@@ -62,7 +62,7 @@ class TaskName(LabelRegisterable):
         # 文字列を結合
         return " ".join(display_strs)
 
-    def __eq__(self, other: "TaskName"):
+    def __eq__(self, other: object):
         if not isinstance(other, TaskName):
             return False
         return (
