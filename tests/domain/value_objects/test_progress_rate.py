@@ -1,7 +1,7 @@
 from notiontaskr.domain.value_objects.progress_rate import ProgressRate
 
 
-class Test_ProgressRateのテスト:
+class Test_ProgressRate:
     class Test_初期化メソッド:
         def test_空の値を渡すと0で初期化されること(self):
             progress_rate = ProgressRate(None)  # type: ignore

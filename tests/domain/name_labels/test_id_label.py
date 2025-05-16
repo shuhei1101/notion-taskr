@@ -7,7 +7,7 @@ from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.status import Status
 
 
-class Test_IdLabelのテスト:
+class Test_IdLabel:
 
     class Test_from_propertyメソッド:
         def test_未着手ステータスで初期化できること(self):

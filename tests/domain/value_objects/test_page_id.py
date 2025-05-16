@@ -3,7 +3,7 @@ import pytest
 from notiontaskr.domain.value_objects.page_id import PageId
 
 
-class Test_PageIdのテスト:
+class Test_PageId:
     class Test_初期化メソッド:
         def test_空の値を渡すと例外が発生すること(self):
             with pytest.raises(ValueError) as excinfo:
