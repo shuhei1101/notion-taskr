@@ -6,7 +6,7 @@ from notiontaskr.domain.task_service import TaskService
 class ExecutedTaskService:
     @staticmethod
     def add_id_tag(to: list[ExecutedTask], source: list[ScheduledTask]) -> None:
-        """予定タスクのIDを持つ実績タスクにIDを付与する"""
+        """予定タスクと同じ名前を持つ実績タスクに同じIDを付与する"""
         for executed_task in to:
             if executed_task.name.id_label is not None:
                 continue  # IDが付与されている場合はスキップ
