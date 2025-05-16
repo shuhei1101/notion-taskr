@@ -80,6 +80,6 @@ class TaskName(LabelRegisterable):
         """工数ラベルを登録するメソッド"""
         self.man_hours_label = label
 
-    def register_parent_id_label(self, parent_id_label: "ParentIdLabel"):
+    def register_parent_id_label(self, label: "ParentIdLabel"):
         """親IDラベルを登録するメソッド"""
-        self.parent_id_label = parent_id_label
+        self.parent_id_label = label
