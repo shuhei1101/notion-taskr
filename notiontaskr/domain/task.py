@@ -20,11 +20,11 @@ class Task:
     page_id: PageId
     name: TaskName
     tags: List[Tag]
+    id: NotionId
+    status: Status
     is_updated: bool = False
-    id: NotionId = None
-    status: Status = None
-    parent_task_page_id: "PageId" = None  # 親タスクId
-    update_contents: List[str] = None  # （デバッグ用）更新内容を保存
+    parent_task_page_id: Optional["PageId"] = None  # 親タスクId
+    update_contents: Optional[List[str]] = None  # （デバッグ用）更新内容を保存
 
     def __init__(
         self,
