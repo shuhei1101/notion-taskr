@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
 from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
