@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 
 if TYPE_CHECKING:
@@ -14,9 +14,9 @@ from notiontaskr.domain.name_labels.name_label import NameLabel
 @dataclass
 class TaskName(LabelRegisterable):
     task_name: str  # タスク名
-    id_label: "IdLabel" = None  # IDラベル
-    man_hours_label: "ManHoursLabel" = None  # 人時ラベル
-    parent_id_label: "ParentIdLabel" = None  # 親IDラベル
+    id_label: Optional["IdLabel"] = None  # IDラベル
+    man_hours_label: Optional["ManHoursLabel"] = None  # 人時ラベル
+    parent_id_label: Optional["ParentIdLabel"] = None  # 親IDラベル
 
     @classmethod
     def from_raw_task_name(cls, raw_task_name: str):
