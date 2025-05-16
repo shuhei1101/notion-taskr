@@ -5,7 +5,7 @@ from dataclasses import dataclass
 class ProgressRate:
     """進捗率"""
 
-    value: int
+    value: float
 
     def __init__(self, value: float):
         if value is None:
