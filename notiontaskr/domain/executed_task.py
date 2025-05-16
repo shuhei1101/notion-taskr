@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from notiontaskr.domain.task import Task
 from notiontaskr.domain.task_name import TaskName
