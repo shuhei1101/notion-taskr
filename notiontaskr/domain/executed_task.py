@@ -25,8 +25,9 @@ class ExecutedTask(Task):
         :raise KeyError:
         :raise ValueError: レスポンスデータに必要なキーが存在しない場合
         """
+
+        task_number = data["properties"]["ID"]["unique_id"]["number"]
         try:
-            task_number = data["properties"]["ID"]["unique_id"]["number"]
             task_name = TaskName.from_raw_task_name(
                 data["properties"]["名前"]["title"][0]["plain_text"]
             )
