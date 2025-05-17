@@ -13,7 +13,7 @@ class ScheduledTaskService:
     def get_tasks_upserted_executed_tasks(
         scheduled_tasks_by_id: dict[NotionId, ScheduledTask],
         executed_tasks: list[ExecutedTask],
-        on_error: Callable[[Exception, ScheduledTask], None],
+        on_error: Callable[[Exception, ExecutedTask], None],
     ) -> list[ScheduledTask]:
         """新たに実績タスクが付与された予定タスクのみを取得する
 
@@ -46,7 +46,7 @@ class ScheduledTaskService:
         updated_tasks = []
         for sub_task in sub_tasks:
             try:
-                target_task = parent_tasks_by_page_id.get(sub_task.parent_task_page_id)
+                target_task = parent_tasks_by_page_id.get(sub_task.parent_task_page_id)  # type: ignore (既にエラーハンドルしているため)
                 if target_task is None:
                     continue
                 TaskService.upsert_tasks(target_task.sub_tasks, sub_task)

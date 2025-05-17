@@ -15,7 +15,7 @@ class ExecutedTask(Task):
     """実績タスクモデル"""
 
     date: Optional[NotionDate] = None
-    man_hours: Optional[ManHours] = None
+    man_hours: ManHours = ManHours(0)
     scheduled_task_id: Optional[NotionId] = None  # 紐づいている予定タスクのID
     scheduled_task_page_id: Optional[PageId] = None  # 紐づいている予定タスクのページID
 

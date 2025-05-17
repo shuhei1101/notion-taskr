@@ -17,12 +17,12 @@ from notiontaskr.domain.value_objects.status import Status
 class ScheduledTask(Task):
     """予定タスクモデル"""
 
-    scheduled_man_hours: ManHours = None
-    executed_man_hours: ManHours = None
-    executed_tasks: list["ExecutedTask"] = None  # 紐づいている実績タスク
-    sub_task_page_ids: list["PageId"] = None  # サブアイテムのページID
-    sub_tasks: list["ScheduledTask"] = None  # サブアイテム
-    progress_rate: ProgressRate = 0  # 進捗率
+    scheduled_man_hours: ManHours = ManHours(0)
+    executed_man_hours: ManHours = ManHours(0)
+    executed_tasks: list["ExecutedTask"] = []  # 紐づいている実績タスク
+    sub_task_page_ids: list["PageId"] = []  # サブアイテムのページID
+    sub_tasks: list["ScheduledTask"] = []  # サブアイテム
+    progress_rate: ProgressRate = ProgressRate(0)  # 進捗率
 
     @classmethod
     def from_response_data(cls, data: dict):

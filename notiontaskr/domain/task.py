@@ -81,7 +81,7 @@ class Task:
             self._toggle_is_updated(f"タスク名: {self.name} -> {name}")
             self.name = name
 
-    def update_parent_task_page_id(self, parent_task_page_id: PageId):
+    def update_parent_task_page_id(self, parent_task_page_id: Optional[PageId]):
         """親タスクIDを更新し、is_updatedをTrueにする"""
         if self.parent_task_page_id != parent_task_page_id:
             self._toggle_is_updated(
