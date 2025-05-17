@@ -77,7 +77,9 @@ class TaskApplicationService:
         )
 
         # 実績タスクにIDを付与する(未付与のもののみ)
-        ExecutedTaskService.add_id_tag(to=executed_tasks, source=scheduled_tasks)
+        _ = ExecutedTaskService.get_tasks_add_id_tag(
+            to=executed_tasks, source=scheduled_tasks
+        )
 
         # 予定タスクに実績タスクを紐づける
         _ = ScheduledTaskService.get_tasks_upserted_executed_tasks(
