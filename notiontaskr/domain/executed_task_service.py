@@ -17,7 +17,7 @@ class ExecutedTaskService:
                 continue
             for scheduled_task in source:
                 if executed_task.name.task_name == scheduled_task.name.task_name:
-                    executed_task.update_id_label(scheduled_task.name.id_label)
+                    executed_task.update_id_label(scheduled_task.name.id_label)  # type: ignore (予定タスクのIDがNoneになることはない)
                     executed_task.update_scheduled_task_id(scheduled_task.id)
                     TaskService.upsert_tasks(to=updated_tasks, source=scheduled_task)
                     break
