@@ -17,8 +17,8 @@ from notiontaskr.domain.value_objects.status import Status
 class ScheduledTask(Task):
     """予定タスクモデル"""
 
-    scheduled_man_hours: ManHours = ManHours(0)
-    executed_man_hours: ManHours = ManHours(0)
+    scheduled_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
+    executed_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
     executed_tasks: list["ExecutedTask"] = []  # 紐づいている実績タスク
     sub_task_page_ids: list["PageId"] = []  # サブアイテムのページID
     sub_tasks: list["ScheduledTask"] = []  # サブアイテム
