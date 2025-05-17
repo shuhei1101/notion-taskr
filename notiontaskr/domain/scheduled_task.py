@@ -32,8 +32,8 @@ class ScheduledTask(Task):
         :raise ValueError: レスポンスデータに必要なキーが存在しない場合
         """
 
+        task_number = data["properties"]["ID"]["unique_id"]["number"]
         try:
-            task_number = data["properties"]["ID"]["unique_id"]["number"]
             task_name = TaskName.from_raw_task_name(
                 data["properties"]["名前"]["title"][0]["plain_text"]
             )
@@ -111,12 +111,12 @@ class ScheduledTask(Task):
         # もし、自身のステータスが未着手かつ
         # 実績タスクの開始時間が現在時刻よりも前のものが一件でもあれば、進行中にする
         if self.status == Status.NOT_STARTED and any(
-            executed_task.date.start < now for executed_task in self.executed_tasks
+            executed_task.date.start < now for executed_task in self.executed_tasks  # type: ignore
         ):
             self.update_status(Status.IN_PROGRESS)
         # もし実績タスクの終了時間が現在時刻よりも前のものが一件もなければ、未着手にする
         elif self.status == Status.IN_PROGRESS and all(
-            now < executed_task.date.start for executed_task in self.executed_tasks
+            now < executed_task.date.start for executed_task in self.executed_tasks  # type: ignore
         ):
             self.update_status(Status.NOT_STARTED)
 
@@ -206,7 +206,7 @@ class ScheduledTask(Task):
     def _aggregate_sub_man_hours(self, sub_tasks: list["ScheduledTask"]):
         """サブアイテムの工数を集計し、ラベルを更新する"""
         if sub_tasks is None or len(sub_tasks) == 0:
-            return (None, ManHours(0))
+            return (ManHours(0), ManHours(0))
         sub_scheduled_man_hours = 0.0
         sub_executed_man_hours = 0.0
         for sub_task in sub_tasks:
