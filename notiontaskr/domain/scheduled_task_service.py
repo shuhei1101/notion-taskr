@@ -22,7 +22,7 @@ class ScheduledTaskService:
         updated_tasks = []
         for executed_task in executed_tasks:
             try:
-                target_task = scheduled_tasks_by_id.get(executed_task.scheduled_task_id)
+                target_task = scheduled_tasks_by_id.get(executed_task.scheduled_task_id)  # type: ignore (既にエラーハンドルしているため)
                 if target_task is None:
                     continue
                 TaskService.upsert_tasks(target_task.executed_tasks, executed_task)
