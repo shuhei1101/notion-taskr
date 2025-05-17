@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Optional
 
 from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
@@ -24,7 +24,9 @@ class Task:
     status: Status
     is_updated: bool = False
     parent_task_page_id: Optional["PageId"] = None  # 親タスクId
-    update_contents: Optional[List[str]] = None  # （デバッグ用）更新内容を保存
+    update_contents: List[str] = field(
+        default_factory=list
+    )  # （デバッグ用）更新内容を保存
 
     def __init__(
         self,

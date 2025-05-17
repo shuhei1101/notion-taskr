@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from notiontaskr.domain.executed_task import ExecutedTask
@@ -19,10 +19,16 @@ class ScheduledTask(Task):
 
     scheduled_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
     executed_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
-    executed_tasks: list["ExecutedTask"] = []  # 紐づいている実績タスク
-    sub_task_page_ids: list["PageId"] = []  # サブアイテムのページID
-    sub_tasks: list["ScheduledTask"] = []  # サブアイテム
-    progress_rate: ProgressRate = ProgressRate(0)  # 進捗率
+    executed_tasks: list["ExecutedTask"] = field(
+        default_factory=list
+    )  # 紐づいている実績タスク
+    sub_task_page_ids: list["PageId"] = field(
+        default_factory=list
+    )  # サブアイテムのページID
+    sub_tasks: list["ScheduledTask"] = field(default_factory=list)  # サブアイテム
+    progress_rate: ProgressRate = field(
+        default_factory=lambda: ProgressRate(0)
+    )  # 進捗率
 
     @classmethod
     def from_response_data(cls, data: dict):
