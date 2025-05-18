@@ -107,9 +107,9 @@ class ScheduledTask(Task):
                 ParentIdLabel.from_property(parent_id=self.id)
             )
 
-    def _update_status_to_check_executed_tasks(self):
+    def _update_status_by_checking_executed_tasks(self):
         """実績タスクの進捗を確認し、ステータスを更新する"""
-        if not self.executed_tasks:
+        if not self.executed_tasks or len(self.executed_tasks) == 0:
             return
 
         # 現在時刻
@@ -126,7 +126,7 @@ class ScheduledTask(Task):
         ):
             self.update_status(Status.NOT_STARTED)
 
-    def update_status_to_check_properties(self):
+    def update_status_by_checking_properties(self):
         """タスクのプロパティに応じてステータスを更新する"""
 
         if self.status == Status.CANCELED:
@@ -134,7 +134,7 @@ class ScheduledTask(Task):
             return
 
         # 実績タスクのステータスを確認し、ステータスを更新する
-        self._update_status_to_check_executed_tasks()
+        self._update_status_by_checking_executed_tasks()
 
         if not self.sub_tasks or len(self.sub_tasks) == 0:
             # サブアイテムがない場合、処理を終了する
@@ -143,7 +143,7 @@ class ScheduledTask(Task):
         # サブアイテムのステータスを更新し、ステータスを集計する
         statuses = []
         for sub_task in self.sub_tasks:
-            sub_task.update_status_to_check_properties()
+            sub_task.update_status_by_checking_properties()
             statuses.append(sub_task.status)
 
         if all(status == Status.COMPLETED for status in statuses):
