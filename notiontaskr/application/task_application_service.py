@@ -1,6 +1,5 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
-from logging import Logger
 
 import notiontaskr.config as config
 from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
