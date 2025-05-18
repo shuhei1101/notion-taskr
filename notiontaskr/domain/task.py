@@ -25,7 +25,7 @@ class Task:
     is_updated: bool = False
     parent_task_page_id: Optional["PageId"] = None  # 親タスクId
     update_contents: List[str] = field(
-        default_factory=list
+        default_factory=list  # 生成時に空のリストを作成(他インスタンスとの共有を避けるため)
     )  # （デバッグ用）更新内容を保存
 
     def __init__(
