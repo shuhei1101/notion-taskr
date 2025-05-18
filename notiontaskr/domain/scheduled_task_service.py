@@ -61,21 +61,25 @@ class ScheduledTaskService:
     def merge_scheduled_tasks(
         scheduled_tasks_by_id: dict[NotionId, ScheduledTask],
         sources: list[ScheduledTask],
+        on_error: Callable[[Exception, ScheduledTask], None] = lambda e, t: None,
     ) -> dict[NotionId, ScheduledTask]:
         """キャッシュと取得した予定タスクをマージする
 
         マージする際、task.executed_tasksはマージ先に引き継ぐ
         """
         for source in sources:
-            if source.id in scheduled_tasks_by_id:
-                # 既存のタスクに実績タスクをマージする
-                source.update_executed_tasks(
-                    scheduled_tasks_by_id[source.id].executed_tasks
-                )
-                source.update_sub_tasks(scheduled_tasks_by_id[source.id].sub_tasks)
-                scheduled_tasks_by_id[source.id] = source
-            else:
-                # 新しいタスクを追加する
-                scheduled_tasks_by_id[source.id] = source
+            try:
+                if source.id in scheduled_tasks_by_id:
+                    # 既存のタスクに実績タスクをマージする
+                    source.update_executed_tasks(
+                        scheduled_tasks_by_id[source.id].executed_tasks
+                    )
+                    source.update_sub_tasks(scheduled_tasks_by_id[source.id].sub_tasks)
+                    scheduled_tasks_by_id[source.id] = source
+                else:
+                    # 新しいタスクを追加する
+                    scheduled_tasks_by_id[source.id] = source
+            except Exception as e:
+                on_error(e, source)
 
         return scheduled_tasks_by_id
