@@ -215,7 +215,7 @@ class ScheduledTask(Task):
             return (ManHours(0), ManHours(0))
         sub_scheduled_man_hours = 0.0
         sub_executed_man_hours = 0.0
-        for sub_task in sub_tasks:
+        for sub_task in self.sub_tasks:
             sub_task.aggregate_man_hours()
             sub_scheduled_man_hours += float(sub_task.scheduled_man_hours)
             sub_executed_man_hours += float(sub_task.executed_man_hours)
