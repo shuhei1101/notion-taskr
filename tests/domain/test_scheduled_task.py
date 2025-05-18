@@ -8,7 +8,6 @@ from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
 from notiontaskr.domain.value_objects.status import Status
 from notiontaskr.domain.value_objects.progress_rate import ProgressRate
 from notiontaskr.domain.value_objects.man_hours import ManHours
-from notiontaskr.domain.executed_task import ExecutedTask
 
 
 class TestScheduledTask:
