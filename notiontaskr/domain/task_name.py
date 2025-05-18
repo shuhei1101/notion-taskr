@@ -53,14 +53,14 @@ class TaskName(LabelRegisterable):
         # 表示順に文字列を追加
         if self.id_label:
             display_strs.append(self.id_label.get_display_str())
-        display_strs.append(self.task_name)
+        display_strs.append(" " + self.task_name + " ")
         if self.man_hours_label:
             display_strs.append(self.man_hours_label.get_display_str())
         if self.parent_id_label:
             display_strs.append(self.parent_id_label.get_display_str())
 
         # 文字列を結合
-        return " ".join(display_strs)
+        return ("".join(display_strs)).strip()
 
     def __eq__(self, other: object):
         if not isinstance(other, TaskName):
