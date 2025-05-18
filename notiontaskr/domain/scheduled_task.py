@@ -95,7 +95,7 @@ class ScheduledTask(Task):
         """実績タスクのプロパティを更新する"""
         for executed_task in self.executed_tasks:
             executed_task.update_name(self.name)
-            executed_task.update_status_to(self.status)
+            executed_task.update_status(self.status)
             executed_task.update_parent_task_page_id(self.parent_task_page_id)
             executed_task.update_scheduled_task_page_id(self.page_id)
 
