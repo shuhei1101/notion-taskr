@@ -2,9 +2,8 @@ import os
 import emoji
 
 # ------------- ディレクトリ設定 -------------
-SRC_DIR = os.path.dirname(os.path.dirname(__file__))
-PROJECT_DIR = os.path.dirname(SRC_DIR)
-LOG_DIR = os.path.join(PROJECT_DIR, "log")
+PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
+LOG_DIR = os.path.join(PROJECT_DIR, "logs")
 CACHE_DIR = os.path.join(PROJECT_DIR, "cache")
 
 # ディレクトリが存在しない場合は作成
