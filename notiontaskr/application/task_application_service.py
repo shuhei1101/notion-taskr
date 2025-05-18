@@ -21,7 +21,7 @@ from notiontaskr.infrastructure.scheduled_task_cache import ScheduledTaskCache
 
 
 class TaskApplicationService:
-    def __init__(self, logger: Logger = AppLogger()):
+    def __init__(self, logger: AppLogger = AppLogger()):
         self.logger = logger
         self.executed_task_repo = ExecutedTaskRepository(
             config.NOTION_TOKEN,

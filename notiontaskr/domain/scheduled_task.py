@@ -209,9 +209,9 @@ class ScheduledTask(Task):
             self._toggle_is_updated(f"進捗率: {self.progress_rate} -> {progress_rate}")
             self.progress_rate = progress_rate
 
-    def _aggregate_sub_man_hours(self, sub_tasks: list["ScheduledTask"]):
-        """サブアイテムの工数を集計し、ラベルを更新する"""
-        if sub_tasks is None or len(sub_tasks) == 0:
+    def _aggregate_sub_man_hours(self) -> tuple[ManHours, ManHours]:
+        """サブアイテムの工数を集計する"""
+        if self.sub_tasks is None or len(self.sub_tasks) == 0:
             return (ManHours(0), ManHours(0))
         sub_scheduled_man_hours = 0.0
         sub_executed_man_hours = 0.0
@@ -224,25 +224,35 @@ class ScheduledTask(Task):
             ManHours(sub_executed_man_hours),
         )
 
+    def _aggregate_executed_man_hours(self) -> ManHours:
+        """実績タスクの工数を集計する"""
+        if self.executed_tasks is None or len(self.executed_tasks) == 0:
+            return ManHours(0)
+
+        executed_man_hours = ManHours(0)
+        for executed_task in self.executed_tasks or []:
+            executed_man_hours += executed_task.man_hours
+
+        return executed_man_hours
+
     def aggregate_man_hours(self):
         """実績工数を集計し、ラベルを更新する"""
-        # サブアイテムの工数を集計する
-        sub_scheduled_man_hours, sub_executed_man_hours = self._aggregate_sub_man_hours(
-            self.sub_tasks
-        )
 
-        # サブアイテムがある場合のみ、予定人時を更新する
+        sub_scheduled_man_hours = ManHours(0)
+        sub_executed_man_hours = ManHours(0)
+
         if len(self.sub_tasks) > 0:
+            # サブアイテムの工数を集計する
+            sub_scheduled_man_hours, sub_executed_man_hours = (
+                self._aggregate_sub_man_hours()
+            )
+            # サブアイテムの予定人時を更新する
             self.update_scheduled_man_hours(sub_scheduled_man_hours)
 
-        executed_man_hours = 0
+        # 実績タスクの工数を集計する
+        executed_man_hours = self._aggregate_executed_man_hours()
 
-        for executed_task in self.executed_tasks or []:
-            executed_man_hours += float(executed_task.man_hours)
-
-        self.update_executed_man_hours(
-            sub_executed_man_hours + ManHours(executed_man_hours)
-        )
+        self.update_executed_man_hours(sub_executed_man_hours + executed_man_hours)
 
     def update_executed_man_hours(self, executed_man_hours: ManHours):
         """実績人時を更新する"""
