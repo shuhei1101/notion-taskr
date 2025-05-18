@@ -188,7 +188,7 @@ class ScheduledTask(Task):
 
         # サブアイテムの予定人時合計を取得する
         total_scheduled_hours = sum(
-            task.scheduled_man_hours.value for task in self.sub_tasks
+            float(task.scheduled_man_hours) for task in self.sub_tasks
         )
         if total_scheduled_hours == 0:
             self.update_progress_rate(ProgressRate(0.0))
@@ -196,7 +196,7 @@ class ScheduledTask(Task):
 
         # 完了済みサブアイテムの予定人時合計を取得する
         done_scheduled_hours = sum(
-            task.scheduled_man_hours.value for task in done_tasks
+            float(task.scheduled_man_hours) for task in done_tasks
         )
 
         # 進捗率を計算する
@@ -217,8 +217,8 @@ class ScheduledTask(Task):
         sub_executed_man_hours = 0.0
         for sub_task in sub_tasks:
             sub_task.aggregate_man_hours()
-            sub_scheduled_man_hours += sub_task.scheduled_man_hours.value
-            sub_executed_man_hours += sub_task.executed_man_hours.value
+            sub_scheduled_man_hours += float(sub_task.scheduled_man_hours)
+            sub_executed_man_hours += float(sub_task.executed_man_hours)
         return (
             ManHours(sub_scheduled_man_hours),
             ManHours(sub_executed_man_hours),
