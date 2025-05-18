@@ -77,7 +77,7 @@ class TestScheduledTask:
             task.update_executed_tasks_properties()
             for executed_task in task.executed_tasks:
                 executed_task.update_name.assert_called_once_with(task.name)  # type: ignore
-                executed_task.update_status_to.assert_called_once_with(task.status)  # type: ignore
+                executed_task.update_status.assert_called_once_with(task.status)  # type: ignore
                 executed_task.update_parent_task_page_id.assert_called_once_with(  # type: ignore
                     task.parent_task_page_id
                 )
