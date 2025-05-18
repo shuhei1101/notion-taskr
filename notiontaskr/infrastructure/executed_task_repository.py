@@ -18,7 +18,7 @@ class ExecutedTaskRepository:
         self.filter = TaskSearchCondition()
 
     async def find_all(
-        self, on_error: Callable[[Exception, dict[str, str]], None]
+        self, on_error: Callable[[Exception, dict], None]
     ) -> List[ExecutedTask]:
         """全ての実績を取得する"""
         filter = (
@@ -47,7 +47,7 @@ class ExecutedTaskRepository:
     async def find_by_condition(
         self,
         condition: TaskSearchCondition,
-        on_error: Callable[[Exception, dict[str, str]], None],
+        on_error: Callable[[Exception, dict], None],
     ) -> List[ExecutedTask]:
         """指定した実績を全て取得する"""
 
@@ -79,7 +79,7 @@ class ExecutedTaskRepository:
     async def find_all_by_condition(
         self,
         condition: TaskSearchCondition,
-        on_error: Callable[[Exception, dict[str, str]], None],
+        on_error: Callable[[Exception, dict], None],
     ) -> List[ExecutedTask]:
         """指定した条件に一致する全ての実績タスクをページネーションを考慮して取得する"""
         all_tasks = []
@@ -98,7 +98,7 @@ class ExecutedTaskRepository:
     async def _find_by_condition_with_cursor(
         self,
         condition: TaskSearchCondition,
-        on_error: Callable[[Exception, dict[str, str]], None],
+        on_error: Callable[[Exception, dict], None],
         start_cursor: str,
     ) -> tuple[list[ExecutedTask], str, bool]:
         """タスクDBの指定タグの実績を全て取得する（ページネーション対応）"""
