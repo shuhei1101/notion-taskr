@@ -41,6 +41,9 @@ class Task:
         self.tags = tags
         self.id = id
         self.status = status
+        self.is_updated = False
+        self.parent_task_page_id = None
+        self.update_contents = []
 
     def _toggle_is_updated(self, update_message: str):
         """is_updatedをトグルする"""
