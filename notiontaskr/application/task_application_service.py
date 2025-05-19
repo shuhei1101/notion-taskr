@@ -184,7 +184,7 @@ class TaskApplicationService:
             return
 
         # pickleから予定タスクを取得
-        cache_scheduled_tasks = self._load_pickle()
+        cache_scheduled_tasks = await self._load_pickle()
         if cache_scheduled_tasks is None:
             return
 
