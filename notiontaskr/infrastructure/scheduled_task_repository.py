@@ -5,7 +5,6 @@ from notiontaskr.infrastructure.scheduled_task_update_properties import (
 )
 from notion_client import Client
 
-from notiontaskr import config
 from notiontaskr.domain.scheduled_task import ScheduledTask
 from notiontaskr.infrastructure.operator import CheckboxOperator
 from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
@@ -20,7 +19,7 @@ class ScheduledTaskRepository:
         self.filter = TaskSearchCondition()
 
     async def find_all(
-        self, on_error: Callable[[Exception, dict[str]], None]
+        self, on_error: Callable[[Exception, dict], None]
     ) -> List[ScheduledTask]:
         """全ての予定を取得する"""
         filter = (
@@ -39,7 +38,7 @@ class ScheduledTaskRepository:
 
         # response_dataをScheduledTaskのリストに変換する
         scheduled_tasks = []
-        for data in response_data["results"]:
+        for data in response_data["results"]:  # type: ignore
             try:
                 scheduled_tasks.append(ScheduledTask.from_response_data(data))
             except Exception as e:
@@ -51,7 +50,7 @@ class ScheduledTaskRepository:
     async def find_by_condition(
         self,
         condition: TaskSearchCondition,
-        on_error: Callable[[Exception, dict[str]], None],
+        on_error: Callable[[Exception, dict], None],
     ) -> List[ScheduledTask]:
         """タスクDBの指定タグの予定を全て取得する"""
         filter = (
@@ -71,7 +70,7 @@ class ScheduledTaskRepository:
 
         # response_dataをScheduledTaskのリストに変換する
         scheduled_tasks = []
-        for data in response_data["results"]:
+        for data in response_data["results"]:  # type: ignore
             try:
                 scheduled_tasks.append(ScheduledTask.from_response_data(data))
             except Exception as e:
@@ -83,7 +82,7 @@ class ScheduledTaskRepository:
     async def find_all_by_condition(
         self,
         condition: TaskSearchCondition,
-        on_error: Callable[[Exception, dict[str]], None],
+        on_error: Callable[[Exception, dict], None],
     ) -> List[ScheduledTask]:
         """指定した条件に一致する全ての予定タスクをページネーションを考慮して取得する"""
         all_tasks = []
@@ -93,7 +92,7 @@ class ScheduledTaskRepository:
             tasks, next_cursor, has_more = await self._find_by_condition_with_cursor(
                 condition=condition,
                 on_error=on_error,
-                start_cursor=start_cursor,
+                start_cursor=start_cursor,  # type: ignore
             )
             all_tasks.extend(tasks)
             start_cursor = next_cursor
@@ -102,8 +101,8 @@ class ScheduledTaskRepository:
     async def _find_by_condition_with_cursor(
         self,
         condition: TaskSearchCondition,
-        on_error: Callable[[Exception, dict[str]], None],
-        start_cursor: str = None,
+        on_error: Callable[[Exception, dict], None],
+        start_cursor: str = None,  # type: ignore
     ) -> tuple[list[ScheduledTask], str, bool]:
         """タスクDBの指定タグの予定を全て取得する（ページネーション対応）"""
         filter = (
@@ -122,20 +121,20 @@ class ScheduledTaskRepository:
 
         response_data = self.client.databases.query(**query_params)
         scheduled_tasks = []
-        for data in response_data["results"]:
+        for data in response_data["results"]:  # type: ignore
             try:
                 scheduled_tasks.append(ScheduledTask.from_response_data(data))
             except Exception as e:
                 on_error(e, data)
-        next_cursor = response_data.get("next_cursor")
-        has_more = response_data.get("has_more", False)
+        next_cursor = response_data.get("next_cursor")  # type: ignore
+        has_more = response_data.get("has_more", False)  # type: ignore
         return scheduled_tasks, next_cursor, has_more
 
     async def find_by_page_id(self, page_id: PageId) -> ScheduledTask:
         """ページIDから1件のページ情報を取得する"""
         try:
             response_data = self.client.pages.retrieve(page_id=str(page_id))
-            task = ScheduledTask.from_response_data(response_data)
+            task = ScheduledTask.from_response_data(response_data)  # type: ignore
             return task
 
         except Exception as e:
@@ -166,22 +165,3 @@ class ScheduledTaskRepository:
             on_success(scheduled_task)
         except Exception as e:
             on_error(e, scheduled_task)
-
-
-# 動作確認用
-if __name__ == "__main__":
-    token = config.NOTION_TOKEN
-    db_id = config.TASK_DB_ID
-
-    scheduled_task_repo = ScheduledTaskRepository(token, db_id)
-    # scheduled_task = scheduled_task_repo.find_by_page_id(
-    #     page_id='1875ffa1-def1-4c34-8875-e559eb6e5853'
-    # )
-    import asyncio
-
-    scheduled_task = asyncio.run(
-        scheduled_task_repo.find_all(
-            on_error=lambda e, data: print(f"Error: {e}, Data: {data}")
-        )
-    )
-    print(scheduled_task)
