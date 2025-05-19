@@ -17,11 +17,6 @@ class TaskUpdateProperties(ABC):
         }
         return self
 
-    def set_executed_man_hours(self, executed_man_hour: float):
-        """実際の人日数の更新"""
-        self.properties["人時(実)"] = {"number": executed_man_hour}
-        return self
-
     def set_parent_task_page_id(self):
         """親アイテム(予)の更新"""
         if self.task.parent_task_page_id:
