@@ -52,12 +52,12 @@ class TaskSearchCondition:
         self.conditions = {"property": "名前", "title": {operator.value: name}}
         return self
 
-    def where_date(self, operator: DateOperator, date: str = {}):
+    def where_date(self, operator: DateOperator, date: str | dict = {}):
         """日付のフィルターを生成する"""
         self.conditions = {"property": "日付", "date": {operator.value: date}}
         return self
 
-    def where_last_edited_time(self, operator: DateOperator, date: str = {}):
+    def where_last_edited_time(self, operator: DateOperator, date: str | dict = {}):
         """最終更新日時のフィルターを生成する"""
         self.conditions = {
             "property": "最終更新日時",
