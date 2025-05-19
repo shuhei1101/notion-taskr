@@ -18,9 +18,7 @@ class ParentIdLabel(NameLabel):
         )
 
     @classmethod
-    def parse_and_register(
-        cls, key: str, value: str, delegate: "LabelRegisterable"
-    ) -> "ParentIdLabel":
+    def parse_and_register(cls, key: str, value: str, delegate: "LabelRegisterable"):
         """ラベルを解析して登録する"""
         if not key == "親":
             raise ValueError(f"Unknown key: {key}")

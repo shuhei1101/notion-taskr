@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, List
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, List, Optional
 
 from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
 from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
@@ -20,25 +20,30 @@ class Task:
     page_id: PageId
     name: TaskName
     tags: List[Tag]
+    id: NotionId
+    status: Status
     is_updated: bool = False
-    id: NotionId = None
-    status: Status = None
-    parent_task_page_id: "PageId" = None  # 親タスクId
-    update_contents: List[str] = None  # （デバッグ用）更新内容を保存
+    parent_task_page_id: Optional["PageId"] = None  # 親タスクId
+    update_contents: List[str] = field(
+        default_factory=list  # 生成時に空のリストを作成(他インスタンスとの共有を避けるため)
+    )  # （デバッグ用）更新内容を保存
 
     def __init__(
         self,
         page_id: PageId,
         name: TaskName,
         tags: List[Tag],
-        id: NotionId = None,
-        status: Status = None,
+        id: NotionId,
+        status: Status,
     ):
         self.page_id = page_id
         self.name = name
         self.tags = tags
         self.id = id
         self.status = status
+        self.is_updated = False
+        self.parent_task_page_id = None
+        self.update_contents = []
 
     def _toggle_is_updated(self, update_message: str):
         """is_updatedをトグルする"""
@@ -69,19 +74,13 @@ class Task:
             )
             self.name.parent_id_label = parent_id_label
 
-    def update_status_to(self, status: Status):
-        """ステータスを更新し、is_updatedをTrueにする"""
-        if self.status != status:
-            self._toggle_is_updated(f"ステータス: {self.status} -> {status}")
-            self.status = status
-
     def update_name(self, name: TaskName):
         """タスク名を更新し、is_updatedをTrueにする"""
         if self.name != name:
             self._toggle_is_updated(f"タスク名: {self.name} -> {name}")
             self.name = name
 
-    def update_parent_task_page_id(self, parent_task_page_id: PageId):
+    def update_parent_task_page_id(self, parent_task_page_id: Optional[PageId]):
         """親タスクIDを更新し、is_updatedをTrueにする"""
         if self.parent_task_page_id != parent_task_page_id:
             self._toggle_is_updated(

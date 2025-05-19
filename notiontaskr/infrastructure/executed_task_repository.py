@@ -18,7 +18,7 @@ class ExecutedTaskRepository:
         self.filter = TaskSearchCondition()
 
     async def find_all(
-        self, on_error: Callable[[Exception, dict[str]], None]
+        self, on_error: Callable[[Exception, dict], None]
     ) -> List[ExecutedTask]:
         """全ての実績を取得する"""
         filter = (
@@ -37,7 +37,7 @@ class ExecutedTaskRepository:
 
         # response_dataをScheduledTaskのリストに変換する
         executed_tasks = []
-        for data in response_data["results"]:
+        for data in response_data["results"]:  # type: ignore
             try:
                 executed_tasks.append(ExecutedTask.from_response_data(data))
             except Exception as e:
@@ -47,7 +47,7 @@ class ExecutedTaskRepository:
     async def find_by_condition(
         self,
         condition: TaskSearchCondition,
-        on_error: Callable[[Exception, dict[str]], None],
+        on_error: Callable[[Exception, dict], None],
     ) -> List[ExecutedTask]:
         """指定した実績を全て取得する"""
 
@@ -68,7 +68,7 @@ class ExecutedTaskRepository:
 
         # response_dataをScheduledTaskのリストに変換する
         executed_tasks = []
-        for data in response_data["results"]:
+        for data in response_data["results"]:  # type: ignore
             try:
                 executed_tasks.append(ExecutedTask.from_response_data(data))
             except Exception as e:
@@ -79,11 +79,11 @@ class ExecutedTaskRepository:
     async def find_all_by_condition(
         self,
         condition: TaskSearchCondition,
-        on_error: Callable[[Exception, dict[str]], None],
+        on_error: Callable[[Exception, dict], None],
     ) -> List[ExecutedTask]:
         """指定した条件に一致する全ての実績タスクをページネーションを考慮して取得する"""
         all_tasks = []
-        start_cursor = None
+        start_cursor = ""
         has_more = True
         while has_more:
             tasks, next_cursor, has_more = await self._find_by_condition_with_cursor(
@@ -98,8 +98,8 @@ class ExecutedTaskRepository:
     async def _find_by_condition_with_cursor(
         self,
         condition: TaskSearchCondition,
-        on_error: Callable[[Exception, dict[str]], None],
-        start_cursor: str = None,
+        on_error: Callable[[Exception, dict], None],
+        start_cursor: str,
     ) -> tuple[list[ExecutedTask], str, bool]:
         """タスクDBの指定タグの実績を全て取得する（ページネーション対応）"""
         filter = (
@@ -118,13 +118,13 @@ class ExecutedTaskRepository:
 
         response_data = self.client.databases.query(**query_params)
         executed_tasks = []
-        for data in response_data["results"]:
+        for data in response_data["results"]:  # type: ignore
             try:
                 executed_tasks.append(ExecutedTask.from_response_data(data))
             except Exception as e:
                 on_error(e, data)
-        next_cursor = response_data.get("next_cursor")
-        has_more = response_data.get("has_more", False)
+        next_cursor = response_data.get("next_cursor")  # type: ignore
+        has_more = response_data.get("has_more", False)  # type: ignore
         return executed_tasks, next_cursor, has_more
 
     async def update(

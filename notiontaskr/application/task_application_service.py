@@ -1,13 +1,13 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
-from logging import Logger
+from typing import List
 
 import notiontaskr.config as config
-from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
 from notiontaskr.util.converter import to_isoformat
 from notiontaskr.app_logger import AppLogger
 from notiontaskr.app_timer import AppTimer
 from notiontaskr.gcs_handler import GCSHandler
+from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
 from notiontaskr.domain.executed_task_service import ExecutedTaskService
 from notiontaskr.domain.scheduled_task_service import ScheduledTaskService
 from notiontaskr.domain.executed_task import ExecutedTask
@@ -21,7 +21,7 @@ from notiontaskr.infrastructure.scheduled_task_cache import ScheduledTaskCache
 
 
 class TaskApplicationService:
-    def __init__(self, logger: Logger = AppLogger()):
+    def __init__(self, logger: AppLogger = AppLogger()):
         self.logger = logger
         self.executed_task_repo = ExecutedTaskRepository(
             config.NOTION_TOKEN,
@@ -77,7 +77,9 @@ class TaskApplicationService:
         )
 
         # 実績タスクにIDを付与する(未付与のもののみ)
-        ExecutedTaskService.add_id_tag(to=executed_tasks, source=scheduled_tasks)
+        _ = ExecutedTaskService.get_tasks_add_id_tag(
+            to=executed_tasks, source=scheduled_tasks
+        )
 
         # 予定タスクに実績タスクを紐づける
         _ = ScheduledTaskService.get_tasks_upserted_executed_tasks(
@@ -120,30 +122,10 @@ class TaskApplicationService:
             )
         )
 
-        await asyncio.gather(*tasks)
+        _ = await asyncio.gather(*tasks)
 
-        self.logger.debug(f"【処理時間】合計: {main_timer.get_elapsed_time()}秒")
-
-        # pickleに保存する
-        self.scheduled_task_cache.save(
-            tasks=scheduled_tasks,
-            on_success=lambda: self.logger.info("Pickleの保存に成功しました。"),
-            on_error=lambda e: self.logger.error(
-                f"Pickleの保存に失敗。エラー内容: {e}"
-            ),
-        )
-
-        # pickleをGCSにアップロードする
-        self.gcs_handler.upload(
-            from_=self.scheduled_task_cache.save_path,
-            to=config.BUCKET_SCHEDULED_PICKLE_PATH,
-            on_success=lambda: self.logger.info(
-                "PickleのGCSへのアップロードに成功しました。"
-            ),
-            on_error=lambda e: self.logger.error(
-                f"PickleのGCSへのアップロードに失敗。エラー内容: {e}"
-            ),
-        )
+        # pickleの保存
+        await self._save_pickle(scheduled_tasks=scheduled_tasks)
 
         self.logger.info("処理時間: " + str(main_timer.get_elapsed_time()) + "秒")
 
@@ -201,38 +183,17 @@ class TaskApplicationService:
             self.logger.debug(f"【処理時間】合計: {main_timer.get_elapsed_time()}秒")
             return
 
-        # バケットからPickleをダウンロードする
-        self.gcs_handler.download(
-            from_=config.BUCKET_SCHEDULED_PICKLE_PATH,
-            to=self.scheduled_task_cache.save_path,
-            on_success=lambda: self.logger.info(
-                "PickleのGCSからのダウンロードに成功しました。"
-            ),
-            on_error=lambda e: self.logger.error(
-                f"PickleのGCSからのダウンロードに失敗。エラー内容: {e}"
-            ),
-        )
-
-        try:
-            # コールバック関数を定義
-            def handle_error(e):
-                raise ValueError(e)
-
-            # Pickleから予定タスクを読み込む
-            cache_scheduled_tasks = self.scheduled_task_cache.load(
-                on_success=lambda: self.logger.info("Pickleの読み込みに成功しました。"),
-                on_error=handle_error,
-            )
-        except Exception as e:
-            self.logger.critical(f"Pickleの読み込みに失敗。エラー内容: {e}")
-            self.logger.critical("処理を終了します。")
+        # pickleから予定タスクを取得
+        cache_scheduled_tasks = self._load_pickle()
+        if cache_scheduled_tasks is None:
             return
+
         add_executed_id_timer = AppTimer.init_and_start()
 
         # キャッシュの予定タスクを辞書に変換
         scheduled_tasks_by_id = {
             scheduled_task.id: scheduled_task
-            for scheduled_task in cache_scheduled_tasks
+            for scheduled_task in cache_scheduled_tasks  # type: ignore
         }
 
         # キャッシュと取得した予定タスクをマージする
@@ -306,33 +267,8 @@ class TaskApplicationService:
 
         await asyncio.gather(*tasks)
 
-        # pickleに保存する
-        try:
-            # コールバック関数を定義
-            def handle_error(e):
-                raise ValueError(e)
-
-            self.scheduled_task_cache.save(
-                tasks=list(scheduled_tasks_by_id.values()),
-                on_success=lambda: self.logger.info("Pickleの保存に成功しました。"),
-                on_error=handle_error,
-            )
-        except Exception as e:
-            self.logger.critical(f"Pickleの保存に失敗。エラー内容: {e}")
-            self.logger.critical("処理を終了します。")
-            return
-
-        # pickleをGCSにアップロードする
-        self.gcs_handler.upload(
-            from_=self.scheduled_task_cache.save_path,
-            to=config.BUCKET_SCHEDULED_PICKLE_PATH,
-            on_success=lambda: self.logger.info(
-                "PickleのGCSへのアップロードに成功しました。"
-            ),
-            on_error=lambda e: self.logger.error(
-                f"PickleのGCSへのアップロードに失敗。エラー内容: {e}"
-            ),
-        )
+        # pickleの保存
+        await self._save_pickle(list(scheduled_tasks_to_update_by_id.values()))
 
         self.logger.debug(
             f"【処理時間】実績タスクの工数計算: {calc_man_hours_timer.get_elapsed_time()}秒"
@@ -346,7 +282,7 @@ class TaskApplicationService:
         # サブアイテムの工数を集計し、ラベルを更新する
         scheduled_task.aggregate_man_hours()
         # 実績タスクのステータスを更新する
-        scheduled_task.update_status_to_check_properties()
+        scheduled_task.update_status_by_checking_properties()
         # 進捗率を更新する
         scheduled_task.calc_progress_rate()
         # 実績人時ラベルを更新する
@@ -379,6 +315,44 @@ class TaskApplicationService:
                 )
             )
         await asyncio.gather(*tasks)
+
+    async def _load_pickle(self) -> List[ScheduledTask] | None:
+        """GCSからPickleをダウンロードし、読み込むメソッド"""
+        try:
+            self.gcs_handler.download(
+                from_=config.BUCKET_SCHEDULED_PICKLE_PATH,
+                to=self.scheduled_task_cache.save_path,
+            )
+            self.logger.info("PickleのGCSからのダウンロードに成功しました。")
+
+            # Pickleから予定タスクを読み込む
+            scheduled_task = self.scheduled_task_cache.load()
+            self.logger.info("Pickleの読み込みに成功しました。")
+            return scheduled_task
+        except Exception as e:
+            self.logger.critical(
+                f"PickleのGCSからのダウンロードに失敗。エラー内容: {e}"
+            )
+            self.logger.critical("処理を終了します。")
+            return None
+
+    async def _save_pickle(self, scheduled_tasks: List[ScheduledTask]):
+        """GCSにPickleをアップロードするメソッド"""
+        try:
+            self.scheduled_task_cache.save(
+                tasks=scheduled_tasks,
+            )
+            self.logger.info("Pickleの保存に成功しました。")
+
+            # pickleをGCSにアップロードする
+            self.gcs_handler.upload(
+                from_=self.scheduled_task_cache.save_path,
+                to=config.BUCKET_SCHEDULED_PICKLE_PATH,
+            )
+            self.logger.info("PickleのGCSへのアップロードに成功しました。")
+        except Exception as e:
+            self.logger.critical(f"Pickleの保存に失敗。エラー内容: {e}")
+            self.logger.critical("処理を終了します。")
 
     async def _update_executed_tasks(
         self,

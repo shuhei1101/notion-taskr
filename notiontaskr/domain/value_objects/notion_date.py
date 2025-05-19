@@ -10,10 +10,6 @@ class NotionDate:
     def __init__(self, start: datetime, end: datetime):
         if not isinstance(start, datetime):
             raise TypeError(f"開始日はdatetime型でなければなりません。")
-        if not isinstance(end, datetime):
-            raise TypeError(f"終了日はdatetime型でなければなりません。")
-        if not start:
-            raise ValueError(f"開始日は必須です。")
         if not end:
             end = start
         if start > end:

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 class ProgressRate:
     """進捗率"""
 
-    value: int
+    value: float
 
     def __init__(self, value: float):
         if value is None:
@@ -22,5 +22,5 @@ class ProgressRate:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ProgressRate):
-            raise NotImplementedError(f"ProgressRateは{type(other)}と比較できません。")
+            return False
         return self.value == other.value

@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Optional
 
 from notiontaskr.domain.task import Task
 from notiontaskr.domain.task_name import TaskName
@@ -13,10 +14,10 @@ from notiontaskr.domain.value_objects.status import Status
 class ExecutedTask(Task):
     """実績タスクモデル"""
 
-    date: NotionDate = None
-    man_hours: ManHours = None
-    scheduled_task_id: NotionId = None  # 紐づいている予定タスクのID
-    scheduled_task_page_id: PageId = None  # 紐づいている予定タスクのページID
+    date: Optional[NotionDate] = None
+    man_hours: ManHours = field(default_factory=lambda: ManHours(0))
+    scheduled_task_id: Optional[NotionId] = None  # 紐づいている予定タスクのID
+    scheduled_task_page_id: Optional[PageId] = None  # 紐づいている予定タスクのページID
 
     @classmethod
     def from_response_data(cls, data):
@@ -25,8 +26,9 @@ class ExecutedTask(Task):
         :raise KeyError:
         :raise ValueError: レスポンスデータに必要なキーが存在しない場合
         """
+
+        task_number = data["properties"]["ID"]["unique_id"]["number"]
         try:
-            task_number = data["properties"]["ID"]["unique_id"]["number"]
             task_name = TaskName.from_raw_task_name(
                 data["properties"]["名前"]["title"][0]["plain_text"]
             )
