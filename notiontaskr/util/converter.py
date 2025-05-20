@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def to_isoformat(dt: datetime) -> str:
@@ -28,3 +28,17 @@ def remove_variant_selectors(text: str) -> str:
     例: ⏲️ -> ⏲
     """
     return "".join(c for c in text if not (0xFE00 <= ord(c) <= 0xFE0F))
+
+
+def dt_to_month_start_end(dt: datetime) -> tuple[datetime, datetime]:
+    # 月初（0時0分0秒）
+    start_date = datetime(dt.year, dt.month, 1, 0, 0, 0)
+
+    # 翌月1日の0時0分から1分引いて月末の23:59に
+    if dt.month == 12:
+        next_month = datetime(dt.year + 1, 1, 1)
+    else:
+        next_month = datetime(dt.year, dt.month + 1, 1)
+
+    end_date = next_month - timedelta(minutes=1)
+    return start_date, end_date
