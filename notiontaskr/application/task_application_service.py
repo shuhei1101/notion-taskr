@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import List
 
 import notiontaskr.config as config
-from notiontaskr.util.converter import to_isoformat
+from notiontaskr.util.converter import dt_to_month_start_end, to_isoformat
 from notiontaskr.app_logger import AppLogger
 from notiontaskr.app_timer import AppTimer
 from notiontaskr.gcs_handler import GCSHandler
@@ -438,3 +438,16 @@ class TaskApplicationService:
             )
 
         await asyncio.gather(*tasks)
+
+
+if __name__ == "__main__":
+    service = TaskApplicationService()
+    start, end = dt_to_month_start_end(datetime(year=2024, month=12, day=1))
+    uptime_data_by_tag = asyncio.run(
+        service.get_uptime(
+            from_=start,
+            to=end,
+            tags=["notion-api", "プライベート"],
+        )
+    )
+    print(uptime_data_by_tag.to_json())
