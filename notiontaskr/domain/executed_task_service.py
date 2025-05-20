@@ -30,13 +30,11 @@ class ExecutedTaskService:
         executed_tasks: list[ExecutedTask], tags: list[str]
     ) -> dict[str, list[ExecutedTask]]:
         """指定したタグを持つ実績タスクを取得する"""
-        executed_tasks_by_tags = {}
+        executed_tasks_by_tags = {tag: [] for tag in tags}
         for task in executed_tasks:
-            for tag in task.tags:
-                if tag in tags:
-                    if tag not in executed_tasks_by_tags:
-                        executed_tasks_by_tags[tag] = []
-                    executed_tasks_by_tags[tag].append(task)
+            for task_tag in task.tags:
+                if str(task_tag) in tags:
+                    executed_tasks_by_tags[str(task_tag)].append(task)
         return executed_tasks_by_tags
 
     @staticmethod
