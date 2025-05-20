@@ -36,3 +36,12 @@ class ExecutedTaskService:
                         executed_tasks_by_tags[tag] = []
                     executed_tasks_by_tags[tag].append(task)
         return executed_tasks_by_tags
+
+    @staticmethod
+    def get_total_man_hours(executed_tasks: list[ExecutedTask]) -> float:
+        """実績タスクの工数を合計する"""
+        total_man_hours = ManHours(0)
+        for task in executed_tasks:
+            total_man_hours += task.man_hours
+
+        return float(total_man_hours)
