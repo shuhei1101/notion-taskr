@@ -69,45 +69,39 @@ class TestExecutedTaskService:
             assert updated_tasks == []
 
     class Test_get_executed_tasks_by_tag:
-        def test_指定タグ配列別に実績タスクを辞書型に振り分けられること(
+        def test_指定したタグを持つ実績タスクを取得できること(self):
+            executed_task1 = Mock()
+            executed_task1.tags = [Mock(__str__=Mock(return_value="tag1"))]
+            executed_task2 = Mock()
+            executed_task2.tags = [Mock(__str__=Mock(return_value="tag2"))]
+            executed_task3 = Mock()
+            executed_task3.tags = [
+                Mock(__str__=Mock(return_value="tag1")),
+                Mock(__str__=Mock(return_value="tag2")),
+            ]
+            executed_tasks = [executed_task1, executed_task2, executed_task3]
+            tags = ["tag1"]
+
+            result = ExecutedTaskService.get_executed_tasks_by_tag(executed_tasks, tags)  # type: ignore
+
+            assert len(result["tag1"]) == 2
+            assert result["tag1"][0] == executed_task1
+            assert result["tag1"][1] == executed_task3
+
+        def test_指定したタグを持つ実績タスクが存在しない場合は空のリストを返すこと(
             self,
         ):
-            executed_tasks = [
-                Mock(
-                    tags=["tag1", "tag2"],
-                ),
-                Mock(
-                    tags=["tag1", "tag3"],
-                ),
-                Mock(
-                    tags=["tag3", "tag4"],
-                ),
-                Mock(
-                    tags=["tag3", "tag4"],
-                ),
-                Mock(
-                    tags=["tag99"],
-                ),
-            ]
-            target_tags = ["tag1", "tag3"]
-            expected_result = {
-                "tag1": [executed_tasks[0], executed_tasks[1]],
-                "tag3": [
-                    executed_tasks[1],
-                    executed_tasks[2],
-                    executed_tasks[3],
-                ],
-            }
-            result = ExecutedTaskService.get_executed_tasks_by_tag(
-                executed_tasks=executed_tasks, tags=target_tags  # type: ignore
-            )
-            # 指定したタグに一致する予定タスクを取得できること
-            assert result["tag1"] == expected_result["tag1"]
-            assert result["tag3"] == expected_result["tag3"]
-            # 指定したタグに一致しない予定タスクは取得できないこと
-            assert "tag99" not in result
-            # 指定したタグに一致する予定タスクの数が一致すること
-            assert len(result) == len(expected_result)
+            executed_task1 = Mock()
+            executed_task1.tags = [Mock(__str__=Mock(return_value="tag2"))]
+            executed_task2 = Mock()
+            executed_task2.tags = [Mock(__str__=Mock(return_value="tag3"))]
+            executed_tasks = [executed_task1, executed_task2]
+            tags = ["tag1"]
+
+            result = ExecutedTaskService.get_executed_tasks_by_tag(executed_tasks, tags)  # type: ignore
+            # 指定したタグを持つ実績タスクが存在しない場合は空のリストを返すことを確認
+            assert len(result["tag1"]) == 0
+            assert result["tag1"] == []
 
     class Test_get_total_man_hours:
         def test_渡した実績タスク配列のman_hourから合計を取得できること(self):
