@@ -12,3 +12,8 @@ class TestTag:
         def test_有効な値を渡すとインスタンスが作成されること(self):
             tag = Tag("重要")
             assert tag.value == "重要"
+
+    class Test__str__:
+        def test_タグの値を文字列として返すこと(self):
+            tag = Tag("重要")
+            assert str(tag) == "重要"
