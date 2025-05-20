@@ -2,6 +2,8 @@ from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.domain.scheduled_task import ScheduledTask
 from notiontaskr.domain.task_service import TaskService
 
+from notiontaskr.domain.value_objects.man_hours import ManHours
+
 
 class ExecutedTaskService:
 
