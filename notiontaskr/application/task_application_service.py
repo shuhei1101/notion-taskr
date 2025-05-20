@@ -390,9 +390,3 @@ class TaskApplicationService:
             )
 
         await asyncio.gather(*tasks)
-
-
-if __name__ == "__main__":
-    service = TaskApplicationService()
-    # asyncio.run(service.daily_task())
-    asyncio.run(service.regular_task())
