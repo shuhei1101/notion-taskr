@@ -4,6 +4,5 @@ WORKDIR /app
 COPY . .
 RUN rm -rf build dist *.egg-info notiontaskr/*.egg-info
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir -r requirements.dev.txt
 
 CMD ["pytest", "--maxfail=1", "--disable-warnings", "-q"]
