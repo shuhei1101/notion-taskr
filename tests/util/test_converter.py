@@ -37,3 +37,17 @@ class Test_remove_variant_selectors:
         text = "⏲️"
         result = remove_variant_selectors(text)
         assert result == "⏲"
+
+
+class Test_dt_to_month_start_end:
+    def test_引数で年月を指定すると月初と月末を取得できること(self):
+        dt = datetime(2023, 10, 1, 12, 0, 0)
+        start, end = dt_to_month_start_end(dt)
+        assert start == datetime(2023, 10, 1, 0, 0)
+        assert end == datetime(2023, 10, 31, 23, 59)
+
+    def test_引数に1日以外を渡しても月初と月末を取得できること(self):
+        dt = datetime(2023, 10, 15, 12, 12, 12)
+        start, end = dt_to_month_start_end(dt)
+        assert start == datetime(2023, 10, 1, 0, 0)
+        assert end == datetime(2023, 10, 31, 23, 59)
