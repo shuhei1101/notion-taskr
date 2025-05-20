@@ -34,15 +34,16 @@ class TaskApplicationService:
         self.scheduled_task_cache = ScheduledTaskCache(
             save_path=config.LOCAL_SCHEDULED_PICKLE_PATH
         )
-        self.gcs_handler = GCSHandler(
+
+    async def daily_task(self):
+        """毎日0時に実行されるタスク"""
+
+        gcs_handler = GCSHandler(
             bucket_name=config.BUCKET_NAME,
             on_error=lambda e: self.logger.error(
                 f"GCSの初期化に失敗。エラー内容: {e}",
             ),
         )
-
-    async def daily_task(self):
-        """毎日0時に実行されるタスク"""
 
         # notionから過去一年分の情報を取得し、Pickleに保存する
         self.logger.info("デイリータスクを開始します。")
@@ -125,7 +126,9 @@ class TaskApplicationService:
         _ = await asyncio.gather(*tasks)
 
         # pickleの保存
-        await self._save_pickle(scheduled_tasks=scheduled_tasks)
+        await self._save_pickle(
+            scheduled_tasks=scheduled_tasks, gcs_handler=gcs_handler
+        )
 
         self.logger.info("処理時間: " + str(main_timer.get_elapsed_time()) + "秒")
 
@@ -133,6 +136,13 @@ class TaskApplicationService:
         """予定タスクのIDを持つ実績タスクにIDを付与する"""
         self.logger.info("レギュラータスクを開始します。")
         main_timer = AppTimer.init_and_start()
+
+        gcs_handler = GCSHandler(
+            bucket_name=config.BUCKET_NAME,
+            on_error=lambda e: self.logger.error(
+                f"GCSの初期化に失敗。エラー内容: {e}",
+            ),
+        )
 
         # 条件作成(最終更新日が1分前~現在。formatは`2025-05-09T14:40:00.000Z`ISO 8601形式)
         condition = TaskSearchCondition().and_(
@@ -184,7 +194,7 @@ class TaskApplicationService:
             return
 
         # pickleから予定タスクを取得
-        cache_scheduled_tasks = await self._load_pickle()
+        cache_scheduled_tasks = await self._load_pickle(gcs_handler=gcs_handler)
         if cache_scheduled_tasks is None:
             return
 
@@ -268,7 +278,10 @@ class TaskApplicationService:
         await asyncio.gather(*tasks)
 
         # pickleの保存
-        await self._save_pickle(list(scheduled_tasks_to_update_by_id.values()))
+        await self._save_pickle(
+            scheduled_tasks=list(scheduled_tasks_to_update_by_id.values()),
+            gcs_handler=gcs_handler,
+        )
 
         self.logger.debug(
             f"【処理時間】実績タスクの工数計算: {calc_man_hours_timer.get_elapsed_time()}秒"
@@ -316,10 +329,10 @@ class TaskApplicationService:
             )
         await asyncio.gather(*tasks)
 
-    async def _load_pickle(self) -> List[ScheduledTask] | None:
+    async def _load_pickle(self, gcs_handler: GCSHandler) -> List[ScheduledTask] | None:
         """GCSからPickleをダウンロードし、読み込むメソッド"""
         try:
-            self.gcs_handler.download(
+            gcs_handler.download(
                 from_=config.BUCKET_SCHEDULED_PICKLE_PATH,
                 to=self.scheduled_task_cache.save_path,
             )
@@ -336,7 +349,9 @@ class TaskApplicationService:
             self.logger.critical("処理を終了します。")
             return None
 
-    async def _save_pickle(self, scheduled_tasks: List[ScheduledTask]):
+    async def _save_pickle(
+        self, scheduled_tasks: List[ScheduledTask], gcs_handler: GCSHandler
+    ):
         """GCSにPickleをアップロードするメソッド"""
         try:
             self.scheduled_task_cache.save(
@@ -345,7 +360,7 @@ class TaskApplicationService:
             self.logger.info("Pickleの保存に成功しました。")
 
             # pickleをGCSにアップロードする
-            self.gcs_handler.upload(
+            gcs_handler.upload(
                 from_=self.scheduled_task_cache.save_path,
                 to=config.BUCKET_SCHEDULED_PICKLE_PATH,
             )
