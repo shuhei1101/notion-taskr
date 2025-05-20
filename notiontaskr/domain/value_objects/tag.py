@@ -9,3 +9,6 @@ class Tag:
         if not value:
             raise ValueError(f"タグは必須です。")
         self.value = str(value)
+
+    def __str__(self) -> str:
+        return self.value
