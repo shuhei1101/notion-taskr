@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from notiontaskr.application.dto.uptime_data import UptimeData, UptimeDataByTag
 import pytest
@@ -7,11 +8,15 @@ class TestUptimeData:
     def test_タグと稼働時間を登録できること(self):
         tag = "tag1"
         uptime = 5.0
+        from_ = datetime(2024, 1, 1)
+        to = datetime(2024, 1, 31)
 
         uptime_data_by_tag = UptimeDataByTag.from_data(
             UptimeData(
                 tag=tag,
                 uptime=uptime,
+                from_=from_,
+                to=to,
             )
         )
 
@@ -22,11 +27,15 @@ class TestUptimeData:
     def test_存在しないタグを指定した場合エラーが発生すること(self):
         tag = "tag1"
         uptime = 5.0
+        from_ = datetime(2024, 1, 1)
+        to = datetime(2024, 1, 31)
 
         uptime_data_by_tag = UptimeDataByTag.from_data(
             UptimeData(
                 tag=tag,
                 uptime=uptime,
+                from_=from_,
+                to=to,
             )
         )
 
@@ -42,11 +51,15 @@ class TestUptimeData:
     def test_追加でデータを登録できること(self):
         tag = "tag1"
         uptime = 5.0
+        from_ = datetime(2024, 1, 1)
+        to = datetime(2024, 1, 31)
 
         uptime_data_by_tag = UptimeDataByTag.from_empty()
         uptime_data = UptimeData(
             tag=tag,
             uptime=uptime,
+            from_=from_,
+            to=to,
         )
         uptime_data_by_tag.insert_data(uptime_data)
 
@@ -58,18 +71,24 @@ class TestUptimeData:
         tag = "tag1"
         uptime1 = 5.0
         uptime2 = 10.0
+        from_ = datetime(2024, 1, 1)
+        to = datetime(2024, 1, 31)
 
         uptime_data_by_tag = UptimeDataByTag.from_empty()
         uptime_data_by_tag.insert_data(
             UptimeData(
                 tag=tag,
                 uptime=uptime1,
+                from_=from_,
+                to=to,
             )
         )
         uptime_data_by_tag.insert_data(
             UptimeData(
                 tag=tag,
                 uptime=uptime2,
+                from_=from_,
+                to=to,
             )
         )
 
@@ -80,19 +99,23 @@ class TestUptimeData:
     def test_json形式での出力ができること(self):
         tag = "tag1"
         uptime = 5.0
+        from_ = datetime(2024, 1, 1)
+        to = datetime(2024, 1, 31)
 
         uptime_data_by_tag = UptimeDataByTag.from_data(
             UptimeData(
                 tag=tag,
                 uptime=uptime,
+                from_=from_,
+                to=to,
             )
         )
 
         expected_json = json.dumps(
             {
                 tag: {
-                    "tag": tag,
-                    "uptime": uptime,
+                    "合計工数": f"{uptime}h",
+                    "対象期間": f"{from_.strftime('%Y/%m')} - {to.strftime('%Y/%m')}",
                 }
             }
         )

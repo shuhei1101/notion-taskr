@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 import json
 
 
@@ -8,6 +9,8 @@ class UptimeData:
 
     tag: str
     uptime: float
+    from_: datetime
+    to: datetime
 
 
 @dataclass
@@ -41,10 +44,10 @@ class UptimeDataByTag:
         return json.dumps(
             {
                 tag: {
-                    "tag": tag,
-                    "uptime": data.uptime,
+                    "合計工数": f"{data.uptime}h",
+                    "対象期間": f"{data.from_.strftime('%Y/%m')} - {data.to.strftime('%Y/%m')}",
                 }
                 for tag, data in self.tag_uptimes_dict.items()
             },
-            ensure_ascii=False,
+            ensure_ascii=True,
         )
