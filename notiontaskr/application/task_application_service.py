@@ -330,6 +330,8 @@ class TaskApplicationService:
                 data=UptimeData(
                     tag=tag,
                     uptime=ExecutedTaskService.get_total_man_hours(tasks),
+                    from_=from_,
+                    to=to,
                 )
             )
 
