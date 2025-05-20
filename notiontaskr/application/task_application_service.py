@@ -18,6 +18,7 @@ from notiontaskr.infrastructure.scheduled_task_repository import ScheduledTaskRe
 from notiontaskr.infrastructure.operator import *
 from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
 from notiontaskr.infrastructure.scheduled_task_cache import ScheduledTaskCache
+from notiontaskr.application.dto.uptime_data import UptimeData, UptimeDataByTag
 
 
 class TaskApplicationService:
@@ -287,6 +288,53 @@ class TaskApplicationService:
             f"【処理時間】実績タスクの工数計算: {calc_man_hours_timer.get_elapsed_time()}秒"
         )
         self.logger.debug(f"【処理時間】合計: {main_timer.get_elapsed_time()}秒")
+
+    async def get_uptime(
+        self, tags: list[str], from_: datetime, to: datetime
+    ) -> "UptimeDataByTag":
+        """指定したタグの稼働実績を取得する
+
+        :param tags: タグのリスト
+        :return: 稼働実績DTO
+        """
+
+        condition = TaskSearchCondition().and_(
+            # 日付のフィルター
+            TaskSearchCondition().where_date(
+                operator=DateOperator.ON_OR_AFTER,
+                date=to_isoformat(from_),
+            ),
+            TaskSearchCondition().where_date(
+                operator=DateOperator.ON_OR_BEFORE,
+                date=to_isoformat(to),
+            ),
+        )
+
+        fetched_executed_tasks = await self.executed_task_repo.find_by_condition(
+            condition=condition,
+            on_error=lambda e, data: self.logger.error(
+                f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+            ),
+        )
+
+        # 指定タグ配列に一致する予定タスクを辞書型で取得する
+        executed_tasks_by_tag = ExecutedTaskService.get_executed_tasks_by_tag(
+            executed_tasks=fetched_executed_tasks,
+            tags=tags,
+        )
+
+        # タグごとの稼働実績を計算する
+        uptime_data_by_tag = UptimeDataByTag.from_empty()
+        for tag, tasks in executed_tasks_by_tag.items():
+            uptime_data_by_tag.insert_data(
+                data=UptimeData(
+                    tag=tag,
+                    uptime=ExecutedTaskService.get_total_man_hours(tasks),
+                )
+            )
+
+        # DTOを返却
+        return uptime_data_by_tag
 
     def _update_scheduled_task_properties(self, scheduled_task: ScheduledTask):
         """予定タスクのプロパティを更新するメソッド"""
