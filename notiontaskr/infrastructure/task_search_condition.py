@@ -76,25 +76,3 @@ class TaskSearchCondition:
         例: 1875ffa1-def1-4c34-8875-e559eb6e5853
         """
         pass
-
-
-if __name__ == "__main__":
-    # テストコード
-    condition = TaskSearchCondition()
-    condition.or_(
-        condition.and_(
-            condition.where_tag(MultiSelectOperator.CONTAINS, "test"),
-            condition.where_status(StatusOperator.EQUALS, Status.NOT_STARTED.value),
-            condition.where_scheduled_flag(CheckboxOperator.EQUALS, True),
-        ),
-        condition.and_(
-            condition.where_name(TextOperator.CONTAINS, "test"),
-            condition.where_scheduled_flag(CheckboxOperator.EQUALS, False),
-        ),
-    )
-    # condition.where_scheduled_flag(CheckboxOperator.EQUALS, True)
-    # condition.where_name(TextOperator.CONTAINS, "test")
-    # json形式で出力
-    import json
-
-    print(json.dumps(condition.build(), indent=4, ensure_ascii=False))
