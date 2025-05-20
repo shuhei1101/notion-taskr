@@ -83,3 +83,15 @@ class ScheduledTaskService:
                 on_error(e, source)
 
         return scheduled_tasks_by_id
+
+    @staticmethod
+    def get_scheduled_tasks_by_tags(
+        scheduled_tasks: list[ScheduledTask], tags: list[str]
+    ) -> dict[str, ScheduledTask]:
+        """指定したタグを持つ予定タスクを取得する"""
+        scheduled_tasks_by_tags = {}
+        for task in scheduled_tasks:
+            for tag in task.tags:
+                if tag in tags:
+                    scheduled_tasks_by_tags[tag] = task
+        return scheduled_tasks_by_tags

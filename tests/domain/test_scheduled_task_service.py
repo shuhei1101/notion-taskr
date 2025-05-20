@@ -104,3 +104,35 @@ class TestScheduledTaskService:
 
             assert len(merged_tasks) == 1
             assert merged_tasks[scheduled_task.id].name.task_name == "タスク1"
+
+    class Test_指定タグ配列に一致する予定タスクを辞書型で取得する:
+        def test_予定タスク配列とタグ配列を渡し指定タグに一致する予定タスクを辞書型で取得できること(
+            self,
+        ):
+            scheduled_tasks = [
+                Mock(
+                    id=NotionId("scheduled_id_1"),
+                    tags=["tag1", "tag2"],
+                ),
+                Mock(
+                    id=NotionId("scheduled_id_2"),
+                    tags=["tag3", "tag4"],
+                ),
+                Mock(
+                    id=NotionId("scheduled_id_3"),
+                    tags=["tag4"],
+                ),
+            ]
+            target_tags = ["tag1", "tag3"]
+            expected_result = {
+                "tag1": scheduled_tasks[0],
+                "tag3": scheduled_tasks[1],
+            }
+            result = ScheduledTaskService.get_scheduled_tasks_by_tags(
+                scheduled_tasks=scheduled_tasks, tags=target_tags  # type: ignore
+            )
+            # 指定したタグに一致する予定タスクを取得できること
+            assert len(result) == len(expected_result)
+            for tag, task in result.items():
+                assert tag in expected_result
+                assert task == expected_result[tag]
