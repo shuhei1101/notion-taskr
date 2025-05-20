@@ -26,11 +26,13 @@ class ExecutedTaskService:
     @staticmethod
     def get_executed_tasks_by_tag(
         executed_tasks: list[ExecutedTask], tags: list[str]
-    ) -> dict[str, ExecutedTask]:
+    ) -> dict[str, list[ExecutedTask]]:
         """指定したタグを持つ実績タスクを取得する"""
         executed_tasks_by_tags = {}
         for task in executed_tasks:
             for tag in task.tags:
                 if tag in tags:
-                    executed_tasks_by_tags[tag] = task
+                    if tag not in executed_tasks_by_tags:
+                        executed_tasks_by_tags[tag] = []
+                    executed_tasks_by_tags[tag].append(task)
         return executed_tasks_by_tags
