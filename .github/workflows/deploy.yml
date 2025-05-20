@@ -1,9 +1,10 @@
-name: Deploy to Cloud Run
+name: Deploy
   
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Test"]
+    types:
+      - completed
 
 env:
   SERVICE_NAME: ${{vars.SERVICE_NAME}}  # SERVICE_NAME はサービス名
@@ -21,6 +22,8 @@ env:
  
 jobs:
   deploy:
+    # テストが成功した場合、かつmainブランチにpushされた場合のみ実行
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
 
     steps:

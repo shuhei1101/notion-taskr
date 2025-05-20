@@ -1,4 +1,4 @@
-name: CI for Service and Job Docker Images
+name: Test
 
 on: [push, pull_request]
 
