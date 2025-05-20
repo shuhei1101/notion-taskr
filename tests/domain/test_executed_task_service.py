@@ -2,8 +2,6 @@ from unittest.mock import Mock
 
 from notiontaskr.domain.executed_task_service import ExecutedTaskService
 
-from notiontaskr.domain.value_objects.man_hours import ManHours
-
 
 class TestExecutedTaskService:
     class Test_get_tasks_add_id_tag:
