@@ -2,6 +2,8 @@ from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.domain.scheduled_task import ScheduledTask
 from notiontaskr.domain.task_service import TaskService
 
+from notiontaskr.domain.value_objects.man_hours import ManHours
+
 
 class ExecutedTaskService:
 
@@ -22,3 +24,26 @@ class ExecutedTaskService:
                     TaskService.upsert_tasks(to=updated_tasks, source=scheduled_task)
                     break
         return updated_tasks
+
+    @staticmethod
+    def get_executed_tasks_by_tag(
+        executed_tasks: list[ExecutedTask], tags: list[str]
+    ) -> dict[str, list[ExecutedTask]]:
+        """指定したタグを持つ実績タスクを取得する"""
+        executed_tasks_by_tags = {}
+        for task in executed_tasks:
+            for tag in task.tags:
+                if tag in tags:
+                    if tag not in executed_tasks_by_tags:
+                        executed_tasks_by_tags[tag] = []
+                    executed_tasks_by_tags[tag].append(task)
+        return executed_tasks_by_tags
+
+    @staticmethod
+    def get_total_man_hours(executed_tasks: list[ExecutedTask]) -> float:
+        """実績タスクの工数を合計する"""
+        total_man_hours = ManHours(0)
+        for task in executed_tasks:
+            total_man_hours += task.man_hours
+
+        return float(total_man_hours)

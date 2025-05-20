@@ -1,0 +1,28 @@
+name: CI for Service and Job Docker Images
+
+on: [push, pull_request]
+
+# 環境変数の設定
+env:
+  NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+  TASK_DB_ID: ${{ secrets.TASK_DB_ID }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # リポジトリのチェックアウト
+    - name: Checkout repository 
+      uses: actions/checkout@v4
+
+    # Docker イメージのビルド
+    - name: Build service docker image
+      run: docker build -f Dockerfile.test -t notion-taskr-test .
+
+    # テスト用のコンテナを実行
+    - name: Run container for tests
+      run: docker run --rm -e NOTION_TOKEN=${{ env.NOTION_TOKEN }} -e TASK_DB_ID=${{ env.TASK_DB_ID }} notion-taskr-test
+
+
+      
