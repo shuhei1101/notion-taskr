@@ -67,3 +67,31 @@ class TestExecutedTaskService:
             updated_tasks = ExecutedTaskService.get_tasks_add_id_tag(to, source)  # type: ignore
             # 新たにIDが付与された予定タスクがない場合は空のリストを返すことを確認
             assert updated_tasks == []
+
+    class Test_指定タグ配列別に実績タスクを辞書型に振り分ける:
+        def test_予定タスク配列とタグ配列を渡し指定タグに一致する予定タスクを辞書型で取得できること(
+            self,
+        ):
+            executed_tasks = [
+                Mock(
+                    tags=["tag1", "tag2"],
+                ),
+                Mock(
+                    tags=["tag3", "tag4"],
+                ),
+                Mock(
+                    tags=["tag4"],
+                ),
+            ]
+            target_tags = ["tag1", "tag3"]
+            expected_result = {
+                "tag1": executed_tasks[0],
+                "tag3": executed_tasks[1],
+            }
+            result = ExecutedTaskService.get_executed_tasks_by_tag(
+                executed_tasks=executed_tasks, tags=target_tags  # type: ignore
+            )
+            # 指定したタグに一致する予定タスクを取得できること
+            assert result["tag1"] == expected_result["tag1"]
+            assert result["tag3"] == expected_result["tag3"]
+            assert len(result) == len(expected_result)

@@ -22,3 +22,15 @@ class ExecutedTaskService:
                     TaskService.upsert_tasks(to=updated_tasks, source=scheduled_task)
                     break
         return updated_tasks
+
+    @staticmethod
+    def get_executed_tasks_by_tag(
+        executed_tasks: list[ExecutedTask], tags: list[str]
+    ) -> dict[str, ExecutedTask]:
+        """指定したタグを持つ実績タスクを取得する"""
+        executed_tasks_by_tags = {}
+        for task in executed_tasks:
+            for tag in task.tags:
+                if tag in tags:
+                    executed_tasks_by_tags[tag] = task
+        return executed_tasks_by_tags
