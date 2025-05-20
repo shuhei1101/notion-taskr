@@ -117,7 +117,8 @@ class TestUptimeData:
                     "合計工数": f"{uptime}h",
                     "対象期間": f"{from_.strftime('%Y/%m')} - {to.strftime('%Y/%m')}",
                 }
-            }
+            },
+            ensure_ascii=False,
         )
 
         assert uptime_data_by_tag.to_json() == expected_json

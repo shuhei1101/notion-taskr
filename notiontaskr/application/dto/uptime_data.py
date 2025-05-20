@@ -49,5 +49,5 @@ class UptimeDataByTag:
                 }
                 for tag, data in self.tag_uptimes_dict.items()
             },
-            ensure_ascii=True,
+            ensure_ascii=False,
         )
