@@ -52,23 +52,17 @@ jobs:
     # サービスジョブのビルド
     - name: Build service docker image
       run: |
-        docker build -t ${{ env.SERVICE_IMAGE }} -f Dockerfile.service \
-        --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
-        --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
+        docker build -t ${{ env.SERVICE_IMAGE }} -f Dockerfile.service .
 
     # レギュラージョブのビルド
     - name: Build job docker image
       run: |
-        docker build -t ${{ env.REGULAR_JOB_IMAGE }} -f Dockerfile.regular.job \
-        --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
-        --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
+        docker build -t ${{ env.REGULAR_JOB_IMAGE }} -f Dockerfile.regular.job .
 
     # デイリージョブのビルド
     - name: Build job docker image
       run: |
-        docker build -t ${{ env.DAILY_JOB_IMAGE }} -f Dockerfile.daily.job \
-        --build-arg NOTION_TOKEN=${{ env.NOTION_TOKEN }} \
-        --build-arg TASK_DB_ID=${{ env.TASK_DB_ID }} .
+        docker build -t ${{ env.DAILY_JOB_IMAGE }} -f Dockerfile.daily.job .
 
     # Dockerイメージをプッシュ
     - name: Push service docker image
@@ -89,6 +83,7 @@ jobs:
           --region $GCP_REGION \
           --service-account $SERVICE_ACCOUNT_NAME \
           --platform managed \
+          --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
           --allow-unauthenticated
 
     # ジョブをCloud Runにデプロイ（作成または更新） 
@@ -103,6 +98,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
             --tasks=1
         else
           echo "Creating new job..."
@@ -113,6 +109,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
             --tasks=1
         fi
 
@@ -128,6 +125,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
             --tasks=1
         else
           echo "Creating new job..."
@@ -138,6 +136,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
             --tasks=1
         fi
 
