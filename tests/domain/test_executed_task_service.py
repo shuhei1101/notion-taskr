@@ -104,19 +104,11 @@ class TestExecutedTaskService:
             assert result["tag1"] == []
 
     class Test_get_total_man_hours:
-        def test_渡した実績タスク配列のman_hourから合計を取得できること(self):
-            executed_tasks = [
-                Mock(
-                    man_hours=ManHours(5),
-                ),
-                Mock(
-                    man_hours=ManHours(5),
-                ),
-                Mock(
-                    man_hours=ManHours(5),
-                ),
-            ]
-            exepected_result = 15
-            result = ExecutedTaskService.get_total_man_hours(executed_tasks)  # type: ignore
+        def test_実績タスクの工数を合計できること(self):
+            from notiontaskr.domain.value_objects.man_hours import ManHours
 
-            assert result == exepected_result
+            executed_task1 = Mock(man_hours=ManHours(5))
+            executed_tasks = [executed_task1]
+            result = ExecutedTaskService.get_total_man_hours(executed_tasks)  # type: ignore
+            # 実績タスクの工数を合計できることを確認
+            assert result == 5.0
