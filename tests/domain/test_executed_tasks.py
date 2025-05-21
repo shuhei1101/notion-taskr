@@ -1,0 +1,95 @@
+from notiontaskr.domain.executed_tasks import ExecutedTasks
+from pytest import fixture
+
+from notiontaskr.domain.executed_task import ExecutedTask
+
+from notiontaskr.domain.value_objects.page_id import PageId
+
+from notiontaskr.domain.task_name import TaskName
+
+from notiontaskr.domain.value_objects.tag import Tag
+
+from notiontaskr.domain.value_objects.notion_id import NotionId
+
+from notiontaskr.domain.value_objects.status import Status
+
+
+class TestExecuted_tasks:
+
+    @fixture
+    def task1(self):
+        return ExecutedTask(
+            page_id=PageId("page_1"),
+            name=TaskName(task_name="タスク1"),
+            tags=[Tag("tag1")],
+            id=NotionId("1"),
+            status=Status.IN_PROGRESS,
+        )
+
+    @fixture
+    def task2(self):
+        return ExecutedTask(
+            page_id=PageId("page_2"),
+            name=TaskName(task_name="タスク2"),
+            tags=[Tag("tag2")],
+            id=NotionId("2"),
+            status=Status.COMPLETED,
+        )
+
+    def test_空の状態で初期化できること(self):
+        executed_tasks = ExecutedTasks.from_empty()
+        assert executed_tasks is not None
+
+    def test__len__メソッドで辞書の要素数を取得できること(self):
+        executed_tasks = ExecutedTasks.from_empty()
+        assert len(executed_tasks) == 0
+
+    def test_実績タスク配列から初期化できること(self, task1: ExecutedTask):
+        executed_tasks = ExecutedTasks.from_tasks([task1])
+        assert executed_tasks is not None
+        assert len(executed_tasks) == 1
+
+    def test_実績タスクを追加できること(self, task1: ExecutedTask):
+        executed_tasks = ExecutedTasks.from_empty()
+        executed_tasks.upsert(task1)
+        assert len(executed_tasks) == 1
+
+    class Test_各辞書からタスクを取得できること:
+        @fixture
+        def executed_tasks(self, task1: ExecutedTask, task2: ExecutedTask):
+            return ExecutedTasks.from_tasks(
+                [
+                    task1,
+                    task2,
+                ]
+            )
+
+        def test_NotionIdを指定し対象の実績タスクを取得できること(
+            self, executed_tasks: ExecutedTasks
+        ):
+            task = executed_tasks.get_by_id(NotionId("1"))
+            if task is None:
+                raise ValueError("タスクが見つかりません")
+            assert task.id == NotionId("1")
+            assert task.page_id == PageId("page_1")
+            assert task.name.task_name == "タスク1"
+
+        def test_PageIdを指定し対象の実績タスクを取得できること(
+            self, executed_tasks: ExecutedTasks
+        ):
+            task = executed_tasks.get_by_page_id(PageId("page_1"))
+            if task is None:
+                raise ValueError("タスクが見つかりません")
+            assert task.id == NotionId("1")
+            assert task.page_id == PageId("page_1")
+            assert task.name.task_name == "タスク1"
+
+        def test_nameを指定し対象の実績タスクを取得できること(
+            self, executed_tasks: ExecutedTasks
+        ):
+            task = executed_tasks.get_by_name("タスク1")
+            if task is None:
+                raise ValueError("タスクが見つかりません")
+            assert task.id == NotionId("1")
+            assert task.page_id == PageId("page_1")
+            assert task.name.task_name == "タスク1"
