@@ -54,15 +54,10 @@ class TestExecuted_tasks:
         executed_tasks.upsert(task1)
         assert len(executed_tasks) == 1
 
-    class Test_各辞書からタスクを取得できること:
+    class Test_辞書関連:
         @fixture
         def executed_tasks(self, task1: ExecutedTask, task2: ExecutedTask):
-            return ExecutedTasks.from_tasks(
-                [
-                    task1,
-                    task2,
-                ]
-            )
+            return ExecutedTasks.from_tasks([task1, task2])
 
         def test_NotionIdを指定し対象の実績タスクを取得できること(
             self, executed_tasks: ExecutedTasks
