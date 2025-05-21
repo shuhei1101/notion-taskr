@@ -46,8 +46,9 @@ class TestExecuted_tasks:
 
     def test_実績タスクを追加できること(self, task1: ExecutedTask):
         executed_tasks = ExecutedTasks.from_empty()
-        executed_tasks.upsert(task1)
-        assert len(executed_tasks) == 1
+        executed_tasks.append(task1)
+        executed_tasks.append(task1)
+        assert len(executed_tasks) == 2
 
     class Test_辞書関連:
         @fixture

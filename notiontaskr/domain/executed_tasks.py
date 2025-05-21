@@ -22,11 +22,9 @@ class ExecutedTasks:
             tasks=tasks,
         )
 
-    def upsert(self, task: ExecutedTask):
+    def append(self, task: ExecutedTask):
         """実績タスクを追加する"""
 
-        if not task.id or not task.page_id or not task.name:
-            raise ValueError("実績タスクにはID、ページID、名前が必要です")
         self.tasks.append(task)
 
     def __len__(self):
