@@ -3,10 +3,6 @@ from typing import List
 
 from notiontaskr.domain.executed_task import ExecutedTask
 
-from notiontaskr.domain.value_objects.notion_id import NotionId
-
-from notiontaskr.domain.value_objects.page_id import PageId
-
 
 @dataclass
 class ExecutedTasks:

@@ -2,15 +2,10 @@ from notiontaskr.domain.executed_tasks import ExecutedTasks
 from pytest import fixture
 
 from notiontaskr.domain.executed_task import ExecutedTask
-
 from notiontaskr.domain.value_objects.page_id import PageId
-
 from notiontaskr.domain.task_name import TaskName
-
 from notiontaskr.domain.value_objects.tag import Tag
-
 from notiontaskr.domain.value_objects.notion_id import NotionId
-
 from notiontaskr.domain.value_objects.status import Status
 
 
