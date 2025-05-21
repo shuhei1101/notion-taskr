@@ -268,7 +268,7 @@ class ScheduledTask(Task):
             self._toggle_is_updated(
                 f"予定人時: {self.scheduled_man_hours} -> {scheduled_man_hours}"
             )
-        self.scheduled_man_hours = scheduled_man_hours
+            self.scheduled_man_hours = scheduled_man_hours
 
     def update_executed_tasks(
         self,
