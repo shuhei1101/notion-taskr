@@ -83,13 +83,3 @@ class TestExecuted_tasks:
             assert task.id == NotionId("1")
             assert task.page_id == PageId("page_1")
             assert task.name.task_name == "タスク1"
-
-        def test_nameを指定し対象の実績タスクを取得できること(
-            self, executed_tasks: ExecutedTasks
-        ):
-            task = executed_tasks.get_by_name("タスク1")
-            if task is None:
-                raise ValueError("タスクが見つかりません")
-            assert task.id == NotionId("1")
-            assert task.page_id == PageId("page_1")
-            assert task.name.task_name == "タスク1"

@@ -17,15 +17,11 @@ class ExecutedTasks:
     executed_tasks: List[ExecutedTask]
     executed_tasks_by_id: dict
     executed_tasks_by_page_id: dict
-    executed_tasks_by_name: dict
 
     @classmethod
     def from_empty(cls):
         return cls(
-            executed_tasks=[],
-            executed_tasks_by_id={},
-            executed_tasks_by_page_id={},
-            executed_tasks_by_name={},
+            executed_tasks=[], executed_tasks_by_id={}, executed_tasks_by_page_id={}
         )
 
     @classmethod
@@ -35,9 +31,6 @@ class ExecutedTasks:
             executed_tasks_by_id={task.id: task for task in tasks},
             executed_tasks_by_page_id={
                 task.page_id: task for task in tasks if task.page_id is not None
-            },
-            executed_tasks_by_name={
-                task.name.task_name: task for task in tasks if task.name is not None
             },
         )
 
@@ -60,7 +53,3 @@ class ExecutedTasks:
     def get_by_page_id(self, page_id: PageId) -> ExecutedTask | None:
         """ページIDを指定し対象の実績タスクを取得する"""
         return self.executed_tasks_by_page_id.get(page_id)
-
-    def get_by_name(self, name: str) -> ExecutedTask | None:
-        """名前を指定し対象の実績タスクを取得する"""
-        return self.executed_tasks_by_name.get(name)
