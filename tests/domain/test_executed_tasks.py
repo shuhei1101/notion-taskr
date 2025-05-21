@@ -59,15 +59,15 @@ class TestExecuted_tasks:
         def executed_tasks(self, task1: ExecutedTask, task2: ExecutedTask):
             return ExecutedTasks.from_tasks([task1, task2])
 
-        def test_NotionIdを指定し対象の実績タスクを取得できること(
-            self, executed_tasks: ExecutedTasks
+        def test_id辞書を取得できること(
+            self,
+            executed_tasks: ExecutedTasks,
+            task1: ExecutedTask,
+            task2: ExecutedTask,
         ):
-            task = executed_tasks.get_by_id(NotionId("1"))
-            if task is None:
-                raise ValueError("タスクが見つかりません")
-            assert task.id == NotionId("1")
-            assert task.page_id == PageId("page_1")
-            assert task.name.task_name == "タスク1"
+            executed_tasks_by_id = executed_tasks.get_tasks_by_id()
+            assert executed_tasks_by_id[NotionId("1")] == task1
+            assert executed_tasks_by_id[NotionId("2")] == task2
 
         def test_PageIdを指定し対象の実績タスクを取得できること(
             self, executed_tasks: ExecutedTasks

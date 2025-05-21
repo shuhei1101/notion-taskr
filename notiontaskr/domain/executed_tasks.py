@@ -38,10 +38,5 @@ class ExecutedTasks:
     def __len__(self):
         return len(self.tasks)
 
-    def get_by_id(self, id: NotionId) -> ExecutedTask | None:
-        """NotionIdを指定し対象の実績タスクを取得する"""
-        return self.executed_tasks_by_id.get(id)
-
-    def get_by_page_id(self, page_id: PageId) -> ExecutedTask | None:
-        """ページIDを指定し対象の実績タスクを取得する"""
-        return self.executed_tasks_by_page_id.get(page_id)
+    def get_tasks_by_id(self):
+        return {task.id: task for task in self.tasks}
