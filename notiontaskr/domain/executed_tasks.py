@@ -18,9 +18,7 @@ class ExecutedTasks:
 
     @classmethod
     def from_empty(cls):
-        return cls(
-            tasks=[]
-        )
+        return cls(tasks=[])
 
     @classmethod
     def from_tasks(cls, tasks: List[ExecutedTask]):
@@ -40,3 +38,6 @@ class ExecutedTasks:
 
     def get_tasks_by_id(self):
         return {task.id: task for task in self.tasks}
+
+    def get_tasks_by_page_id(self):
+        return {task.page_id: task for task in self.tasks}
