@@ -41,10 +41,13 @@ def get_uptime_from_start_end():
     if not tags or not start_year or not start_month or not end_year or not end_month:
         return "Invalid parameters", 400
 
-    start = datetime(year=int(start_year), month=int(start_month), day=1)
-    end = datetime(year=int(end_year), month=int(end_month), day=1)
+    start_of_month = datetime(year=int(start_year), month=int(start_month), day=1)
+    end_dt = datetime(year=int(end_year), month=int(end_month), day=1)
+    _, end_of_month = dt_to_month_start_end(end_dt)
 
-    uptime_data_by_tag = asyncio.run(service.get_uptime(from_=start, to=end, tags=tags))
+    uptime_data_by_tag = asyncio.run(
+        service.get_uptime(from_=start_of_month, to=end_of_month, tags=tags)
+    )
 
     # レスポンスをJSON形式で返す
     return uptime_data_by_tag.to_json(), 200
