@@ -26,3 +26,6 @@ class Tags:
 
     def __len__(self):
         return len(self.tags)
+
+    def __iter__(self):
+        return iter(self.tags)

@@ -7,7 +7,7 @@ from notiontaskr.domain.task_name import TaskName
 from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.page_id import PageId
 from notiontaskr.domain.value_objects.status import Status
-from notiontaskr.domain.value_objects.tag import Tag
+from notiontaskr.domain.tags import Tags
 
 if TYPE_CHECKING:
     from notiontaskr.domain.name_labels.id_label import IdLabel
@@ -19,7 +19,7 @@ class Task:
 
     page_id: PageId
     name: TaskName
-    tags: List[Tag]
+    tags: Tags
     id: NotionId
     status: Status
     is_updated: bool = False
@@ -32,7 +32,7 @@ class Task:
         self,
         page_id: PageId,
         name: TaskName,
-        tags: List[Tag],
+        tags: Tags,
         id: NotionId,
         status: Status,
     ):

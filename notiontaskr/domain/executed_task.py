@@ -9,6 +9,10 @@ from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.page_id import PageId
 from notiontaskr.domain.value_objects.status import Status
 
+from notiontaskr.domain.tags import Tags
+
+from notiontaskr.domain.value_objects.tag import Tag
+
 
 @dataclass
 class ExecutedTask(Task):
@@ -40,9 +44,9 @@ class ExecutedTask(Task):
                 end=end_date_str,
             )
 
-            tags = []
+            tags = Tags.from_empty()
             for tag in data["properties"]["タグ"]["multi_select"]:
-                tags.append(tag["name"])
+                tags.append(Tag(tag["name"]))
 
             return cls(
                 page_id=PageId(data["id"]),

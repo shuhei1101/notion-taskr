@@ -28,3 +28,8 @@ class TestTags:
         assert len(tags) == 2
         assert tags.tags[0] == Tag("tag1")
         assert tags.tags[1] == Tag("tag2")
+
+    def test_拡張for文が使えること(self):
+        tags = Tags.from_tags([Tag("tag1"), Tag("tag2")])
+        tag_names = [str(tag) for tag in tags]
+        assert tag_names == ["tag1", "tag2"]

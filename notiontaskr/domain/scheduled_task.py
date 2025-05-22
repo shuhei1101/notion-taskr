@@ -12,6 +12,10 @@ from notiontaskr.domain.value_objects.page_id import PageId
 from notiontaskr.domain.value_objects.progress_rate import ProgressRate
 from notiontaskr.domain.value_objects.status import Status
 
+from notiontaskr.domain.tags import Tags
+
+from notiontaskr.domain.value_objects.tag import Tag
+
 
 @dataclass
 class ScheduledTask(Task):
@@ -49,9 +53,9 @@ class ScheduledTask(Task):
             )
 
             status = Status.from_str(data["properties"]["ステータス"]["status"]["name"])
-            tags = []
+            tags = Tags.from_empty()
             for tag in data["properties"]["タグ"]["multi_select"]:
-                tags.append(tag["name"])
+                tags.append(Tag(tag["name"]))
 
             instance = cls(
                 page_id=PageId(data["id"]),

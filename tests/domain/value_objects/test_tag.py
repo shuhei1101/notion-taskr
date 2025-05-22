@@ -17,3 +17,8 @@ class TestTag:
         def test_タグの値を文字列として返すこと(self):
             tag = Tag("重要")
             assert str(tag) == "重要"
+
+    def test_hash化できること(self):
+        tag1 = Tag("重要")
+        tag2 = Tag("重要")
+        assert hash(tag1) == hash(tag2)

@@ -9,6 +9,10 @@ from notiontaskr.domain.value_objects.status import Status
 from notiontaskr.domain.value_objects.progress_rate import ProgressRate
 from notiontaskr.domain.value_objects.man_hours import ManHours
 
+from notiontaskr.domain.tags import Tags
+
+from notiontaskr.domain.value_objects.tag import Tag
+
 
 class TestScheduledTask:
     class Test_from_response_data:
@@ -42,7 +46,7 @@ class TestScheduledTask:
                 task.name.task_name
                 == data["properties"]["名前"]["title"][0]["plain_text"]
             )
-            assert task.tags == ["タグ1", "タグ2"]
+            assert task.tags == Tags.from_tags([Tag("タグ1"), Tag("タグ2")])
             assert task.id.number == data["properties"]["ID"]["unique_id"]["number"]
             assert (
                 task.status.value == data["properties"]["ステータス"]["status"]["name"]
