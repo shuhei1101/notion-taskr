@@ -20,6 +20,8 @@ from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
 from notiontaskr.infrastructure.scheduled_task_cache import ScheduledTaskCache
 from notiontaskr.application.dto.uptime_data import UptimeData, UptimeDataByTag
 
+from notiontaskr.domain.tags import Tags
+
 
 class TaskApplicationService:
     def __init__(self, logger: AppLogger = AppLogger()):
@@ -290,7 +292,7 @@ class TaskApplicationService:
         self.logger.debug(f"【処理時間】合計: {main_timer.get_elapsed_time()}秒")
 
     async def get_uptime(
-        self, tags: list[str], from_: datetime, to: datetime
+        self, tags: Tags, from_: datetime, to: datetime
     ) -> "UptimeDataByTag":
         """指定したタグの稼働実績を取得する
 
@@ -318,8 +320,7 @@ class TaskApplicationService:
         )
 
         # 指定タグ配列に一致する予定タスクを辞書型で取得する
-        executed_tasks_by_tag = ExecutedTaskService.get_executed_tasks_by_tag(
-            executed_tasks=fetched_executed_tasks,
+        executed_tasks_by_tag = fetched_executed_tasks.get_tasks_by_tag(
             tags=tags,
         )
 
