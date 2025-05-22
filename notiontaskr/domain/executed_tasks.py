@@ -53,3 +53,6 @@ class ExecutedTasks:
                 if task_tag in tags:
                     executed_tasks_by_tags[task_tag].append(task)
         return executed_tasks_by_tags
+
+    def __iter__(self):
+        return iter(self._tasks)

@@ -94,3 +94,8 @@ class TestExecuted_tasks:
         executed_tasks2 = ExecutedTasks.from_tasks([task1, task2])
         executed_tasks1.extend(executed_tasks2)
         assert len(executed_tasks1) == 3
+
+    def test_拡張for文が使えること(self, task1: ExecutedTask):
+        executed_tasks = ExecutedTasks.from_tasks([task1])
+        task_names = [str(task) for task in executed_tasks]
+        assert task_names == [str(task1)]
