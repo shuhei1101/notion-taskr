@@ -26,18 +26,6 @@ class ExecutedTaskService:
         return updated_tasks
 
     @staticmethod
-    def get_executed_tasks_by_tag(
-        executed_tasks: list[ExecutedTask], tags: list[str]
-    ) -> dict[str, list[ExecutedTask]]:
-        """指定したタグを持つ実績タスクを取得する"""
-        executed_tasks_by_tags = {tag: [] for tag in tags}
-        for task in executed_tasks:
-            for task_tag in task.tags:
-                if str(task_tag) in tags:
-                    executed_tasks_by_tags[str(task_tag)].append(task)
-        return executed_tasks_by_tags
-
-    @staticmethod
     def get_total_man_hours(executed_tasks: list[ExecutedTask]) -> float:
         """実績タスクの工数を合計する"""
         total_man_hours = ManHours(0)
