@@ -19,6 +19,7 @@ class TestScheduledTasks:
             tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
             id=NotionId("1"),
             status=Status.IN_PROGRESS,
+            is_updated=True,
         )
 
     @fixture
@@ -29,6 +30,7 @@ class TestScheduledTasks:
             tags=Tags.from_tags([Tag("tag2"), Tag("tag3")]),
             id=NotionId("2"),
             status=Status.COMPLETED,
+            is_updated=False,
         )
 
     def test_空の状態で初期化できること(self):
@@ -66,6 +68,22 @@ class TestScheduledTasks:
         scheduled_tasks = ScheduledTasks.from_tasks([task1])
         assert scheduled_tasks[0] == task1
 
+    def test_変更されたタスクを取得できること(
+        self, task1: ScheduledTask, task2: ScheduledTask
+    ):
+        scheduled_tasks = ScheduledTasks.from_tasks(
+            [task1, task2]  # task1のみis_updated=True
+        )
+        assert task1 in scheduled_tasks.get_updated_tasks()
+
+    def タスクを追加または更新できること(
+        self, task1: ScheduledTask, task2: ScheduledTask
+    ):
+        scheduled_tasks = ScheduledTasks.from_empty()
+        scheduled_tasks.append(task1)
+        scheduled_tasks.append(task2)
+        assert len(scheduled_tasks) == 2
+
     class Test_辞書関連:
         @fixture
         def scheduled_tasks(self, task1: ScheduledTask, task2: ScheduledTask):
@@ -89,3 +107,44 @@ class TestScheduledTasks:
             )
             assert len(tasks_by_tag[Tag("tag1")]) == 1
             assert len(tasks_by_tag[Tag("tag2")]) == 2
+
+    class Test_辞書から初期化:
+        @fixture
+        def scheduled_tasks(self):
+            return ScheduledTasks.from_tasks(
+                [
+                    ScheduledTask(
+                        page_id=PageId("page_1"),  # ページIDは同じ
+                        name=TaskName("タスク1"),
+                        tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
+                        id=NotionId("1"),  # ページIDは同じ
+                        status=Status.IN_PROGRESS,
+                        is_updated=True,
+                    ),
+                    ScheduledTask(
+                        page_id=PageId("page_1"),  # ページIDは同じ
+                        name=TaskName("タスク2"),
+                        tags=Tags.from_tags([Tag("tag2"), Tag("tag3")]),
+                        id=NotionId("1"),  # ページIDは同じ
+                        status=Status.COMPLETED,
+                        is_updated=False,
+                    ),
+                ]
+            )
+
+        def test_id辞書から初期化できること(self, scheduled_tasks: ScheduledTasks):
+
+            tasks_by_id = scheduled_tasks.get_tasks_by_id()
+            new_scheduled_tasks = ScheduledTasks.from_tasks_by_id(tasks_by_id)
+
+            # ２番目のタスクが上書きされていること
+            assert len(new_scheduled_tasks) == 1
+            assert new_scheduled_tasks[0].name == TaskName("タスク2")
+
+        def test_page_id辞書から初期化できること(self, scheduled_tasks: ScheduledTasks):
+            tasks_by_page_id = scheduled_tasks.get_tasks_by_page_id()
+            new_scheduled_tasks = ScheduledTasks.from_tasks_by_page_id(tasks_by_page_id)
+
+            # ２番目のタスクが上書きされていること
+            assert len(new_scheduled_tasks) == 1
+            assert new_scheduled_tasks[0].name == TaskName("タスク2")

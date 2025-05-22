@@ -5,13 +5,21 @@ from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.domain.tags import Tags
 from notiontaskr.domain.value_objects.tag import Tag
 from notiontaskr.domain.value_objects.man_hours import ManHours
+from notiontaskr.domain.tasks import Tasks
+
+from notiontaskr.domain.value_objects.notion_id import NotionId
+
+from notiontaskr.domain.value_objects.page_id import PageId
 
 
 @dataclass
-class ExecutedTasks:
+class ExecutedTasks(Tasks):
     """実績タスクを管理するクラス"""
 
     _tasks: List[ExecutedTask]
+
+    def _get_tasks(self):
+        return self._tasks
 
     @classmethod
     def from_empty(cls):
@@ -23,6 +31,18 @@ class ExecutedTasks:
             _tasks=tasks,
         )
 
+    @classmethod
+    def from_tasks_by_id(cls, tasks_by_id: dict[NotionId, ExecutedTask]):
+        return cls(
+            _tasks=list(tasks_by_id.values()),
+        )
+
+    @classmethod
+    def from_tasks_by_page_id(cls, tasks_by_page_id: dict[PageId, ExecutedTask]):
+        return cls(
+            _tasks=list(tasks_by_page_id.values()),
+        )
+
     def append(self, task: ExecutedTask):
         """実績タスクを追加する"""
 
@@ -32,12 +52,6 @@ class ExecutedTasks:
         """実績タスクを追加する"""
 
         self._tasks.extend(tasks._tasks)
-
-    def __len__(self):
-        return len(self._tasks)
-
-    def __getitem__(self, index: int):
-        return self._tasks[index]
 
     def get_tasks_by_id(self):
         return {task.id: task for task in self._tasks}
@@ -61,6 +75,3 @@ class ExecutedTasks:
             total_man_hours += task.man_hours
 
         return total_man_hours
-
-    def __iter__(self):
-        return iter(self._tasks)

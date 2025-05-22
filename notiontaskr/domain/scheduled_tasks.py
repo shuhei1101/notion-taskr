@@ -2,17 +2,23 @@ from dataclasses import dataclass
 from typing import List
 
 from notiontaskr.domain.scheduled_task import ScheduledTask
-
 from notiontaskr.domain.tags import Tags
-
 from notiontaskr.domain.value_objects.tag import Tag
+from notiontaskr.domain.tasks import Tasks
+
+from notiontaskr.domain.value_objects.notion_id import NotionId
+
+from notiontaskr.domain.value_objects.page_id import PageId
 
 
 @dataclass
-class ScheduledTasks:
+class ScheduledTasks(Tasks):
     """スケジュールタスクを管理するクラス"""
 
     _tasks: List[ScheduledTask]
+
+    def _get_tasks(self):
+        return self._tasks
 
     @classmethod
     def from_empty(cls):
@@ -24,6 +30,18 @@ class ScheduledTasks:
             _tasks=tasks,
         )
 
+    @classmethod
+    def from_tasks_by_id(cls, tasks_by_id: dict[NotionId, ScheduledTask]):
+        return cls(
+            _tasks=list(tasks_by_id.values()),
+        )
+
+    @classmethod
+    def from_tasks_by_page_id(cls, tasks_by_page_id: dict[PageId, ScheduledTask]):
+        return cls(
+            _tasks=list(tasks_by_page_id.values()),
+        )
+
     def append(self, task: ScheduledTask):
         """スケジュールタスクを追加する"""
 
@@ -33,15 +51,6 @@ class ScheduledTasks:
         """スケジュールタスクを追加する"""
 
         self._tasks.extend(tasks._tasks)
-
-    def __len__(self):
-        return len(self._tasks)
-
-    def __iter__(self):
-        return iter(self._tasks)
-
-    def __getitem__(self, index: int):
-        return self._tasks[index]
 
     def get_tasks_by_id(self):
         return {task.id: task for task in self._tasks}

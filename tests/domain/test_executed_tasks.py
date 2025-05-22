@@ -22,6 +22,7 @@ class TestExecutedTasks:
             id=NotionId("1"),
             status=Status.IN_PROGRESS,
             man_hours=ManHours(1.0),
+            is_updated=True,
         )
 
     @fixture
@@ -33,6 +34,7 @@ class TestExecutedTasks:
             id=NotionId("2"),
             status=Status.COMPLETED,
             man_hours=ManHours(2.0),
+            is_updated=False,
         )
 
     def test_空の状態で初期化できること(self):
@@ -78,6 +80,14 @@ class TestExecutedTasks:
         executed_tasks = ExecutedTasks.from_tasks([task1])
         assert executed_tasks[0] == task1
 
+    def test_変更されたタスクを取得できること(
+        self, task1: ExecutedTask, task2: ExecutedTask
+    ):
+        scheduled_tasks = ExecutedTasks.from_tasks(
+            [task1, task2]  # task1のみis_updated=True
+        )
+        assert task1 in scheduled_tasks.get_updated_tasks()
+
     class Test_辞書関連:
         @fixture
         def executed_tasks(self, task1: ExecutedTask, task2: ExecutedTask):
@@ -99,3 +109,44 @@ class TestExecutedTasks:
             )
             assert len(executed_tasks_by_tag[Tag("tag1")]) == 1
             assert len(executed_tasks_by_tag[Tag("tag2")]) == 2
+
+    class Test_辞書から初期化:
+        @fixture
+        def executed_tasks(self):
+            return ExecutedTasks.from_tasks(
+                [
+                    ExecutedTask(
+                        page_id=PageId("page_1"),  # ページIDは同じ
+                        name=TaskName("タスク1"),
+                        tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
+                        id=NotionId("1"),  # ページIDは同じ
+                        status=Status.IN_PROGRESS,
+                        is_updated=True,
+                    ),
+                    ExecutedTask(
+                        page_id=PageId("page_1"),  # ページIDは同じ
+                        name=TaskName("タスク2"),
+                        tags=Tags.from_tags([Tag("tag2"), Tag("tag3")]),
+                        id=NotionId("1"),  # ページIDは同じ
+                        status=Status.COMPLETED,
+                        is_updated=False,
+                    ),
+                ]
+            )
+
+        def test_id辞書から初期化できること(self, executed_tasks: ExecutedTasks):
+
+            tasks_by_id = executed_tasks.get_tasks_by_id()
+            new_executed_tasks = ExecutedTasks.from_tasks_by_id(tasks_by_id)
+
+            # ２番目のタスクが上書きされていること
+            assert len(new_executed_tasks) == 1
+            assert new_executed_tasks[0].name == TaskName("タスク2")
+
+        def test_page_id辞書から初期化できること(self, executed_tasks: ExecutedTasks):
+            tasks_by_page_id = executed_tasks.get_tasks_by_page_id()
+            new_executed_tasks = ExecutedTasks.from_tasks_by_page_id(tasks_by_page_id)
+
+            # ２番目のタスクが上書きされていること
+            assert len(new_executed_tasks) == 1
+            assert new_executed_tasks[0].name == TaskName("タスク2")
