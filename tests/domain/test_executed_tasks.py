@@ -87,3 +87,10 @@ class TestExecuted_tasks:
             assert len(executed_tasks_by_tag[Tag("tag1")]) == 1
             assert len(executed_tasks_by_tag[Tag("tag2")]) == 2
 
+    def test_extendメソッドでリストに自身を追加できること(
+        self, task1: ExecutedTask, task2: ExecutedTask
+    ):
+        executed_tasks1 = ExecutedTasks.from_tasks([task1])
+        executed_tasks2 = ExecutedTasks.from_tasks([task1, task2])
+        executed_tasks1.extend(executed_tasks2)
+        assert len(executed_tasks1) == 3

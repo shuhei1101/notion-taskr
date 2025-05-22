@@ -31,6 +31,11 @@ class ExecutedTasks:
 
         self.tasks.append(task)
 
+    def extend(self, tasks: "ExecutedTasks"):
+        """実績タスクを追加する"""
+
+        self.tasks.extend(tasks.tasks)
+
     def __len__(self):
         return len(self.tasks)
 
