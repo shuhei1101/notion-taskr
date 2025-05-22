@@ -1,6 +1,7 @@
 from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.domain.scheduled_task import ScheduledTask
 from notiontaskr.domain.task_service import TaskService
+from notiontaskr.domain.executed_tasks import ExecutedTasks
 
 from notiontaskr.domain.value_objects.man_hours import ManHours
 
@@ -9,7 +10,7 @@ class ExecutedTaskService:
 
     @staticmethod
     def get_tasks_add_id_tag(
-        to: list[ExecutedTask], source: list[ScheduledTask]
+        to: ExecutedTasks, source: list[ScheduledTask]
     ) -> list[ScheduledTask]:
         """予定タスクと同じ名前を持つ実績タスクに同じIDを付与し、
         新たにIDが付与された予定タスクのみを返却する"""

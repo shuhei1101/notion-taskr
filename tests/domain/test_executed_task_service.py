@@ -2,6 +2,8 @@ from unittest.mock import Mock
 
 from notiontaskr.domain.executed_task_service import ExecutedTaskService
 
+from notiontaskr.domain.executed_tasks import ExecutedTasks
+
 
 class TestExecutedTaskService:
     class Test_get_tasks_add_id_tag:
@@ -15,7 +17,7 @@ class TestExecutedTaskService:
             scheduled_task.name.task_name = "タスク1"
             scheduled_task.name.id_label = "ID1"
             scheduled_task.id = "scheduled_id_1"
-            to = [executed_task]
+            to = ExecutedTasks.from_tasks([executed_task])
             source = [scheduled_task]
 
             _ = ExecutedTaskService.get_tasks_add_id_tag(to, source)  # type: ignore
@@ -33,7 +35,7 @@ class TestExecutedTaskService:
             scheduled_task.name.task_name = "タスク1"
             scheduled_task.name.id_label = "ID1"
             scheduled_task.id = "scheduled_id_1"
-            to = [executed_task]
+            to = ExecutedTasks.from_tasks([executed_task])
             source = [scheduled_task]
 
             updated_tasks = ExecutedTaskService.get_tasks_add_id_tag(to, source)  # type: ignore
@@ -44,7 +46,7 @@ class TestExecutedTaskService:
             executed_task = Mock()
             executed_task.name.id_label = "既存のID"
             scheduled_task = Mock()
-            to = [executed_task]
+            to = ExecutedTasks.from_tasks([executed_task])
             source = [scheduled_task]
 
             updated_tasks = ExecutedTaskService.get_tasks_add_id_tag(to, source)  # type: ignore
@@ -61,7 +63,7 @@ class TestExecutedTaskService:
             scheduled_task.name.task_name = "タスク1"
             scheduled_task.name.id_label = "ID1"
             scheduled_task.id = "scheduled_id_1"
-            to = [executed_task]
+            to = ExecutedTasks.from_tasks([executed_task])
             source = [scheduled_task]
 
             updated_tasks = ExecutedTaskService.get_tasks_add_id_tag(to, source)  # type: ignore
