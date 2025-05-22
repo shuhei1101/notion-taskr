@@ -328,9 +328,9 @@ class TaskApplicationService:
         uptime_data_by_tag = UptimeDataByTag.from_empty()
         for tag, tasks in executed_tasks_by_tag.items():
             uptime_data_by_tag.insert_data(
-                data=UptimeData(
+                data=UptimeData.from_domain(
                     tag=tag,
-                    uptime=ExecutedTaskService.get_total_man_hours(tasks),
+                    uptime=tasks.get_total_man_hours(),
                     from_=from_,
                     to=to,
                 )

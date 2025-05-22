@@ -2,6 +2,9 @@ from dataclasses import dataclass
 from datetime import datetime
 import json
 
+from notiontaskr.domain.value_objects.tag import Tag
+from notiontaskr.domain.value_objects.man_hours import ManHours
+
 
 @dataclass
 class UptimeData:
@@ -11,6 +14,13 @@ class UptimeData:
     uptime: float
     from_: datetime
     to: datetime
+
+    @classmethod
+    def from_domain(
+        cls, tag: Tag, uptime: ManHours, from_: datetime, to: datetime
+    ) -> "UptimeData":
+        """ドメインからDTOを生成する"""
+        return cls(tag=str(tag), uptime=float(uptime), from_=from_, to=to)
 
 
 @dataclass
