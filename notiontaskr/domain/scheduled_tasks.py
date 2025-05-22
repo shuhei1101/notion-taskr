@@ -12,7 +12,7 @@ from notiontaskr.domain.value_objects.page_id import PageId
 
 
 @dataclass
-class ScheduledTasks(Tasks):
+class ScheduledTasks(Tasks[ScheduledTask]):
     """スケジュールタスクを管理するクラス"""
 
     _tasks: List[ScheduledTask]

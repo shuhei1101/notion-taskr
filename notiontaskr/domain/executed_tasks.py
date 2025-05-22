@@ -13,7 +13,7 @@ from notiontaskr.domain.value_objects.page_id import PageId
 
 
 @dataclass
-class ExecutedTasks(Tasks):
+class ExecutedTasks(Tasks[ExecutedTask]):
     """実績タスクを管理するクラス"""
 
     _tasks: List[ExecutedTask]
