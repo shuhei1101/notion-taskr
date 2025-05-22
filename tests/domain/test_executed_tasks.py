@@ -8,6 +8,8 @@ from notiontaskr.domain.value_objects.tag import Tag
 from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.status import Status
 
+from notiontaskr.domain.tags import Tags
+
 
 class TestExecuted_tasks:
 
@@ -16,7 +18,7 @@ class TestExecuted_tasks:
         return ExecutedTask(
             page_id=PageId("page_1"),
             name=TaskName(task_name="タスク1"),
-            tags=[Tag("tag1")],
+            tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
             id=NotionId("1"),
             status=Status.IN_PROGRESS,
         )
@@ -26,7 +28,7 @@ class TestExecuted_tasks:
         return ExecutedTask(
             page_id=PageId("page_2"),
             name=TaskName(task_name="タスク2"),
-            tags=[Tag("tag2")],
+            tags=Tags.from_tags([Tag("tag2"), Tag("tag3")]),
             id=NotionId("2"),
             status=Status.COMPLETED,
         )
@@ -74,3 +76,14 @@ class TestExecuted_tasks:
             executed_tasks_by_page_id = executed_tasks.get_tasks_by_page_id()
             assert executed_tasks_by_page_id[PageId("page_1")] == task1
             assert executed_tasks_by_page_id[PageId("page_2")] == task2
+
+        def test_tag辞書を取得できること(
+            self,
+            executed_tasks: ExecutedTasks,
+        ):
+            executed_tasks_by_tag = executed_tasks.get_tasks_by_tag(
+                tags=Tags.from_tags([Tag("tag1"), Tag("tag2")])
+            )
+            assert len(executed_tasks_by_tag[Tag("tag1")]) == 1
+            assert len(executed_tasks_by_tag[Tag("tag2")]) == 2
+
