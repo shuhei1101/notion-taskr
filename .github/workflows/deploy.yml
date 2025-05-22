@@ -77,22 +77,6 @@ jobs:
     - name: Push job docker image
       run: docker push ${{ env.DAILY_JOB_IMAGE }}
 
-    - name: Add secrets to GCP Secret Manager
-      run: |
-        echo -n "${{ secrets.NOTION_TOKEN }}" | gcloud secrets create NOTION_TOKEN --data-file=- || \
-          echo -n "${{ secrets.NOTION_TOKEN }}" | gcloud secrets versions add NOTION_TOKEN --data-file=-
-
-        echo -n "${{ secrets.TASK_DB_ID }}" | gcloud secrets create TASK_DB_ID --data-file=- || \
-          echo -n "${{ secrets.TASK_DB_ID }}" | gcloud secrets versions add TASK_DB_ID --data-file=-
-
-        gcloud secrets add-iam-policy-binding NOTION_TOKEN \
-          --member="serviceAccount:${{ env.SERVICE_ACCOUNT_NAME }}" \
-          --role="roles/secretmanager.secretAccessor"
-
-        gcloud secrets add-iam-policy-binding TASK_DB_ID \
-          --member="serviceAccount:${{ env.SERVICE_ACCOUNT_NAME }}" \
-          --role="roles/secretmanager.secretAccessor"
-          
     # Cloud Run にデプロイ
     - name: Deploy to Cloud Run (Service)
       run: |
@@ -102,7 +86,7 @@ jobs:
           --region $GCP_REGION \
           --service-account $SERVICE_ACCOUNT_NAME \
           --platform managed \
-          --update-secrets NOTION_TOKEN=NOTION_TOKEN:latest,TASK_DB_ID=TASK_DB_ID:latest \
+          --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
           --allow-unauthenticated
 
     # ジョブをCloud Runにデプロイ（作成または更新） 
@@ -117,7 +101,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
-          --update-secrets NOTION_TOKEN=NOTION_TOKEN:latest,TASK_DB_ID=TASK_DB_ID:latest \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
             --tasks=1
         else
           echo "Creating new job..."
@@ -128,7 +112,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
-          --update-secrets NOTION_TOKEN=NOTION_TOKEN:latest,TASK_DB_ID=TASK_DB_ID:latest \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
             --tasks=1
         fi
 
@@ -144,7 +128,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
-          --update-secrets NOTION_TOKEN=NOTION_TOKEN:latest,TASK_DB_ID=TASK_DB_ID:latest \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
             --tasks=1
         else
           echo "Creating new job..."
@@ -155,7 +139,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
-          --update-secrets NOTION_TOKEN=NOTION_TOKEN:latest,TASK_DB_ID=TASK_DB_ID:latest \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
             --tasks=1
         fi
 
