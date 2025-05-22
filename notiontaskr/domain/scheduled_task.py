@@ -16,6 +16,8 @@ from notiontaskr.domain.tags import Tags
 
 from notiontaskr.domain.value_objects.tag import Tag
 
+from notiontaskr.domain.executed_tasks import ExecutedTasks
+
 
 @dataclass
 class ScheduledTask(Task):
@@ -23,9 +25,7 @@ class ScheduledTask(Task):
 
     scheduled_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
     executed_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
-    executed_tasks: list["ExecutedTask"] = field(
-        default_factory=list
-    )  # 紐づいている実績タスク
+    executed_tasks: ExecutedTasks = ExecutedTasks.from_empty()  # 紐づいている実績タスク
     sub_task_page_ids: list["PageId"] = field(
         default_factory=list
     )  # サブアイテムのページID
@@ -276,7 +276,7 @@ class ScheduledTask(Task):
 
     def update_executed_tasks(
         self,
-        executed_tasks: list["ExecutedTask"],
+        executed_tasks: ExecutedTasks,
     ):
         """実績タスクを更新する"""
         self.executed_tasks = executed_tasks
