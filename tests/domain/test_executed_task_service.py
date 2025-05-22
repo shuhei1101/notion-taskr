@@ -4,6 +4,8 @@ from notiontaskr.domain.executed_task_service import ExecutedTaskService
 
 from notiontaskr.domain.executed_tasks import ExecutedTasks
 
+from notiontaskr.domain.scheduled_tasks import ScheduledTasks
+
 
 class TestExecutedTaskService:
     class Test_get_tasks_add_id_tag:
@@ -49,7 +51,7 @@ class TestExecutedTaskService:
             to = ExecutedTasks.from_tasks([executed_task])
             source = [scheduled_task]
 
-            updated_tasks = ExecutedTaskService.get_tasks_add_id_tag(to, source)  # type: ignore
+            _ = ExecutedTaskService.get_tasks_add_id_tag(to, source)  # type: ignore
             # 内部のメソッドが呼び出されないことを確認
             executed_task.update_id_label.assert_not_called()
             executed_task.update_scheduled_task_id.assert_not_called()

@@ -1,20 +1,21 @@
 from notiontaskr.domain.executed_task import ExecutedTask
-from notiontaskr.domain.scheduled_task import ScheduledTask
 from notiontaskr.domain.task_service import TaskService
 from notiontaskr.domain.executed_tasks import ExecutedTasks
 
 from notiontaskr.domain.value_objects.man_hours import ManHours
+
+from notiontaskr.domain.scheduled_tasks import ScheduledTasks
 
 
 class ExecutedTaskService:
 
     @staticmethod
     def get_tasks_add_id_tag(
-        to: ExecutedTasks, source: list[ScheduledTask]
-    ) -> list[ScheduledTask]:
+        to: ExecutedTasks, source: ScheduledTasks
+    ) -> ScheduledTasks:
         """予定タスクと同じ名前を持つ実績タスクに同じIDを付与し、
         新たにIDが付与された予定タスクのみを返却する"""
-        updated_tasks = []
+        updated_tasks = ScheduledTasks.from_empty()
         for executed_task in to:
             if executed_task.name.id_label is not None:
                 continue
@@ -22,9 +23,11 @@ class ExecutedTaskService:
                 if executed_task.name.task_name == scheduled_task.name.task_name:
                     executed_task.update_id_label(scheduled_task.name.id_label)  # type: ignore (予定タスクのIDがNoneになることはない)
                     executed_task.update_scheduled_task_id(scheduled_task.id)
-                    TaskService.upsert_tasks(to=updated_tasks, source=scheduled_task)
+                    updated_tasks.append(scheduled_task)
                     break
-        return updated_tasks
+
+        # 更新した予定タスクを取得する(重複除去)
+        return ScheduledTasks.from_tasks_by_id(updated_tasks.get_tasks_by_id())
 
     @staticmethod
     def get_total_man_hours(executed_tasks: list[ExecutedTask]) -> float:
