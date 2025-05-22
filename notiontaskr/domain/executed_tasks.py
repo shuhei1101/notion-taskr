@@ -2,11 +2,8 @@ from dataclasses import dataclass
 from typing import List
 
 from notiontaskr.domain.executed_task import ExecutedTask
-
 from notiontaskr.domain.tags import Tags
-
 from notiontaskr.domain.value_objects.tag import Tag
-
 from notiontaskr.domain.value_objects.man_hours import ManHours
 
 
