@@ -86,11 +86,11 @@ jobs:
           echo -n "${{ secrets.TASK_DB_ID }}" | gcloud secrets versions add TASK_DB_ID --data-file=-
 
         gcloud secrets add-iam-policy-binding NOTION_TOKEN \
-          --member="serviceAccount:${{ fromJson(secrets.GCP_SA_KEY).client_email }}" \
+          --member="serviceAccount:${{ env.SERVICE_ACCOUNT_NAME }}" \
           --role="roles/secretmanager.secretAccessor"
 
         gcloud secrets add-iam-policy-binding TASK_DB_ID \
-          --member="serviceAccount:${{ fromJson(secrets.GCP_SA_KEY).client_email }}" \
+          --member="serviceAccount:${{ env.SERVICE_ACCOUNT_NAME }}" \
           --role="roles/secretmanager.secretAccessor"
           
     # Cloud Run にデプロイ
