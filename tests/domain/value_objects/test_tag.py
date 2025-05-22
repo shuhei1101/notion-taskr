@@ -22,3 +22,10 @@ class TestTag:
         tag1 = Tag("重要")
         tag2 = Tag("重要")
         assert hash(tag1) == hash(tag2)
+
+    def test___eq___メソッドで等価性を比較できること(self):
+        tag1 = Tag("重要")
+        tag2 = Tag("重要")
+        tag3 = Tag("緊急")
+        assert tag1 == tag2
+        assert tag1 != tag3

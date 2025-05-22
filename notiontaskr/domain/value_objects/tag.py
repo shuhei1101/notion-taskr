@@ -15,3 +15,8 @@ class Tag:
 
     def __hash__(self) -> int:
         return hash(self.value)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Tag):
+            return NotImplemented
+        return self.value == other.value
