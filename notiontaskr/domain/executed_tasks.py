@@ -54,5 +54,13 @@ class ExecutedTasks:
                     executed_tasks_by_tags[task_tag].append(task)
         return executed_tasks_by_tags
 
+    def get_total_man_hours(self) -> ManHours:
+        """実績タスクの工数の合計を取得する"""
+        total_man_hours = ManHours(0.0)
+        for task in self._tasks:
+            total_man_hours += task.man_hours
+
+        return total_man_hours
+
     def __iter__(self):
         return iter(self._tasks)

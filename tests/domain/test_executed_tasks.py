@@ -99,3 +99,10 @@ class TestExecuted_tasks:
         executed_tasks = ExecutedTasks.from_tasks([task1])
         task_names = [str(task) for task in executed_tasks]
         assert task_names == [str(task1)]
+
+    def test_実績タスクの工数の合計を取得できること(
+        self, task1: ExecutedTask, task2: ExecutedTask
+    ):
+        executed_tasks = ExecutedTasks.from_tasks([task1, task2])
+        total_man_hours = executed_tasks.get_total_man_hours()
+        assert total_man_hours == task1.man_hours + task2.man_hours
