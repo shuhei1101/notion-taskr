@@ -7,12 +7,12 @@ from notiontaskr.domain.tags import Tags
 
 from notiontaskr.domain.value_objects.tag import Tag
 
+from notiontaskr.domain.value_objects.man_hours import ManHours
+
 
 @dataclass
 class ExecutedTasks:
-    """
-    実績タスクを管理するクラス
-    """
+    """実績タスクを管理するクラス"""
 
     _tasks: List[ExecutedTask]
 
@@ -38,6 +38,9 @@ class ExecutedTasks:
 
     def __len__(self):
         return len(self._tasks)
+
+    def __getitem__(self, index: int):
+        return self._tasks[index]
 
     def get_tasks_by_id(self):
         return {task.id: task for task in self._tasks}

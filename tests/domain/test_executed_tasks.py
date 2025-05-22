@@ -7,11 +7,11 @@ from notiontaskr.domain.task_name import TaskName
 from notiontaskr.domain.value_objects.tag import Tag
 from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.status import Status
-
 from notiontaskr.domain.tags import Tags
+from notiontaskr.domain.value_objects.man_hours import ManHours
 
 
-class TestExecuted_tasks:
+class TestExecutedTasks:
 
     @fixture
     def task1(self):
@@ -21,6 +21,7 @@ class TestExecuted_tasks:
             tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
             id=NotionId("1"),
             status=Status.IN_PROGRESS,
+            man_hours=ManHours(1.0),
         )
 
     @fixture
@@ -31,6 +32,7 @@ class TestExecuted_tasks:
             tags=Tags.from_tags([Tag("tag2"), Tag("tag3")]),
             id=NotionId("2"),
             status=Status.COMPLETED,
+            man_hours=ManHours(2.0),
         )
 
     def test_空の状態で初期化できること(self):
@@ -52,41 +54,6 @@ class TestExecuted_tasks:
         executed_tasks.append(task1)
         assert len(executed_tasks) == 2
 
-    class Test_辞書関連:
-        @fixture
-        def executed_tasks(self, task1: ExecutedTask, task2: ExecutedTask):
-            return ExecutedTasks.from_tasks([task1, task2])
-
-        def test_id辞書を取得できること(
-            self,
-            executed_tasks: ExecutedTasks,
-            task1: ExecutedTask,
-            task2: ExecutedTask,
-        ):
-            executed_tasks_by_id = executed_tasks.get_tasks_by_id()
-            assert executed_tasks_by_id[NotionId("1")] == task1
-            assert executed_tasks_by_id[NotionId("2")] == task2
-
-        def test_page_id辞書を取得できること(
-            self,
-            executed_tasks: ExecutedTasks,
-            task1: ExecutedTask,
-            task2: ExecutedTask,
-        ):
-            executed_tasks_by_page_id = executed_tasks.get_tasks_by_page_id()
-            assert executed_tasks_by_page_id[PageId("page_1")] == task1
-            assert executed_tasks_by_page_id[PageId("page_2")] == task2
-
-        def test_tag辞書を取得できること(
-            self,
-            executed_tasks: ExecutedTasks,
-        ):
-            executed_tasks_by_tag = executed_tasks.get_tasks_by_tag(
-                tags=Tags.from_tags([Tag("tag1"), Tag("tag2")])
-            )
-            assert len(executed_tasks_by_tag[Tag("tag1")]) == 1
-            assert len(executed_tasks_by_tag[Tag("tag2")]) == 2
-
     def test_extendメソッドでリストに自身を追加できること(
         self, task1: ExecutedTask, task2: ExecutedTask
     ):
@@ -106,3 +73,29 @@ class TestExecuted_tasks:
         executed_tasks = ExecutedTasks.from_tasks([task1, task2])
         total_man_hours = executed_tasks.get_total_man_hours()
         assert total_man_hours == task1.man_hours + task2.man_hours
+
+    def test_添字で要素を取得できること(self, task1: ExecutedTask):
+        executed_tasks = ExecutedTasks.from_tasks([task1])
+        assert executed_tasks[0] == task1
+
+    class Test_辞書関連:
+        @fixture
+        def executed_tasks(self, task1: ExecutedTask, task2: ExecutedTask):
+            return ExecutedTasks.from_tasks([task1, task2])
+
+        def test_id辞書を取得できること(self, executed_tasks: ExecutedTasks):
+            executed_tasks_by_id = executed_tasks.get_tasks_by_id()
+            assert executed_tasks_by_id[NotionId("1")] == executed_tasks[0]
+            assert executed_tasks_by_id[NotionId("2")] == executed_tasks[1]
+
+        def test_page_id辞書を取得できること(self, executed_tasks: ExecutedTasks):
+            executed_tasks_by_page_id = executed_tasks.get_tasks_by_page_id()
+            assert executed_tasks_by_page_id[PageId("page_1")] == executed_tasks[0]
+            assert executed_tasks_by_page_id[PageId("page_2")] == executed_tasks[1]
+
+        def test_tag辞書を取得できること(self, executed_tasks: ExecutedTasks):
+            executed_tasks_by_tag = executed_tasks.get_tasks_by_tag(
+                tags=Tags.from_tags([Tag("tag1"), Tag("tag2")])
+            )
+            assert len(executed_tasks_by_tag[Tag("tag1")]) == 1
+            assert len(executed_tasks_by_tag[Tag("tag2")]) == 2
