@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.domain.name_labels.id_label import IdLabel
 from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
 from notiontaskr.domain.task import Task
@@ -25,7 +24,9 @@ class ScheduledTask(Task):
 
     scheduled_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
     executed_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
-    executed_tasks: ExecutedTasks = ExecutedTasks.from_empty()  # 紐づいている実績タスク
+    executed_tasks: ExecutedTasks = field(
+        default_factory=lambda: ExecutedTasks.from_empty()
+    )  # 紐づいている実績タスク
     sub_task_page_ids: list["PageId"] = field(
         default_factory=list
     )  # サブアイテムのページID
@@ -72,7 +73,6 @@ class ScheduledTask(Task):
                 ),
                 scheduled_man_hours=ManHours(data["properties"]["人時(予)"]["number"]),
                 executed_man_hours=ManHours(data["properties"]["人時(実)"]["number"]),
-                executed_tasks=[],
                 sub_task_page_ids=[
                     PageId(relation["id"])
                     for relation in data["properties"]["サブアイテム"]["relation"]
