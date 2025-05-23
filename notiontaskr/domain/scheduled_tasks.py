@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, List
 
+from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
+
 if TYPE_CHECKING:
     from notiontaskr.domain.scheduled_task import ScheduledTask
 from notiontaskr.domain.tags import Tags
@@ -72,3 +74,9 @@ class ScheduledTasks(Tasks["ScheduledTask"]):
                 if task_tag in tags:
                     scheduled_tasks_by_tags[task_tag].append(task)
         return scheduled_tasks_by_tags
+
+    def update_parent_id_label(self, parent_id: NotionId) -> "ScheduledTasks":
+        """親IDを更新する"""
+        for task in self._tasks:
+            task.update_parent_id_label(ParentIdLabel.from_property(parent_id))
+        return self

@@ -108,10 +108,7 @@ class ScheduledTask(Task):
     def update_sub_tasks_properties(self):
         """サブアイテムのプロパティを更新する"""
         # サブアイテムの親IDラベルを更新する
-        for sub_task in self.sub_tasks:
-            sub_task.update_parent_id_label(
-                ParentIdLabel.from_property(parent_id=self.id)
-            )
+        self.sub_tasks.update_parent_id_label(parent_id=self.id)
 
     def _update_status_by_checking_executed_tasks(self):
         """実績タスクの進捗を確認し、ステータスを更新する"""

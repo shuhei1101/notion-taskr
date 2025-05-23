@@ -153,3 +153,33 @@ class TestScheduledTasks:
             # ２番目のタスクが上書きされていること
             assert len(new_scheduled_tasks) == 1
             assert new_scheduled_tasks[0].name == TaskName("タスク2")
+
+    def test_taskの親IDラベルを更新できること(self):
+        scheduled_tasks = ScheduledTasks.from_tasks(
+            [
+                ScheduledTask(
+                    page_id=PageId("page_1"),  # ページIDは同じ
+                    name=TaskName("タスク1"),
+                    tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
+                    id=NotionId("1"),  # ページIDは同じ
+                    status=Status.IN_PROGRESS,
+                    is_updated=True,
+                ),
+                ScheduledTask(
+                    page_id=PageId("page_1"),  # ページIDは同じ
+                    name=TaskName("タスク2"),
+                    tags=Tags.from_tags([Tag("tag2"), Tag("tag3")]),
+                    id=NotionId("1"),  # ページIDは同じ
+                    status=Status.COMPLETED,
+                    is_updated=False,
+                ),
+            ]
+        )
+        parent_id = NotionId("1")
+        scheduled_tasks.update_parent_id_label(parent_id=parent_id)
+        assert scheduled_tasks[0].name.parent_id_label.value == str(  # type: ignore
+            parent_id.number
+        )
+        assert scheduled_tasks[1].name.parent_id_label.value == str(  # type: ignore
+            parent_id.number
+        )
