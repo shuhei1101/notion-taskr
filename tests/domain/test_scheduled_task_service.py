@@ -1,43 +1,74 @@
 from unittest.mock import Mock
 
 from notiontaskr.domain.value_objects.notion_id import NotionId
-
 from notiontaskr.domain.scheduled_task_service import ScheduledTaskService
+from notiontaskr.domain.scheduled_tasks import ScheduledTasks
+from notiontaskr.domain.executed_tasks import ExecutedTasks
+from notiontaskr.domain.scheduled_task import ScheduledTask
+from notiontaskr.domain.executed_task import ExecutedTask
 
 
 class TestScheduledTaskService:
     class Test_get_tasks_upserted_executed_tasks:
         def test_予定タスクIDが一致する実績タスクを追加できること(self):
-            scheduled_task = Mock()
-            scheduled_task.id = NotionId("scheduled_id_1")
-            scheduled_task.executed_tasks = []
-            executed_task = Mock()
-            executed_task.scheduled_task_id = NotionId("scheduled_id_1")
-            executed_task.name.task_name = "タスク1"
-            executed_task.name.id_label = None
-            scheduled_tasks_by_id = {scheduled_task.id: scheduled_task}
-            executed_tasks = [executed_task]
+            scheduled_tasks = ScheduledTasks.from_tasks(
+                [
+                    ScheduledTask(
+                        id=NotionId("scheduled_id_1"),
+                        name=Mock(),
+                        tags=Mock(),
+                        page_id=Mock(),
+                        status=Mock(),
+                    )
+                ]
+            )
+            executed_tasks = ExecutedTasks.from_tasks(
+                [
+                    ExecutedTask(
+                        page_id=Mock(),
+                        name=Mock(),
+                        tags=Mock(),
+                        id=Mock(),
+                        status=Mock(),
+                        scheduled_task_id=NotionId("scheduled_id_1"),
+                    )
+                ]
+            )
 
-            updated_tasks = ScheduledTaskService.get_tasks_upserted_executed_tasks(
-                scheduled_tasks_by_id, executed_tasks, lambda e, t: None  # type: ignore
+            _, updated_tasks = ScheduledTaskService.get_tasks_upserted_executed_tasks(
+                scheduled_tasks, executed_tasks, lambda e, t: None  # type: ignore
             )
 
             assert len(updated_tasks) == 1
             assert updated_tasks[0].id == NotionId("scheduled_id_1")
 
         def test_対象の予定タスクが存在しない場合は何も追加されないこと(self):
-            scheduled_task = Mock()
-            scheduled_task.id = NotionId("scheduled_id_1")
-            scheduled_task.executed_tasks = []
-            executed_task = Mock()
-            executed_task.scheduled_task_id = NotionId("scheduled_id_2")
-            executed_task.name.task_name = "タスク1"
-            executed_task.name.id_label = None
-            scheduled_tasks_by_id = {scheduled_task.id: scheduled_task}
-            executed_tasks = [executed_task]
+            scheduled_tasks = ScheduledTasks.from_tasks(
+                [
+                    ScheduledTask(
+                        id=NotionId("scheduled_id_1"),
+                        name=Mock(),
+                        tags=Mock(),
+                        page_id=Mock(),
+                        status=Mock(),
+                    )
+                ]
+            )
+            executed_tasks = ExecutedTasks.from_tasks(
+                [
+                    ExecutedTask(
+                        page_id=Mock(),
+                        name=Mock(),
+                        tags=Mock(),
+                        id=Mock(),
+                        status=Mock(),
+                        scheduled_task_id=NotionId("scheduled_id_2"),
+                    )
+                ]
+            )
 
-            updated_tasks = ScheduledTaskService.get_tasks_upserted_executed_tasks(
-                scheduled_tasks_by_id, executed_tasks, lambda e, t: None  # type: ignore
+            _, updated_tasks = ScheduledTaskService.get_tasks_upserted_executed_tasks(
+                scheduled_tasks, executed_tasks, lambda e, t: None  # type: ignore
             )
 
             assert len(updated_tasks) == 0

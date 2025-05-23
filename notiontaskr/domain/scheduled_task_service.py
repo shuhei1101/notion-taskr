@@ -1,3 +1,4 @@
+import copy
 from typing import Callable
 from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.domain.scheduled_task import ScheduledTask
@@ -5,33 +6,41 @@ from notiontaskr.domain.task_service import TaskService
 from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.page_id import PageId
 
+from notiontaskr.domain.scheduled_tasks import ScheduledTasks
+
+from notiontaskr.domain.executed_tasks import ExecutedTasks
+
 
 class ScheduledTaskService:
     """ScheduledTaskのドメインサービスクラス"""
 
     @staticmethod
     def get_tasks_upserted_executed_tasks(
-        scheduled_tasks_by_id: dict[NotionId, ScheduledTask],
-        executed_tasks: list[ExecutedTask],
+        scheduled_tasks: ScheduledTasks,
+        executed_tasks: ExecutedTasks,
         on_error: Callable[[Exception, ExecutedTask], None],
-    ) -> list[ScheduledTask]:
-        """新たに実績タスクが付与された予定タスクのみを取得する
+    ) -> tuple[ScheduledTasks, ScheduledTasks]:
+        """予定タスクに実績タスクを付与し、更新された予定タスクを取得する
 
-        - **注意**: 本メソッドは予定タスクが直接変更される。
+        :return ScheduledTasks: 新たに実績タスクが付与された予定タスク配列
+        :return ScheduledTasks: 更新された予定タスク
         """
-        updated_tasks = []
+        new_scheduled_tasks = copy.deepcopy(scheduled_tasks)
+        updated_tasks = ScheduledTasks.from_empty()
+        scheduled_tasks_by_id = new_scheduled_tasks.get_tasks_by_id()
         for executed_task in executed_tasks:
             try:
-                target_task = scheduled_tasks_by_id.get(executed_task.scheduled_task_id)  # type: ignore (既にエラーハンドルしているため)
+                target_task = scheduled_tasks_by_id.get((executed_task.scheduled_task_id))  # type: ignore (既にエラーハンドルしているため)
                 if target_task is None:
                     continue
-                TaskService.upsert_tasks(target_task.executed_tasks, executed_task)
-                TaskService.upsert_tasks(updated_tasks, target_task)
+                target_task.executed_tasks.upsert_by_id(executed_task)
+                updated_tasks.upsert_by_id(target_task)
 
             except Exception as e:
                 on_error(e, executed_task)
+                continue
 
-        return updated_tasks
+        return new_scheduled_tasks, updated_tasks
 
     @staticmethod
     def get_tasks_appended_sub_tasks(

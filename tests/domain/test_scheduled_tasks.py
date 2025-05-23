@@ -76,13 +76,18 @@ class TestScheduledTasks:
         )
         assert task1 in scheduled_tasks.get_updated_tasks()
 
-    def タスクを追加または更新できること(
-        self, task1: ScheduledTask, task2: ScheduledTask
-    ):
+    def test_タスクを追加または更新できること(self):
+        task = ScheduledTask(
+            page_id=PageId("page_1"),
+            name=TaskName("タスク1"),
+            tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
+            id=NotionId("1"),
+            status=Status.IN_PROGRESS,
+        )
         scheduled_tasks = ScheduledTasks.from_empty()
-        scheduled_tasks.append(task1)
-        scheduled_tasks.append(task2)
-        assert len(scheduled_tasks) == 2
+        scheduled_tasks.upsert_by_id(task)
+        scheduled_tasks.upsert_by_id(task)
+        assert len(scheduled_tasks) == 1
 
     class Test_辞書関連:
         @fixture

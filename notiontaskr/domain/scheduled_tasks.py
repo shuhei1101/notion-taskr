@@ -52,6 +52,11 @@ class ScheduledTasks(Tasks[ScheduledTask]):
 
         self._tasks.extend(tasks._tasks)
 
+    def upsert_by_id(self, task: ScheduledTask):
+        """スケジュールタスクをIDで更新する"""
+        self._tasks.append(task)
+        self._tasks = list(self.get_tasks_by_id().values())
+
     def get_tasks_by_id(self):
         return {task.id: task for task in self._tasks}
 

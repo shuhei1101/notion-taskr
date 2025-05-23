@@ -70,7 +70,7 @@ class TestExecutedTaskService:
 
             updated_tasks = ExecutedTaskService.get_tasks_add_id_tag(to, source)  # type: ignore
             # 新たにIDが付与された予定タスクがない場合は空のリストを返すことを確認
-            assert updated_tasks == []
+            assert updated_tasks == ScheduledTasks.from_empty()
 
     class Test_get_total_man_hours:
         def test_実績タスクの工数を合計できること(self):

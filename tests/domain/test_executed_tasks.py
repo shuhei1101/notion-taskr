@@ -88,6 +88,19 @@ class TestExecutedTasks:
         )
         assert task1 in scheduled_tasks.get_updated_tasks()
 
+    def test_upsert_by_idメソッドでタスクを追加または更新できること(self):
+        executed_tasks = ExecutedTasks.from_empty()
+        task = ExecutedTask(
+            page_id=PageId("page_1"),
+            name=TaskName("タスク1"),
+            tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
+            id=NotionId("1"),
+            status=Status.IN_PROGRESS,
+        )
+        executed_tasks.upsert_by_id(task)
+        executed_tasks.upsert_by_id(task)
+        assert len(executed_tasks) == 1
+
     class Test_辞書関連:
         @fixture
         def executed_tasks(self, task1: ExecutedTask, task2: ExecutedTask):
