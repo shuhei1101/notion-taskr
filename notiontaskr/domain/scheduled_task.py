@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from notiontaskr.domain.name_labels.id_label import IdLabel
 from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
@@ -10,12 +11,11 @@ from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.page_id import PageId
 from notiontaskr.domain.value_objects.progress_rate import ProgressRate
 from notiontaskr.domain.value_objects.status import Status
-
 from notiontaskr.domain.tags import Tags
-
 from notiontaskr.domain.value_objects.tag import Tag
-
 from notiontaskr.domain.executed_tasks import ExecutedTasks
+
+from notiontaskr.domain.scheduled_tasks import ScheduledTasks
 
 
 @dataclass
@@ -30,7 +30,9 @@ class ScheduledTask(Task):
     sub_task_page_ids: list["PageId"] = field(
         default_factory=list
     )  # サブアイテムのページID
-    sub_tasks: list["ScheduledTask"] = field(default_factory=list)  # サブアイテム
+    sub_tasks: "ScheduledTasks" = field(
+        default_factory=lambda: ScheduledTasks(_tasks=[])
+    )  # サブアイテム
     progress_rate: ProgressRate = field(
         default_factory=lambda: ProgressRate(0)
     )  # 進捗率
@@ -77,7 +79,7 @@ class ScheduledTask(Task):
                     PageId(relation["id"])
                     for relation in data["properties"]["サブアイテム"]["relation"]
                 ],
-                sub_tasks=[],
+                sub_tasks=ScheduledTasks.from_empty(),
                 progress_rate=ProgressRate(data["properties"]["進捗率"]["number"]),
             )
 
@@ -274,16 +276,10 @@ class ScheduledTask(Task):
             )
             self.scheduled_man_hours = scheduled_man_hours
 
-    def update_executed_tasks(
-        self,
-        executed_tasks: ExecutedTasks,
-    ):
+    def update_executed_tasks(self, executed_tasks: ExecutedTasks):
         """実績タスクを更新する"""
         self.executed_tasks = executed_tasks
 
-    def update_sub_tasks(
-        self,
-        sub_tasks: list["ScheduledTask"],
-    ):
+    def update_sub_tasks(self, sub_tasks: "ScheduledTasks"):
         """サブアイテムを更新する"""
         self.sub_tasks = sub_tasks

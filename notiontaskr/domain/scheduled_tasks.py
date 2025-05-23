@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import List
+from typing import TYPE_CHECKING, List
 
-from notiontaskr.domain.scheduled_task import ScheduledTask
+if TYPE_CHECKING:
+    from notiontaskr.domain.scheduled_task import ScheduledTask
 from notiontaskr.domain.tags import Tags
 from notiontaskr.domain.value_objects.tag import Tag
 from notiontaskr.domain.tasks import Tasks
@@ -12,10 +13,10 @@ from notiontaskr.domain.value_objects.page_id import PageId
 
 
 @dataclass
-class ScheduledTasks(Tasks[ScheduledTask]):
+class ScheduledTasks(Tasks["ScheduledTask"]):
     """スケジュールタスクを管理するクラス"""
 
-    _tasks: List[ScheduledTask]
+    _tasks: List["ScheduledTask"]
 
     def _get_tasks(self):
         return self._tasks
@@ -25,24 +26,24 @@ class ScheduledTasks(Tasks[ScheduledTask]):
         return cls(_tasks=[])
 
     @classmethod
-    def from_tasks(cls, tasks: List[ScheduledTask]):
+    def from_tasks(cls, tasks: List["ScheduledTask"]):
         return cls(
             _tasks=tasks,
         )
 
     @classmethod
-    def from_tasks_by_id(cls, tasks_by_id: dict[NotionId, ScheduledTask]):
+    def from_tasks_by_id(cls, tasks_by_id: dict[NotionId, "ScheduledTask"]):
         return cls(
             _tasks=list(tasks_by_id.values()),
         )
 
     @classmethod
-    def from_tasks_by_page_id(cls, tasks_by_page_id: dict[PageId, ScheduledTask]):
+    def from_tasks_by_page_id(cls, tasks_by_page_id: dict[PageId, "ScheduledTask"]):
         return cls(
             _tasks=list(tasks_by_page_id.values()),
         )
 
-    def append(self, task: ScheduledTask):
+    def append(self, task: "ScheduledTask"):
         """スケジュールタスクを追加する"""
 
         self._tasks.append(task)
@@ -52,7 +53,7 @@ class ScheduledTasks(Tasks[ScheduledTask]):
 
         self._tasks.extend(tasks._tasks)
 
-    def upsert_by_id(self, task: ScheduledTask):
+    def upsert_by_id(self, task: "ScheduledTask"):
         """スケジュールタスクをIDで更新する"""
         self._tasks.append(task)
         self._tasks = list(self.get_tasks_by_id().values())
