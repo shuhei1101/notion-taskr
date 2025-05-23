@@ -7,6 +7,8 @@ from notiontaskr.domain.executed_tasks import ExecutedTasks
 from notiontaskr.domain.scheduled_task import ScheduledTask
 from notiontaskr.domain.executed_task import ExecutedTask
 
+from notiontaskr.domain.value_objects.page_id import PageId
+
 
 class TestScheduledTaskService:
     class Test_get_tasks_upserted_executed_tasks:
@@ -75,36 +77,75 @@ class TestScheduledTaskService:
 
     class Test_get_tasks_appended_sub_tasks:
         def test_親タスクIDが一致するサブタスクを追加できること(self):
-            parent_task = Mock()
-            parent_task.page_id = NotionId("parent_id_1")
-            parent_task.sub_tasks = []
-            sub_task = Mock()
-            sub_task.parent_task_page_id = NotionId("parent_id_1")
-            sub_task.name.task_name = "サブタスク1"
-            sub_tasks = [sub_task]
-            parent_tasks_by_page_id = {parent_task.page_id: parent_task}
+            parent_tasks = ScheduledTasks.from_tasks(
+                [
+                    ScheduledTask(
+                        id=NotionId("parent_id_1"),
+                        name=Mock(),
+                        tags=Mock(),
+                        page_id=PageId("parent_id_1"),
+                        status=Mock(),
+                    )
+                ]
+            )
+            sub_tasks = ScheduledTasks.from_tasks(
+                [
+                    ScheduledTask(
+                        id=Mock(),
+                        name=Mock(),
+                        tags=Mock(),
+                        page_id=Mock(),
+                        status=Mock(),
+                        parent_task_page_id=PageId("parent_id_1"),
+                    )
+                ]
+            )
 
-            updated_tasks = ScheduledTaskService.get_tasks_appended_sub_tasks(
-                sub_tasks, parent_tasks_by_page_id, lambda e, t: None  # type: ignore
+            parent_tasks, updated_tasks = (
+                ScheduledTaskService.get_tasks_appended_sub_tasks(
+                    parent_tasks=parent_tasks,
+                    sub_tasks=sub_tasks,
+                    on_error=lambda e, t: None,  # type: ignore
+                )
             )
 
             assert len(updated_tasks) == 1
-            assert updated_tasks[0].page_id == NotionId("parent_id_1")
+            assert updated_tasks[0].id == NotionId("parent_id_1")
 
         def test_対象の親タスクが存在しない場合は何も追加されないこと(self):
-            parent_task = Mock()
-            parent_task.page_id = NotionId("parent_id_1")
-            parent_task.sub_tasks = []
-            sub_task = Mock()
-            sub_task.parent_task_page_id = NotionId("parent_id_2")
-            sub_task.name.task_name = "サブタスク1"
-            sub_tasks = [sub_task]
-            parent_tasks_by_page_id = {parent_task.page_id: parent_task}
-
-            updated_tasks = ScheduledTaskService.get_tasks_appended_sub_tasks(
-                sub_tasks, parent_tasks_by_page_id, lambda e, t: None  # type: ignore
+            parent_tasks = ScheduledTasks.from_tasks(
+                [
+                    ScheduledTask(
+                        id=NotionId("parent_id_1"),
+                        name=Mock(),
+                        tags=Mock(),
+                        page_id=PageId("parent_id_1"),
+                        status=Mock(),
+                    )
+                ]
+            )
+            sub_tasks = ScheduledTasks.from_tasks(
+                [
+                    ScheduledTask(
+                        id=Mock(),
+                        name=Mock(),
+                        tags=Mock(),
+                        page_id=Mock(),
+                        status=Mock(),
+                        parent_task_page_id=PageId(
+                            "parent_id_2"
+                        ),  # 親タスクIDが一致しない
+                    )
+                ]
             )
 
+            parent_tasks, updated_tasks = (
+                ScheduledTaskService.get_tasks_appended_sub_tasks(
+                    parent_tasks=parent_tasks,
+                    sub_tasks=sub_tasks,
+                    on_error=lambda e, t: None,  # type: ignore
+                )
+            )
             assert len(updated_tasks) == 0
 
     class Test_merge_scheduled_tasks:

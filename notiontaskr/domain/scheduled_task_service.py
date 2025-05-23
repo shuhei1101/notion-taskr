@@ -44,27 +44,29 @@ class ScheduledTaskService:
 
     @staticmethod
     def get_tasks_appended_sub_tasks(
-        sub_tasks: list[ScheduledTask],
-        parent_tasks_by_page_id: dict[PageId, ScheduledTask],
+        parent_tasks: ScheduledTasks,
+        sub_tasks: ScheduledTasks,
         on_error: Callable[[Exception, ScheduledTask], None],
-    ) -> list[ScheduledTask]:
+    ) -> tuple[ScheduledTasks, ScheduledTasks]:
         """新たにサブアイテムが付与された予定タスクのみを取得する
 
         - **注意**: 本メソッドは予定タスクが直接変更される。
         """
-        updated_tasks = []
+        new_parent_tasks = copy.deepcopy(parent_tasks)
+        parent_tasks_by_page_id = new_parent_tasks.get_tasks_by_page_id()
+        updated_tasks = ScheduledTasks.from_empty()
         for sub_task in sub_tasks:
             try:
                 target_task = parent_tasks_by_page_id.get(sub_task.parent_task_page_id)  # type: ignore (既にエラーハンドルしているため)
                 if target_task is None:
                     continue
-                TaskService.upsert_tasks(target_task.sub_tasks, sub_task)
-                TaskService.upsert_tasks(updated_tasks, target_task)
+                target_task.sub_tasks.upsert_by_id(sub_task)
+                updated_tasks.upsert_by_id(target_task)
 
             except Exception as e:
                 on_error(e, sub_task)
 
-        return updated_tasks
+        return new_parent_tasks, updated_tasks
 
     @staticmethod
     def merge_scheduled_tasks(
