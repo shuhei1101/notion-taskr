@@ -1,8 +1,8 @@
 import os
 import pickle
-from typing import List
 
-from notiontaskr.domain.scheduled_task import ScheduledTask
+
+from notiontaskr.domain.scheduled_tasks import ScheduledTasks
 
 
 class ScheduledTaskCache:
@@ -11,7 +11,7 @@ class ScheduledTaskCache:
 
     def save(
         self,
-        tasks: List[ScheduledTask],
+        tasks: ScheduledTasks,
     ) -> None:
         """Task一覧をファイルに保存する"""
         try:
@@ -22,7 +22,7 @@ class ScheduledTaskCache:
 
     def load(
         self,
-    ) -> List[ScheduledTask]:
+    ) -> ScheduledTasks:
         """ファイルからTask一覧を読み込む"""
         try:
             if not os.path.exists(self.save_path):
