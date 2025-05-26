@@ -21,6 +21,11 @@ class ManHours:
             raise NotImplementedError(f"ManHours同士の加算のみサポートしています。")
         return ManHours(self.value + other.value)
 
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        return self.__add__(other)
+
     def __float__(self):
         return self.value
 

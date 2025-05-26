@@ -42,3 +42,6 @@ class TestManHours:
         def test_引数が同じ型でvalueが同じときTrueを返すこと(self):
             assert ManHours(1) == ManHours(1)
             assert ManHours(1.0) == ManHours(1)
+
+    def test_sumメソッドが使えること(self):
+        assert sum([ManHours(1), ManHours(2)]) == ManHours(3)
