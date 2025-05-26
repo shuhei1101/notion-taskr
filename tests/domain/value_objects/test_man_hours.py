@@ -45,3 +45,6 @@ class TestManHours:
 
     def test_sumメソッドが使えること(self):
         assert sum([ManHours(1), ManHours(2)]) == ManHours(3)
+
+    def test_割り算ができること(self):
+        assert ManHours(6) / ManHours(2) == ManHours(3)

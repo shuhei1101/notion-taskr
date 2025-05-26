@@ -42,3 +42,10 @@ class ManHours:
         if not isinstance(other, ManHours):
             return False
         return self.value == other.value
+
+    def __truediv__(self, other):
+        if not isinstance(other, ManHours):
+            raise NotImplementedError(f"ManHours同士の割り算のみサポートしています。")
+        if other.value == 0:
+            raise ZeroDivisionError("ManHoursの値で0で割ることはできません。")
+        return ManHours(self.value / other.value)
