@@ -80,3 +80,15 @@ class ExecutedTasks(Tasks[ExecutedTask]):
             total_man_hours += task.man_hours
 
         return total_man_hours
+
+    @dataclass
+    class AggregatePropertiesResult:
+        """集計結果の型"""
+
+        man_hours: ManHours
+
+    def sum_properties(self) -> "AggregatePropertiesResult":
+        """タスクのプロパティを集計する"""
+        return self.AggregatePropertiesResult(
+            man_hours=sum((task.man_hours for task in self._tasks), start=ManHours(0)),
+        )

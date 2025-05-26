@@ -428,15 +428,10 @@ class TestScheduledTask:
                     status=Mock(),
                     parent_task_page_id=None,
                 )
-                task._aggregate_executed_man_hours = Mock()
-                task._aggregate_executed_man_hours.return_value = ManHours(
-                    5
-                )  # モックの戻り値を設定
                 task.update_executed_man_hours = Mock()  # 対象のメソッドをモック化
 
                 task.aggregate_man_hours()
 
-                task._aggregate_executed_man_hours.assert_called_once()  # 実績人時の合計を集計するメソッドが呼ばれることを確認
                 task.update_executed_man_hours.assert_called_once()  # 実績人時が更新されることを確認
 
     class Test_update_executed_man_hours:

@@ -163,3 +163,29 @@ class TestExecutedTasks:
             # ２番目のタスクが上書きされていること
             assert len(new_executed_tasks) == 1
             assert new_executed_tasks[0].name == TaskName("タスク2")
+
+    def test_taskのman_hoursを集計できること(self):
+        scheduled_tasks = ExecutedTasks.from_tasks(
+            [
+                ExecutedTask(
+                    page_id=PageId("page_1"),  # ページIDは同じ
+                    name=TaskName("タスク1"),
+                    tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
+                    id=NotionId("1"),  # ページIDは同じ
+                    status=Status.IN_PROGRESS,
+                    is_updated=True,
+                    man_hours=ManHours(1.0),
+                ),
+                ExecutedTask(
+                    page_id=PageId("page_1"),  # ページIDは同じ
+                    name=TaskName("タスク2"),
+                    tags=Tags.from_tags([Tag("tag2"), Tag("tag3")]),
+                    id=NotionId("1"),  # ページIDは同じ
+                    status=Status.COMPLETED,
+                    is_updated=False,
+                    man_hours=ManHours(1.0),
+                ),
+            ]
+        )
+        result_data = scheduled_tasks.sum_properties()
+        assert result_data.man_hours == ManHours(2.0)

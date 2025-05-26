@@ -230,14 +230,20 @@ class ScheduledTask(Task):
 
         if len(self.sub_tasks) > 0:
             # サブアイテムの工数を集計する
-            result_data = self.sub_tasks.sum_properties()
+            sub_tasks_properties = self.sub_tasks.sum_properties()
+            # サブアイテムの実績人時を加算
+            sub_executed_man_hours = (
+                sub_executed_man_hours + sub_tasks_properties.executed_man_hours
+            )
             # サブアイテムの予定人時を更新する
-            self.update_scheduled_man_hours(result_data.scheduled_man_hours)
+            self.update_scheduled_man_hours(sub_tasks_properties.scheduled_man_hours)
 
         # 実績タスクの工数を集計する
-        executed_man_hours = self._aggregate_executed_man_hours()
+        executed_tasks_properties = self.executed_tasks.sum_properties()
 
-        self.update_executed_man_hours(sub_executed_man_hours + executed_man_hours)
+        self.update_executed_man_hours(
+            sub_executed_man_hours + executed_tasks_properties.man_hours
+        )
 
     def update_executed_man_hours(self, executed_man_hours: ManHours):
         """実績人時を更新する"""
