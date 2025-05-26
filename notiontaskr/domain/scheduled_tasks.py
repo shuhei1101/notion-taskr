@@ -5,6 +5,8 @@ from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
 
 from notiontaskr.domain.value_objects.man_hours import ManHours
 
+from notiontaskr.domain.executed_tasks import ExecutedTasks
+
 if TYPE_CHECKING:
     from notiontaskr.domain.scheduled_task import ScheduledTask
 from notiontaskr.domain.tags import Tags
@@ -106,3 +108,11 @@ class ScheduledTasks(Tasks["ScheduledTask"]):
         return ScheduledTasks.from_tasks(
             [task for task in self._tasks if task.is_updated]
         )
+
+    def get_executed_tasks(self) -> "ExecutedTasks":
+        """実績タスクを取得する"""
+        executed_tasks = ExecutedTasks.from_empty()
+        for task in self._tasks:
+            if task.executed_tasks:
+                executed_tasks.extend(task.executed_tasks)
+        return executed_tasks

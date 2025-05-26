@@ -11,6 +11,10 @@ from notiontaskr.domain.tags import Tags
 
 from notiontaskr.domain.value_objects.man_hours import ManHours
 
+from notiontaskr.domain.executed_task import ExecutedTask
+
+from notiontaskr.domain.executed_tasks import ExecutedTasks
+
 
 class TestScheduledTasks:
     @fixture
@@ -214,3 +218,51 @@ class TestScheduledTasks:
         result_data = scheduled_tasks.sum_properties()
         assert result_data.scheduled_man_hours == ManHours(2.0)
         assert result_data.executed_man_hours == ManHours(4.0)
+
+    def test_taskのexecuted_tasksを配列で取得できること(self):
+        scheduled_tasks = ScheduledTasks.from_tasks(
+            [
+                ScheduledTask(
+                    page_id=PageId("page_1"),  # ページIDは同じ
+                    name=TaskName("タスク1"),
+                    tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
+                    id=NotionId("1"),  # ページIDは同じ
+                    status=Status.IN_PROGRESS,
+                    is_updated=True,
+                    executed_tasks=ExecutedTasks.from_tasks(
+                        [
+                            ExecutedTask(
+                                page_id=PageId("page_1"),  # ページIDは同じ
+                                name=TaskName("タスク1"),
+                                tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
+                                id=NotionId("1"),  # ページIDは同じ
+                                status=Status.IN_PROGRESS,
+                                is_updated=True,
+                            )
+                        ]
+                    ),
+                ),
+                ScheduledTask(
+                    page_id=PageId("page_2"),  # ページIDは異なる
+                    name=TaskName("タスク2"),
+                    tags=Tags.from_tags([Tag("tag2"), Tag("tag3")]),
+                    id=NotionId("2"),  # ページIDは異なる
+                    status=Status.COMPLETED,
+                    is_updated=False,
+                    executed_tasks=ExecutedTasks.from_tasks(
+                        [
+                            ExecutedTask(
+                                page_id=PageId("page_2"),  # ページIDは同じ
+                                name=TaskName("タスク2"),
+                                tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
+                                id=NotionId("1"),  # ページIDは同じ
+                                status=Status.IN_PROGRESS,
+                                is_updated=True,
+                            )
+                        ]
+                    ),
+                ),
+            ]
+        )
+        assert scheduled_tasks.get_executed_tasks()[0].page_id == PageId("page_1")
+        assert scheduled_tasks.get_executed_tasks()[1].page_id == PageId("page_2")
