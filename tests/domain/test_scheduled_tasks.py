@@ -211,6 +211,6 @@ class TestScheduledTasks:
                 ),
             ]
         )
-        scheduled_man_hours, executed_man_hours = scheduled_tasks.aggregate_man_hours()
-        assert scheduled_man_hours == ManHours(2.0)
-        assert executed_man_hours == ManHours(4.0)
+        result_data = scheduled_tasks.sum_properties()
+        assert result_data.scheduled_man_hours == ManHours(2.0)
+        assert result_data.executed_man_hours == ManHours(4.0)

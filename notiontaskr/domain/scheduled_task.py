@@ -226,16 +226,13 @@ class ScheduledTask(Task):
     def aggregate_man_hours(self):
         """実績工数を集計し、ラベルを更新する"""
 
-        sub_scheduled_man_hours = ManHours(0)
         sub_executed_man_hours = ManHours(0)
 
         if len(self.sub_tasks) > 0:
             # サブアイテムの工数を集計する
-            sub_scheduled_man_hours, sub_executed_man_hours = (
-                self.sub_tasks.aggregate_man_hours()
-            )
+            result_data = self.sub_tasks.sum_properties()
             # サブアイテムの予定人時を更新する
-            self.update_scheduled_man_hours(sub_scheduled_man_hours)
+            self.update_scheduled_man_hours(result_data.scheduled_man_hours)
 
         # 実績タスクの工数を集計する
         executed_man_hours = self._aggregate_executed_man_hours()
