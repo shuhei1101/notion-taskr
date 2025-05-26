@@ -185,26 +185,28 @@ class ScheduledTask(Task):
             return
 
         # サブアイテムのステータスが完了のものを取得する
-        done_tasks = [
-            task for task in self.sub_tasks if task.status == Status.COMPLETED
-        ]
+        done_tasks = ScheduledTasks(
+            [task for task in self.sub_tasks if task.status == Status.COMPLETED]
+        )
 
         # サブアイテムの予定人時合計を取得する
-        total_scheduled_hours = sum(
-            float(task.scheduled_man_hours) for task in self.sub_tasks
-        )
-        if total_scheduled_hours == 0:
+        sub_tasks_properties = self.sub_tasks.sum_properties()
+        total_scheduled_hours = sub_tasks_properties.scheduled_man_hours
+        if total_scheduled_hours == ManHours(0):
             self.update_progress_rate(ProgressRate(0.0))
             return
 
         # 完了済みサブアイテムの予定人時合計を取得する
-        done_scheduled_hours = sum(
-            float(task.scheduled_man_hours) for task in done_tasks
-        )
+        done_tasks_properties = done_tasks.sum_properties()
+        done_scheduled_hours = done_tasks_properties.scheduled_man_hours
 
         # 進捗率を計算する
-        progress = done_scheduled_hours / total_scheduled_hours
-        self.update_progress_rate(ProgressRate(progress))
+        self.update_progress_rate(
+            ProgressRate.from_man_hours(
+                dividends=done_scheduled_hours,
+                divisors=total_scheduled_hours,
+            )
+        )
 
     def update_progress_rate(self, progress_rate: ProgressRate):
         """進捗率を更新する"""
