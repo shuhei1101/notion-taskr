@@ -9,6 +9,8 @@ from notiontaskr.domain.value_objects.status import Status
 from notiontaskr.domain.value_objects.tag import Tag
 from notiontaskr.domain.tags import Tags
 
+from notiontaskr.domain.value_objects.man_hours import ManHours
+
 
 class TestScheduledTasks:
     @fixture
@@ -183,3 +185,32 @@ class TestScheduledTasks:
         assert scheduled_tasks[1].name.parent_id_label.value == str(  # type: ignore
             parent_id.number
         )
+
+    def test_taskのman_hoursを集計できること(self):
+        scheduled_tasks = ScheduledTasks.from_tasks(
+            [
+                ScheduledTask(
+                    page_id=PageId("page_1"),  # ページIDは同じ
+                    name=TaskName("タスク1"),
+                    tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
+                    id=NotionId("1"),  # ページIDは同じ
+                    status=Status.IN_PROGRESS,
+                    is_updated=True,
+                    scheduled_man_hours=ManHours(1.0),
+                    executed_man_hours=ManHours(2.0),
+                ),
+                ScheduledTask(
+                    page_id=PageId("page_1"),  # ページIDは同じ
+                    name=TaskName("タスク2"),
+                    tags=Tags.from_tags([Tag("tag2"), Tag("tag3")]),
+                    id=NotionId("1"),  # ページIDは同じ
+                    status=Status.COMPLETED,
+                    is_updated=False,
+                    scheduled_man_hours=ManHours(1.0),
+                    executed_man_hours=ManHours(2.0),
+                ),
+            ]
+        )
+        scheduled_man_hours, executed_man_hours = scheduled_tasks.aggregate_man_hours()
+        assert scheduled_man_hours == ManHours(2.0)
+        assert executed_man_hours == ManHours(4.0)

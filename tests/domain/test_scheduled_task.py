@@ -363,74 +363,6 @@ class TestScheduledTask:
             task.update_progress_rate(ProgressRate(0.5))  # 進捗率を0.5に更新
             task._toggle_is_updated.assert_not_called()  # 更新処理が呼ばれないことを確認
 
-    class Test__aggregate_sub_man_hours:
-        class Test_サブアイテムがない場合:
-            def test_サブアイテムが空の場合に0を返すこと(self):
-                task = ScheduledTask(
-                    page_id=Mock(),
-                    name=Mock(),
-                    tags=Mock(),
-                    id=Mock(),
-                    status=Mock(),
-                    parent_task_page_id=None,
-                    sub_tasks=ScheduledTasks.from_empty(),  # サブアイテムを空に設定
-                )
-                result = task._aggregate_sub_man_hours()
-                assert result == (ManHours(0), ManHours(0))  # 0を返すことを確認
-
-        class Test_サブアイテムがある場合:
-            def test_すべてのサブアイテムでaggregate_man_hoursが呼ばれること(
-                self,
-            ):
-                task = ScheduledTask(
-                    page_id=Mock(),
-                    name=Mock(),
-                    tags=Mock(),
-                    id=Mock(),
-                    status=Mock(),
-                    parent_task_page_id=None,
-                )
-
-                # サブアイテムを作成
-                sub_task1 = copy.copy(task)
-                sub_task2 = copy.copy(task)
-
-                # 対象のメソッドをモック化
-                sub_task1.aggregate_man_hours = Mock()
-                sub_task2.aggregate_man_hours = Mock()
-
-                # サブアイテムを設定し実行
-                task.sub_tasks = ScheduledTasks.from_tasks([sub_task1, sub_task2])
-                task._aggregate_sub_man_hours()
-
-                # 各サブアイテムのaggregateが呼ばれることを確認
-                sub_task1.aggregate_man_hours.assert_called_once()
-                sub_task2.aggregate_man_hours.assert_called_once()
-
-            def test_サブアイテムの工数を集計して返すこと(self):
-                task = ScheduledTask(
-                    page_id=Mock(),
-                    name=Mock(),
-                    tags=Mock(),
-                    id=Mock(),
-                    status=Mock(),
-                    parent_task_page_id=None,
-                    scheduled_man_hours=ManHours(1),
-                )
-
-                # サブアイテムを作成
-                sub_task1 = copy.copy(task)
-                sub_task2 = copy.copy(task)
-
-                # サブアイテムを設定し実行
-                task.sub_tasks = ScheduledTasks.from_tasks([sub_task1, sub_task2])
-                result = task._aggregate_sub_man_hours()
-                # サブアイテムの工数を集計して返すことを確認
-                assert result == (
-                    ManHours(2),  # 1 + 1
-                    ManHours(0),  # sub_taskの更に下にサブタスクがないため0を返す
-                )
-
     class Test__aggregate_executed_man_hours:
         class Test_実績タスクがない場合:
             def test_0を返すこと(self):
@@ -506,29 +438,6 @@ class TestScheduledTask:
 
                 task._aggregate_executed_man_hours.assert_called_once()  # 実績人時の合計を集計するメソッドが呼ばれることを確認
                 task.update_executed_man_hours.assert_called_once()  # 実績人時が更新されることを確認
-
-        class Test_サブアイテムがある場合:
-            def test_サブアイテムの予定人時を更新すること(self):
-                task = ScheduledTask(
-                    page_id=Mock(),
-                    name=Mock(),
-                    tags=Mock(),
-                    id=Mock(),
-                    status=Mock(),
-                    parent_task_page_id=None,
-                )
-                task.sub_tasks = ScheduledTasks.from_tasks([Mock(), Mock()])
-                task._aggregate_sub_man_hours = Mock()
-                task._aggregate_sub_man_hours.return_value = (
-                    ManHours(5),  # サブアイテムの予定人時合計
-                    ManHours(0),  # サブアイテムの実績人時合計
-                )
-                task.update_scheduled_man_hours = Mock()  # 対象のメソッドをモック化
-
-                task.aggregate_man_hours()
-
-                task._aggregate_sub_man_hours.assert_called_once()  # サブアイテムの予定人時を集計するメソッドが呼ばれることを確認
-                task.update_scheduled_man_hours.assert_called_once()  # サブアイテムの予定人時を集計するメソッドが呼ばれることを確認
 
     class Test_update_executed_man_hours:
         def test_実績人時が異なる場合に更新されること(self):

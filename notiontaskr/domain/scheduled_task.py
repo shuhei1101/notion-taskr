@@ -212,21 +212,6 @@ class ScheduledTask(Task):
             self._toggle_is_updated(f"進捗率: {self.progress_rate} -> {progress_rate}")
             self.progress_rate = progress_rate
 
-    def _aggregate_sub_man_hours(self) -> tuple[ManHours, ManHours]:
-        """サブアイテムの工数を集計する"""
-        if self.sub_tasks is None or len(self.sub_tasks) == 0:
-            return (ManHours(0), ManHours(0))
-        sub_scheduled_man_hours = 0.0
-        sub_executed_man_hours = 0.0
-        for sub_task in self.sub_tasks:
-            sub_task.aggregate_man_hours()
-            sub_scheduled_man_hours += float(sub_task.scheduled_man_hours)
-            sub_executed_man_hours += float(sub_task.executed_man_hours)
-        return (
-            ManHours(sub_scheduled_man_hours),
-            ManHours(sub_executed_man_hours),
-        )
-
     def _aggregate_executed_man_hours(self) -> ManHours:
         """実績タスクの工数を集計する"""
         if self.executed_tasks is None or len(self.executed_tasks) == 0:
@@ -247,7 +232,7 @@ class ScheduledTask(Task):
         if len(self.sub_tasks) > 0:
             # サブアイテムの工数を集計する
             sub_scheduled_man_hours, sub_executed_man_hours = (
-                self._aggregate_sub_man_hours()
+                self.sub_tasks.aggregate_man_hours()
             )
             # サブアイテムの予定人時を更新する
             self.update_scheduled_man_hours(sub_scheduled_man_hours)
