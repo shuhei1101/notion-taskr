@@ -100,3 +100,9 @@ class ScheduledTasks(Tasks["ScheduledTask"]):
                 (task.scheduled_man_hours for task in self._tasks), start=ManHours(0)
             ),
         )
+
+    def get_updated_tasks(self) -> "ScheduledTasks":
+        """更新されたタスクを取得する"""
+        return ScheduledTasks.from_tasks(
+            [task for task in self._tasks if task.is_updated]
+        )

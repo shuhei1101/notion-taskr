@@ -92,3 +92,9 @@ class ExecutedTasks(Tasks[ExecutedTask]):
         return self.AggregatePropertiesResult(
             man_hours=sum((task.man_hours for task in self._tasks), start=ManHours(0)),
         )
+
+    def get_updated_tasks(self) -> "ExecutedTasks":
+        """更新されたタスクを取得する"""
+        return ExecutedTasks.from_tasks(
+            [task for task in self._tasks if task.is_updated]
+        )

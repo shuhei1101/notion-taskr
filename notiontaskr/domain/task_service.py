@@ -5,12 +5,6 @@ T = TypeVar("T", bound=Task)
 
 
 class TaskService:
-    @staticmethod
-    def get_updated_tasks(tasks: list[T]):
-        """変更されたタスクを取得する"""
-        updated_tasks = list(filter(lambda task: task.is_updated, tasks))
-
-        return updated_tasks
 
     @staticmethod
     def upsert_tasks(to: list[T], source: T):
