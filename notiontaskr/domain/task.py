@@ -11,6 +11,8 @@ from notiontaskr.domain.tags import Tags
 
 from notiontaskr.domain.value_objects.notion_date import NotionDate
 
+from notiontaskr.notifier.task_remind_info import TaskRemindInfo
+
 if TYPE_CHECKING:
     from notiontaskr.domain.name_labels.id_label import IdLabel
 
@@ -24,6 +26,7 @@ class Task:
     tags: Tags
     id: NotionId
     status: Status
+    remind_info: "TaskRemindInfo"
     is_updated: bool = False
     parent_task_page_id: Optional["PageId"] = None  # 親タスクId
     update_contents: List[str] = field(
@@ -38,6 +41,7 @@ class Task:
         tags: Tags,
         id: NotionId,
         status: Status,
+        remind_info: "TaskRemindInfo" = TaskRemindInfo(),
     ):
         self.page_id = page_id
         self.name = name
@@ -47,6 +51,7 @@ class Task:
         self.is_updated = False
         self.parent_task_page_id = None
         self.update_contents = []
+        self.remind_info = remind_info
 
     def _toggle_is_updated(self, update_message: str):
         """is_updatedをトグルする"""
