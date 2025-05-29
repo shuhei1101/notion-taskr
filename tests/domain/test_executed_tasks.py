@@ -88,7 +88,7 @@ class TestExecutedTasks:
         )
         assert task1 in scheduled_tasks.get_updated_tasks()
 
-    def test_upsert_by_idメソッドでタスクを追加または更新できること(self):
+    def test_merged_by_idメソッドでタスクを追加または更新できること(self):
         executed_tasks = ExecutedTasks.from_empty()
         task = ExecutedTask(
             page_id=PageId("page_1"),
@@ -97,8 +97,8 @@ class TestExecutedTasks:
             id=NotionId("1"),
             status=Status.IN_PROGRESS,
         )
-        executed_tasks.upsert_by_id(task)
-        executed_tasks.upsert_by_id(task)
+        executed_tasks = executed_tasks.upserted_by_id(ExecutedTasks.from_tasks([task]))
+        executed_tasks = executed_tasks.upserted_by_id(ExecutedTasks.from_tasks([task]))
         assert len(executed_tasks) == 1
 
     class Test_辞書関連:

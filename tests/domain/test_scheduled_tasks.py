@@ -91,9 +91,15 @@ class TestScheduledTasks:
             status=Status.IN_PROGRESS,
         )
         scheduled_tasks = ScheduledTasks.from_empty()
-        scheduled_tasks.upsert_by_id(task)
-        scheduled_tasks.upsert_by_id(task)
-        assert len(scheduled_tasks) == 1
+        result_tasks = scheduled_tasks.upserted_by_id(
+            ScheduledTasks.from_tasks([task, task])
+        )
+        assert len(result_tasks) == 1
+
+    def test_IDで一意なタスクを取得できること(self, task1: ScheduledTask):
+        scheduled_tasks = ScheduledTasks.from_tasks([task1, task1])
+        unique_tasks = scheduled_tasks.get_unique_tasks_by_id()
+        assert len(unique_tasks) == 1
 
     class Test_辞書関連:
         @fixture
@@ -266,3 +272,22 @@ class TestScheduledTasks:
         )
         assert scheduled_tasks.get_executed_tasks()[0].page_id == PageId("page_1")
         assert scheduled_tasks.get_executed_tasks()[1].page_id == PageId("page_2")
+
+    def test_直接mergeできること(self):
+        task1 = ScheduledTask(
+            page_id=PageId("page_1"),
+            name=TaskName("タスク1"),
+            tags=Tags.from_tags([Tag("tag1"), Tag("tag2")]),
+            id=NotionId("1"),
+            status=Status.IN_PROGRESS,
+        )
+        task2 = ScheduledTask(
+            page_id=PageId("page_2"),
+            name=TaskName("タスク2"),
+            tags=Tags.from_tags([Tag("tag2"), Tag("tag3")]),
+            id=NotionId("1"),
+            status=Status.COMPLETED,
+        )
+        scheduled_tasks = ScheduledTasks.from_empty()
+        scheduled_tasks.upsert_by_id(ScheduledTasks.from_tasks([task1, task2]))
+        assert len(scheduled_tasks) == 1
