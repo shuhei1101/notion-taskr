@@ -13,6 +13,8 @@ from notiontaskr.domain.value_objects.tag import Tag
 from notiontaskr.domain.executed_tasks import ExecutedTasks
 from notiontaskr.domain.scheduled_tasks import ScheduledTasks
 
+from notiontaskr.domain.value_objects.notion_date import NotionDate
+
 
 class TestScheduledTask:
     class Test_from_response_data:
@@ -38,6 +40,7 @@ class TestScheduledTask:
                         ]
                     },
                     "進捗率": {"number": 80},
+                    "日付": {"date": {"start": "2023-10-01", "end": None}},
                 },
             }
             task = ScheduledTask.from_response_data(data)
@@ -579,3 +582,20 @@ class TestScheduledTask:
             assert (
                 task.sub_tasks == tmp_sub_tasks
             )  # 実績タスクリストが更新されていることを確認
+
+    def test_現在時刻が予定時刻を超えているときにis_delayがTrueになること(self):
+        task = ScheduledTask(
+            page_id=Mock(),
+            name=Mock(),
+            tags=Mock(),
+            id=Mock(),
+            status=Status.NOT_STARTED,
+            parent_task_page_id=None,
+            date=NotionDate(
+                start=datetime.now(timezone.utc)
+                - timedelta(days=2),  # 現在時刻より2日前を設定
+                end=None,  # 終了日はNoneに設定(startと同じ日付を想定)
+            ),
+        )
+
+        assert task.is_delayed() is True

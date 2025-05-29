@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Optional
 
 
 @dataclass
@@ -7,7 +8,7 @@ class NotionDate:
     start: datetime
     end: datetime
 
-    def __init__(self, start: datetime, end: datetime):
+    def __init__(self, start: datetime, end: Optional[datetime]):
         if not isinstance(start, datetime):
             raise TypeError(f"開始日はdatetime型でなければなりません。")
         if not end:

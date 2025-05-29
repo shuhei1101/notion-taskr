@@ -9,6 +9,8 @@ from notiontaskr.domain.value_objects.page_id import PageId
 from notiontaskr.domain.value_objects.status import Status
 from notiontaskr.domain.tags import Tags
 
+from notiontaskr.domain.value_objects.notion_date import NotionDate
+
 if TYPE_CHECKING:
     from notiontaskr.domain.name_labels.id_label import IdLabel
 
@@ -27,6 +29,7 @@ class Task:
     update_contents: List[str] = field(
         default_factory=list  # 生成時に空のリストを作成(他インスタンスとの共有を避けるため)
     )  # （デバッグ用）更新内容を保存
+    date: Optional["NotionDate"] = None
 
     def __init__(
         self,
