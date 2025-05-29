@@ -3,7 +3,7 @@ from datetime import timedelta
 
 
 @dataclass
-class TaskNotification:
+class TaskRemindInfo:
     has_before_start: bool = False
     has_after_start: bool = False
     before_start_minutes: timedelta = timedelta(minutes=5)
@@ -16,7 +16,7 @@ class TaskNotification:
         has_after_start: bool = False,
         before_start_minutes: int = 5,
         after_start_minutes: int = 5,
-    ) -> "TaskNotification":
+    ) -> "TaskRemindInfo":
         if before_start_minutes < 0:
             raise ValueError("before_start_minutesは0以上でなければなりません")
         if after_start_minutes < 0:
