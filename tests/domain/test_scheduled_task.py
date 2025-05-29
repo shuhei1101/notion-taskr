@@ -189,20 +189,6 @@ class TestScheduledTask:
             task.update_status_by_checking_properties()
             task.update_id_label.assert_not_called()
 
-        def test_サブアイテムがない場合は処理を終了すること(self):
-            task = ScheduledTask(
-                page_id=Mock(),
-                name=Mock(),
-                tags=Mock(),
-                id=Mock(),
-                status=Mock(),
-                parent_task_page_id=None,
-            )
-            task.sub_tasks = ScheduledTasks.from_empty()  # サブアイテムを空に設定
-            task.update_id_label = Mock()
-            task.update_status_by_checking_properties()
-            task.update_id_label.assert_not_called()
-
         def test_全てのサブアイテムが完了している場合は親タスクを完了にすること(self):
             task = ScheduledTask(
                 page_id=Mock(),
@@ -264,6 +250,44 @@ class TestScheduledTask:
             task.update_status_by_checking_properties()
             task.update_status.assert_called_once_with(Status.NOT_STARTED)
 
+        def test_サブアイテムを進行中にした後に親アイテムを進行中にすること(
+            self,
+        ):
+            task = ScheduledTask(
+                page_id=Mock(),
+                name=Mock(),
+                tags=Mock(),
+                id=Mock(),
+                status=Status.NOT_STARTED,
+                parent_task_page_id=None,
+            )
+            task.sub_tasks = ScheduledTasks.from_tasks(
+                [
+                    ScheduledTask(
+                        page_id=Mock(),
+                        name=Mock(),
+                        tags=Mock(),
+                        id=Mock(),
+                        status=Status.NOT_STARTED,
+                        parent_task_page_id=None,
+                        executed_tasks=ExecutedTasks.from_tasks(
+                            [
+                                Mock(
+                                    date=Mock(
+                                        start=datetime.now(timezone.utc)
+                                        - timedelta(days=1),
+                                        end=None,
+                                    )
+                                )
+                            ]
+                        ),
+                    ),
+                ]
+            )
+            task.update_status_by_checking_properties()
+            assert task.status == Status.IN_PROGRESS
+            assert task.sub_tasks[0].status == Status.IN_PROGRESS
+
     class Test_calc_progress_rate:
         class Test_自身のステータスが完了の場合:
             def test_自身の進捗率を1にすること(self):
@@ -305,9 +329,15 @@ class TestScheduledTask:
                 )
                 task.sub_tasks = ScheduledTasks.from_tasks(
                     [
-                        Mock(scheduled_man_hours=ManHours(5), status=Status.COMPLETED),
                         Mock(
-                            scheduled_man_hours=ManHours(5), status=Status.NOT_STARTED
+                            scheduled_man_hours=ManHours(5),
+                            status=Status.COMPLETED,
+                            executed_man_hours=ManHours(5),
+                        ),
+                        Mock(
+                            scheduled_man_hours=ManHours(5),
+                            status=Status.NOT_STARTED,
+                            executed_man_hours=ManHours(5),
                         ),
                     ]
                 )
@@ -327,9 +357,15 @@ class TestScheduledTask:
                 )
                 task.sub_tasks = ScheduledTasks.from_tasks(
                     [
-                        Mock(scheduled_man_hours=ManHours(0), status=Status.COMPLETED),
                         Mock(
-                            scheduled_man_hours=ManHours(0), status=Status.NOT_STARTED
+                            scheduled_man_hours=ManHours(0),
+                            status=Status.COMPLETED,
+                            executed_man_hours=ManHours(5),
+                        ),
+                        Mock(
+                            scheduled_man_hours=ManHours(0),
+                            status=Status.NOT_STARTED,
+                            executed_man_hours=ManHours(5),
                         ),
                     ]
                 )

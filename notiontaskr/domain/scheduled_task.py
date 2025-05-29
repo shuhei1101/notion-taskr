@@ -1,9 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
 
 from notiontaskr.domain.name_labels.id_label import IdLabel
-from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
 from notiontaskr.domain.task import Task
 from notiontaskr.domain.task_name import TaskName
 from notiontaskr.domain.value_objects.man_hours import ManHours
@@ -112,9 +110,6 @@ class ScheduledTask(Task):
 
     def _update_status_by_checking_executed_tasks(self):
         """実績タスクの進捗を確認し、ステータスを更新する"""
-        if not self.executed_tasks or len(self.executed_tasks) == 0:
-            return
-
         # 現在時刻
         now = datetime.now(timezone.utc)
         # もし、自身のステータスが未着手かつ
@@ -129,20 +124,7 @@ class ScheduledTask(Task):
         ):
             self.update_status(Status.NOT_STARTED)
 
-    def update_status_by_checking_properties(self):
-        """タスクのプロパティに応じてステータスを更新する"""
-
-        if self.status == Status.CANCELED:
-            # ステータスが中止の場合は、何もしない
-            return
-
-        # 実績タスクのステータスを確認し、ステータスを更新する
-        self._update_status_by_checking_executed_tasks()
-
-        if not self.sub_tasks or len(self.sub_tasks) == 0:
-            # サブアイテムがない場合、処理を終了する
-            return
-
+    def _update_status_by_checking_sub_tasks(self):
         # サブアイテムのステータスを更新し、ステータスを集計する
         statuses = []
         for sub_task in self.sub_tasks:
@@ -160,6 +142,21 @@ class ScheduledTask(Task):
         else:
             # それ以外は未着手にする
             self.update_status(Status.NOT_STARTED)
+
+    def update_status_by_checking_properties(self):
+        """タスクのプロパティに応じてステータスを更新する"""
+
+        if self.status == Status.CANCELED:
+            # ステータスが中止の場合は、何もしない
+            return
+
+        if self.executed_tasks and len(self.executed_tasks) != 0:
+            # 実績タスクのステータスを確認し、ステータスを更新する
+            self._update_status_by_checking_executed_tasks()
+
+        if self.sub_tasks and len(self.sub_tasks) != 0:
+            # サブアイテムのステータスを確認し、ステータスを更新する
+            self._update_status_by_checking_sub_tasks()
 
         self.update_id_label(
             IdLabel.from_property(
