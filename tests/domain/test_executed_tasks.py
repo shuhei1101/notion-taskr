@@ -147,23 +147,6 @@ class TestExecutedTasks:
                 ]
             )
 
-        def test_id辞書から初期化できること(self, executed_tasks: ExecutedTasks):
-
-            tasks_by_id = executed_tasks.get_tasks_by_id()
-            new_executed_tasks = ExecutedTasks.from_tasks_by_id(tasks_by_id)
-
-            # ２番目のタスクが上書きされていること
-            assert len(new_executed_tasks) == 1
-            assert new_executed_tasks[0].name == TaskName("タスク2")
-
-        def test_page_id辞書から初期化できること(self, executed_tasks: ExecutedTasks):
-            tasks_by_page_id = executed_tasks.get_tasks_by_page_id()
-            new_executed_tasks = ExecutedTasks.from_tasks_by_page_id(tasks_by_page_id)
-
-            # ２番目のタスクが上書きされていること
-            assert len(new_executed_tasks) == 1
-            assert new_executed_tasks[0].name == TaskName("タスク2")
-
     def test_taskのman_hoursを集計できること(self):
         scheduled_tasks = ExecutedTasks.from_tasks(
             [

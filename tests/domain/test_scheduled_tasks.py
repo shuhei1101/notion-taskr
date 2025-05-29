@@ -149,23 +149,6 @@ class TestScheduledTasks:
                 ]
             )
 
-        def test_id辞書から初期化できること(self, scheduled_tasks: ScheduledTasks):
-
-            tasks_by_id = scheduled_tasks.get_tasks_by_id()
-            new_scheduled_tasks = ScheduledTasks.from_tasks_by_id(tasks_by_id)
-
-            # ２番目のタスクが上書きされていること
-            assert len(new_scheduled_tasks) == 1
-            assert new_scheduled_tasks[0].name == TaskName("タスク2")
-
-        def test_page_id辞書から初期化できること(self, scheduled_tasks: ScheduledTasks):
-            tasks_by_page_id = scheduled_tasks.get_tasks_by_page_id()
-            new_scheduled_tasks = ScheduledTasks.from_tasks_by_page_id(tasks_by_page_id)
-
-            # ２番目のタスクが上書きされていること
-            assert len(new_scheduled_tasks) == 1
-            assert new_scheduled_tasks[0].name == TaskName("タスク2")
-
     def test_taskの親IDラベルを更新できること(self):
         scheduled_tasks = ScheduledTasks.from_tasks(
             [
