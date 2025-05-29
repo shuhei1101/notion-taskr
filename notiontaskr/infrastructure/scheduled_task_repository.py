@@ -1,13 +1,13 @@
-from typing import Callable, List
+from typing import Callable
 from notiontaskr.domain.value_objects.page_id import PageId
 from notiontaskr.infrastructure.scheduled_task_update_properties import (
     ScheduledTaskUpdateProperties,
 )
 from notion_client import Client
-
 from notiontaskr.domain.scheduled_task import ScheduledTask
 from notiontaskr.infrastructure.operator import CheckboxOperator
 from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
+from notiontaskr.domain.scheduled_tasks import ScheduledTasks
 
 
 class ScheduledTaskRepository:
@@ -20,7 +20,7 @@ class ScheduledTaskRepository:
 
     async def find_all(
         self, on_error: Callable[[Exception, dict], None]
-    ) -> List[ScheduledTask]:
+    ) -> ScheduledTasks:
         """全ての予定を取得する"""
         filter = (
             TaskSearchCondition()
@@ -37,7 +37,7 @@ class ScheduledTaskRepository:
         )
 
         # response_dataをScheduledTaskのリストに変換する
-        scheduled_tasks = []
+        scheduled_tasks = ScheduledTasks.from_empty()
         for data in response_data["results"]:  # type: ignore
             try:
                 scheduled_tasks.append(ScheduledTask.from_response_data(data))
@@ -51,7 +51,7 @@ class ScheduledTaskRepository:
         self,
         condition: TaskSearchCondition,
         on_error: Callable[[Exception, dict], None],
-    ) -> List[ScheduledTask]:
+    ) -> ScheduledTasks:
         """タスクDBの指定タグの予定を全て取得する"""
         filter = (
             TaskSearchCondition()
@@ -69,7 +69,7 @@ class ScheduledTaskRepository:
         )
 
         # response_dataをScheduledTaskのリストに変換する
-        scheduled_tasks = []
+        scheduled_tasks = ScheduledTasks.from_empty()
         for data in response_data["results"]:  # type: ignore
             try:
                 scheduled_tasks.append(ScheduledTask.from_response_data(data))
@@ -83,9 +83,9 @@ class ScheduledTaskRepository:
         self,
         condition: TaskSearchCondition,
         on_error: Callable[[Exception, dict], None],
-    ) -> List[ScheduledTask]:
+    ) -> ScheduledTasks:
         """指定した条件に一致する全ての予定タスクをページネーションを考慮して取得する"""
-        all_tasks = []
+        all_tasks = ScheduledTasks.from_empty()
         start_cursor = None
         has_more = True
         while has_more:
@@ -103,7 +103,7 @@ class ScheduledTaskRepository:
         condition: TaskSearchCondition,
         on_error: Callable[[Exception, dict], None],
         start_cursor: str = None,  # type: ignore
-    ) -> tuple[list[ScheduledTask], str, bool]:
+    ) -> tuple[ScheduledTasks, str, bool]:
         """タスクDBの指定タグの予定を全て取得する（ページネーション対応）"""
         filter = (
             TaskSearchCondition()
@@ -120,7 +120,7 @@ class ScheduledTaskRepository:
             query_params["start_cursor"] = start_cursor
 
         response_data = self.client.databases.query(**query_params)
-        scheduled_tasks = []
+        scheduled_tasks = ScheduledTasks.from_empty()
         for data in response_data["results"]:  # type: ignore
             try:
                 scheduled_tasks.append(ScheduledTask.from_response_data(data))

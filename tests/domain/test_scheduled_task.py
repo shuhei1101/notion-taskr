@@ -8,6 +8,10 @@ from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
 from notiontaskr.domain.value_objects.status import Status
 from notiontaskr.domain.value_objects.progress_rate import ProgressRate
 from notiontaskr.domain.value_objects.man_hours import ManHours
+from notiontaskr.domain.tags import Tags
+from notiontaskr.domain.value_objects.tag import Tag
+from notiontaskr.domain.executed_tasks import ExecutedTasks
+from notiontaskr.domain.scheduled_tasks import ScheduledTasks
 
 
 class TestScheduledTask:
@@ -42,7 +46,7 @@ class TestScheduledTask:
                 task.name.task_name
                 == data["properties"]["名前"]["title"][0]["plain_text"]
             )
-            assert task.tags == ["タグ1", "タグ2"]
+            assert task.tags == Tags.from_tags([Tag("タグ1"), Tag("タグ2")])
             assert task.id.number == data["properties"]["ID"]["unique_id"]["number"]
             assert (
                 task.status.value == data["properties"]["ステータス"]["status"]["name"]
@@ -73,7 +77,7 @@ class TestScheduledTask:
                 status=Mock(),
                 parent_task_page_id=None,
             )
-            task.executed_tasks = [Mock(), Mock()]
+            task.executed_tasks = ExecutedTasks.from_tasks([Mock(), Mock()])
             task.update_executed_tasks_properties()
             for executed_task in task.executed_tasks:
                 executed_task.update_name.assert_called_once_with(task.name)  # type: ignore
@@ -92,7 +96,7 @@ class TestScheduledTask:
                 status=Mock(),
                 parent_task_page_id=None,
             )
-            task.sub_tasks = [Mock(), Mock()]
+            task.sub_tasks = ScheduledTasks.from_tasks([Mock(), Mock()])
             task.update_sub_tasks_properties()
             for sub_task in task.sub_tasks:
                 sub_task.update_parent_id_label.assert_called_once_with(  # type: ignore
@@ -109,7 +113,7 @@ class TestScheduledTask:
                 status=Mock(),
                 parent_task_page_id=None,
             )
-            task.executed_tasks = []
+            task.executed_tasks = ExecutedTasks.from_empty()
             task.update_status = Mock()
             task._update_status_by_checking_executed_tasks()
             task.update_status.assert_not_called()
@@ -127,14 +131,16 @@ class TestScheduledTask:
                 status=Status.NOT_STARTED,
                 parent_task_page_id=None,
             )
-            task.executed_tasks = [
-                Mock(
-                    date=Mock(
-                        start=now - timedelta(days=1),  # 「現在時刻 - 1日」を指定
-                        end=None,
+            task.executed_tasks = ExecutedTasks.from_tasks(
+                [
+                    Mock(
+                        date=Mock(
+                            start=now - timedelta(days=1),  # 「現在時刻 - 1日」を指定
+                            end=None,
+                        )
                     )
-                )
-            ]
+                ]
+            )
             task.update_status = Mock()
             task._update_status_by_checking_executed_tasks()
             task.update_status.assert_called_once_with(Status.IN_PROGRESS)
@@ -152,14 +158,16 @@ class TestScheduledTask:
                 status=Status.IN_PROGRESS,
                 parent_task_page_id=None,
             )
-            task.executed_tasks = [
-                Mock(
-                    date=Mock(
-                        start=now + timedelta(days=2),  # 「現在時刻 + 2日」を指定
-                        end=now + timedelta(days=1),  # 「現在時刻 + 1日」を指定
+            task.executed_tasks = ExecutedTasks.from_tasks(
+                [
+                    Mock(
+                        date=Mock(
+                            start=now + timedelta(days=2),  # 「現在時刻 + 2日」を指定
+                            end=now + timedelta(days=1),  # 「現在時刻 + 1日」を指定
+                        )
                     )
-                )
-            ]
+                ]
+            )
             task.update_status = Mock()
             task._update_status_by_checking_executed_tasks()
             task.update_status.assert_called_once_with(Status.NOT_STARTED)
@@ -181,20 +189,6 @@ class TestScheduledTask:
             task.update_status_by_checking_properties()
             task.update_id_label.assert_not_called()
 
-        def test_サブアイテムがない場合は処理を終了すること(self):
-            task = ScheduledTask(
-                page_id=Mock(),
-                name=Mock(),
-                tags=Mock(),
-                id=Mock(),
-                status=Mock(),
-                parent_task_page_id=None,
-            )
-            task.sub_tasks = []
-            task.update_id_label = Mock()
-            task.update_status_by_checking_properties()
-            task.update_id_label.assert_not_called()
-
         def test_全てのサブアイテムが完了している場合は親タスクを完了にすること(self):
             task = ScheduledTask(
                 page_id=Mock(),
@@ -204,10 +198,12 @@ class TestScheduledTask:
                 status=Status.NOT_STARTED,
                 parent_task_page_id=None,
             )
-            task.sub_tasks = [
-                Mock(status=Status.COMPLETED),
-                Mock(status=Status.COMPLETED),
-            ]
+            task.sub_tasks = ScheduledTasks.from_tasks(
+                [
+                    Mock(status=Status.COMPLETED),
+                    Mock(status=Status.COMPLETED),
+                ]
+            )
             task.update_status = Mock()
             task.update_status_by_checking_properties()
             task.update_status.assert_called_once_with(Status.COMPLETED)
@@ -223,10 +219,12 @@ class TestScheduledTask:
                 status=Status.NOT_STARTED,
                 parent_task_page_id=None,
             )
-            task.sub_tasks = [
-                Mock(status=Status.COMPLETED),
-                Mock(status=Status.IN_PROGRESS),
-            ]
+            task.sub_tasks = ScheduledTasks.from_tasks(
+                [
+                    Mock(status=Status.COMPLETED),
+                    Mock(status=Status.IN_PROGRESS),
+                ]
+            )
             task.update_status = Mock()
             task.update_status_by_checking_properties()
             task.update_status.assert_called_once_with(Status.IN_PROGRESS)
@@ -242,13 +240,53 @@ class TestScheduledTask:
                 status=Status.IN_PROGRESS,
                 parent_task_page_id=None,
             )
-            task.sub_tasks = [
-                Mock(status=Status.NOT_STARTED),
-                Mock(status=Status.NOT_STARTED),
-            ]
+            task.sub_tasks = ScheduledTasks.from_tasks(
+                [
+                    Mock(status=Status.NOT_STARTED),
+                    Mock(status=Status.NOT_STARTED),
+                ]
+            )
             task.update_status = Mock()
             task.update_status_by_checking_properties()
             task.update_status.assert_called_once_with(Status.NOT_STARTED)
+
+        def test_サブアイテムを進行中にした後に親アイテムを進行中にすること(
+            self,
+        ):
+            task = ScheduledTask(
+                page_id=Mock(),
+                name=Mock(),
+                tags=Mock(),
+                id=Mock(),
+                status=Status.NOT_STARTED,
+                parent_task_page_id=None,
+            )
+            task.sub_tasks = ScheduledTasks.from_tasks(
+                [
+                    ScheduledTask(
+                        page_id=Mock(),
+                        name=Mock(),
+                        tags=Mock(),
+                        id=Mock(),
+                        status=Status.NOT_STARTED,
+                        parent_task_page_id=None,
+                        executed_tasks=ExecutedTasks.from_tasks(
+                            [
+                                Mock(
+                                    date=Mock(
+                                        start=datetime.now(timezone.utc)
+                                        - timedelta(days=1),
+                                        end=None,
+                                    )
+                                )
+                            ]
+                        ),
+                    ),
+                ]
+            )
+            task.update_status_by_checking_properties()
+            assert task.status == Status.IN_PROGRESS
+            assert task.sub_tasks[0].status == Status.IN_PROGRESS
 
     class Test_calc_progress_rate:
         class Test_自身のステータスが完了の場合:
@@ -289,10 +327,20 @@ class TestScheduledTask:
                     status=Status.NOT_STARTED,
                     parent_task_page_id=None,
                 )
-                task.sub_tasks = [
-                    Mock(scheduled_man_hours=ManHours(5), status=Status.COMPLETED),
-                    Mock(scheduled_man_hours=ManHours(5), status=Status.NOT_STARTED),
-                ]
+                task.sub_tasks = ScheduledTasks.from_tasks(
+                    [
+                        Mock(
+                            scheduled_man_hours=ManHours(5),
+                            status=Status.COMPLETED,
+                            executed_man_hours=ManHours(5),
+                        ),
+                        Mock(
+                            scheduled_man_hours=ManHours(5),
+                            status=Status.NOT_STARTED,
+                            executed_man_hours=ManHours(5),
+                        ),
+                    ]
+                )
                 task.update_progress_rate = Mock()
                 task.calc_progress_rate()
                 task.update_progress_rate.assert_called_once_with(ProgressRate(0.5))
@@ -307,10 +355,20 @@ class TestScheduledTask:
                     status=Status.NOT_STARTED,
                     parent_task_page_id=None,
                 )
-                task.sub_tasks = [
-                    Mock(scheduled_man_hours=ManHours(0), status=Status.COMPLETED),
-                    Mock(scheduled_man_hours=ManHours(0), status=Status.NOT_STARTED),
-                ]
+                task.sub_tasks = ScheduledTasks.from_tasks(
+                    [
+                        Mock(
+                            scheduled_man_hours=ManHours(0),
+                            status=Status.COMPLETED,
+                            executed_man_hours=ManHours(5),
+                        ),
+                        Mock(
+                            scheduled_man_hours=ManHours(0),
+                            status=Status.NOT_STARTED,
+                            executed_man_hours=ManHours(5),
+                        ),
+                    ]
+                )
                 task.update_progress_rate = Mock()
                 task.calc_progress_rate()
                 task.update_progress_rate.assert_called_once_with(ProgressRate(0.0))
@@ -341,74 +399,6 @@ class TestScheduledTask:
             task.update_progress_rate(ProgressRate(0.5))  # 進捗率を0.5に更新
             task._toggle_is_updated.assert_not_called()  # 更新処理が呼ばれないことを確認
 
-    class Test__aggregate_sub_man_hours:
-        class Test_サブアイテムがない場合:
-            def test_サブアイテムが空の場合に0を返すこと(self):
-                task = ScheduledTask(
-                    page_id=Mock(),
-                    name=Mock(),
-                    tags=Mock(),
-                    id=Mock(),
-                    status=Mock(),
-                    parent_task_page_id=None,
-                    sub_tasks=[],  # サブアイテムを空に設定
-                )
-                result = task._aggregate_sub_man_hours()
-                assert result == (ManHours(0), ManHours(0))  # 0を返すことを確認
-
-        class Test_サブアイテムがある場合:
-            def test_すべてのサブアイテムでaggregate_man_hoursが呼ばれること(
-                self,
-            ):
-                task = ScheduledTask(
-                    page_id=Mock(),
-                    name=Mock(),
-                    tags=Mock(),
-                    id=Mock(),
-                    status=Mock(),
-                    parent_task_page_id=None,
-                )
-
-                # サブアイテムを作成
-                sub_task1 = copy.copy(task)
-                sub_task2 = copy.copy(task)
-
-                # 対象のメソッドをモック化
-                sub_task1.aggregate_man_hours = Mock()
-                sub_task2.aggregate_man_hours = Mock()
-
-                # サブアイテムを設定し実行
-                task.sub_tasks = [sub_task1, sub_task2]
-                task._aggregate_sub_man_hours()
-
-                # 各サブアイテムのaggregateが呼ばれることを確認
-                sub_task1.aggregate_man_hours.assert_called_once()
-                sub_task2.aggregate_man_hours.assert_called_once()
-
-            def test_サブアイテムの工数を集計して返すこと(self):
-                task = ScheduledTask(
-                    page_id=Mock(),
-                    name=Mock(),
-                    tags=Mock(),
-                    id=Mock(),
-                    status=Mock(),
-                    parent_task_page_id=None,
-                    scheduled_man_hours=ManHours(1),
-                )
-
-                # サブアイテムを作成
-                sub_task1 = copy.copy(task)
-                sub_task2 = copy.copy(task)
-
-                # サブアイテムを設定し実行
-                task.sub_tasks = [sub_task1, sub_task2]
-                result = task._aggregate_sub_man_hours()
-                # サブアイテムの工数を集計して返すことを確認
-                assert result == (
-                    ManHours(2),  # 1 + 1
-                    ManHours(0),  # sub_taskの更に下にサブタスクがないため0を返す
-                )
-
     class Test__aggregate_executed_man_hours:
         class Test_実績タスクがない場合:
             def test_0を返すこと(self):
@@ -419,7 +409,7 @@ class TestScheduledTask:
                     id=Mock(),
                     status=Mock(),
                     parent_task_page_id=None,
-                    executed_tasks=[],  # 実績タスクを空に設定
+                    executed_tasks=ExecutedTasks.from_empty(),  # 実績タスクを空に設定
                 )
                 result = task._aggregate_executed_man_hours()
                 assert result == ManHours(0)  # 0を返すことを確認
@@ -439,7 +429,9 @@ class TestScheduledTask:
 
                 executed_task1.man_hours = ManHours(2)
                 executed_task2.man_hours = ManHours(3)
-                task.executed_tasks = [executed_task1, executed_task2]
+                task.executed_tasks = ExecutedTasks.from_tasks(
+                    [executed_task1, executed_task2]
+                )
                 result = task._aggregate_executed_man_hours()
 
                 # 実績タスクの工数を集計して返すことを確認
@@ -456,7 +448,7 @@ class TestScheduledTask:
                     status=Mock(),
                     parent_task_page_id=None,
                 )
-                task.sub_tasks = []  # サブアイテムを空に設定
+                task.sub_tasks = ScheduledTasks.from_empty()  # サブアイテムを空に設定
 
                 task.update_scheduled_man_hours = Mock()  # 対象のメソッドをモック化
                 task.aggregate_man_hours()
@@ -472,39 +464,11 @@ class TestScheduledTask:
                     status=Mock(),
                     parent_task_page_id=None,
                 )
-                task._aggregate_executed_man_hours = Mock()
-                task._aggregate_executed_man_hours.return_value = ManHours(
-                    5
-                )  # モックの戻り値を設定
                 task.update_executed_man_hours = Mock()  # 対象のメソッドをモック化
 
                 task.aggregate_man_hours()
 
-                task._aggregate_executed_man_hours.assert_called_once()  # 実績人時の合計を集計するメソッドが呼ばれることを確認
                 task.update_executed_man_hours.assert_called_once()  # 実績人時が更新されることを確認
-
-        class Test_サブアイテムがある場合:
-            def test_サブアイテムの予定人時を更新すること(self):
-                task = ScheduledTask(
-                    page_id=Mock(),
-                    name=Mock(),
-                    tags=Mock(),
-                    id=Mock(),
-                    status=Mock(),
-                    parent_task_page_id=None,
-                )
-                task.sub_tasks = [Mock(), Mock()]
-                task._aggregate_sub_man_hours = Mock()
-                task._aggregate_sub_man_hours.return_value = (
-                    ManHours(5),  # サブアイテムの予定人時合計
-                    ManHours(0),  # サブアイテムの実績人時合計
-                )
-                task.update_scheduled_man_hours = Mock()  # 対象のメソッドをモック化
-
-                task.aggregate_man_hours()
-
-                task._aggregate_sub_man_hours.assert_called_once()  # サブアイテムの予定人時を集計するメソッドが呼ばれることを確認
-                task.update_scheduled_man_hours.assert_called_once()  # サブアイテムの予定人時を集計するメソッドが呼ばれることを確認
 
     class Test_update_executed_man_hours:
         def test_実績人時が異なる場合に更新されること(self):
@@ -584,9 +548,11 @@ class TestScheduledTask:
             )
             executed_task1 = Mock()
             executed_task2 = Mock()
-            task.executed_tasks = [executed_task1, executed_task2]
+            task.executed_tasks = ExecutedTasks.from_tasks(
+                [executed_task1, executed_task2]
+            )
 
-            tmp_executed_tasks = []
+            tmp_executed_tasks = ExecutedTasks.from_empty()
             task.update_executed_tasks(tmp_executed_tasks)
 
             assert (
@@ -605,9 +571,9 @@ class TestScheduledTask:
             )
             sub_task1 = Mock()
             sub_task2 = Mock()
-            task.sub_tasks = [sub_task1, sub_task2]
+            task.sub_tasks = ScheduledTasks.from_tasks([sub_task1, sub_task2])
 
-            tmp_sub_tasks = []
+            tmp_sub_tasks = ScheduledTasks.from_empty()
             task.update_sub_tasks(tmp_sub_tasks)
 
             assert (

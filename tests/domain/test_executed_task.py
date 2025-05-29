@@ -3,6 +3,10 @@ import pytest
 from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.domain.value_objects.notion_id import NotionId
 
+from notiontaskr.domain.tags import Tags
+
+from notiontaskr.domain.value_objects.tag import Tag
+
 
 class TestExecutedTask:
     class Test_from_response_data:
@@ -36,7 +40,7 @@ class TestExecutedTask:
                 task.name.task_name
                 == data["properties"]["名前"]["title"][0]["plain_text"]
             )
-            assert task.tags == ["タグ1", "タグ2"]
+            assert task.tags == Tags.from_tags([Tag("タグ1"), Tag("タグ2")])
             assert task.id.number == data["properties"]["ID"]["unique_id"]["number"]
             assert (
                 task.status.value == data["properties"]["ステータス"]["status"]["name"]

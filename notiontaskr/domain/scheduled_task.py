@@ -1,9 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.domain.name_labels.id_label import IdLabel
-from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
 from notiontaskr.domain.task import Task
 from notiontaskr.domain.task_name import TaskName
 from notiontaskr.domain.value_objects.man_hours import ManHours
@@ -11,6 +9,11 @@ from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.page_id import PageId
 from notiontaskr.domain.value_objects.progress_rate import ProgressRate
 from notiontaskr.domain.value_objects.status import Status
+from notiontaskr.domain.tags import Tags
+from notiontaskr.domain.value_objects.tag import Tag
+from notiontaskr.domain.executed_tasks import ExecutedTasks
+
+from notiontaskr.domain.scheduled_tasks import ScheduledTasks
 
 
 @dataclass
@@ -19,13 +22,15 @@ class ScheduledTask(Task):
 
     scheduled_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
     executed_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
-    executed_tasks: list["ExecutedTask"] = field(
-        default_factory=list
+    executed_tasks: ExecutedTasks = field(
+        default_factory=lambda: ExecutedTasks.from_empty()
     )  # 紐づいている実績タスク
     sub_task_page_ids: list["PageId"] = field(
         default_factory=list
     )  # サブアイテムのページID
-    sub_tasks: list["ScheduledTask"] = field(default_factory=list)  # サブアイテム
+    sub_tasks: "ScheduledTasks" = field(
+        default_factory=lambda: ScheduledTasks(_tasks=[])
+    )  # サブアイテム
     progress_rate: ProgressRate = field(
         default_factory=lambda: ProgressRate(0)
     )  # 進捗率
@@ -49,9 +54,9 @@ class ScheduledTask(Task):
             )
 
             status = Status.from_str(data["properties"]["ステータス"]["status"]["name"])
-            tags = []
+            tags = Tags.from_empty()
             for tag in data["properties"]["タグ"]["multi_select"]:
-                tags.append(tag["name"])
+                tags.append(Tag(tag["name"]))
 
             instance = cls(
                 page_id=PageId(data["id"]),
@@ -68,12 +73,11 @@ class ScheduledTask(Task):
                 ),
                 scheduled_man_hours=ManHours(data["properties"]["人時(予)"]["number"]),
                 executed_man_hours=ManHours(data["properties"]["人時(実)"]["number"]),
-                executed_tasks=[],
                 sub_task_page_ids=[
                     PageId(relation["id"])
                     for relation in data["properties"]["サブアイテム"]["relation"]
                 ],
-                sub_tasks=[],
+                sub_tasks=ScheduledTasks.from_empty(),
                 progress_rate=ProgressRate(data["properties"]["進捗率"]["number"]),
             )
 
@@ -102,16 +106,10 @@ class ScheduledTask(Task):
     def update_sub_tasks_properties(self):
         """サブアイテムのプロパティを更新する"""
         # サブアイテムの親IDラベルを更新する
-        for sub_task in self.sub_tasks:
-            sub_task.update_parent_id_label(
-                ParentIdLabel.from_property(parent_id=self.id)
-            )
+        self.sub_tasks.update_parent_id_label(parent_id=self.id)
 
     def _update_status_by_checking_executed_tasks(self):
         """実績タスクの進捗を確認し、ステータスを更新する"""
-        if not self.executed_tasks or len(self.executed_tasks) == 0:
-            return
-
         # 現在時刻
         now = datetime.now(timezone.utc)
         # もし、自身のステータスが未着手かつ
@@ -126,20 +124,7 @@ class ScheduledTask(Task):
         ):
             self.update_status(Status.NOT_STARTED)
 
-    def update_status_by_checking_properties(self):
-        """タスクのプロパティに応じてステータスを更新する"""
-
-        if self.status == Status.CANCELED:
-            # ステータスが中止の場合は、何もしない
-            return
-
-        # 実績タスクのステータスを確認し、ステータスを更新する
-        self._update_status_by_checking_executed_tasks()
-
-        if not self.sub_tasks or len(self.sub_tasks) == 0:
-            # サブアイテムがない場合、処理を終了する
-            return
-
+    def _update_status_by_checking_sub_tasks(self):
         # サブアイテムのステータスを更新し、ステータスを集計する
         statuses = []
         for sub_task in self.sub_tasks:
@@ -157,6 +142,21 @@ class ScheduledTask(Task):
         else:
             # それ以外は未着手にする
             self.update_status(Status.NOT_STARTED)
+
+    def update_status_by_checking_properties(self):
+        """タスクのプロパティに応じてステータスを更新する"""
+
+        if self.status == Status.CANCELED:
+            # ステータスが中止の場合は、何もしない
+            return
+
+        if self.executed_tasks and len(self.executed_tasks) != 0:
+            # 実績タスクのステータスを確認し、ステータスを更新する
+            self._update_status_by_checking_executed_tasks()
+
+        if self.sub_tasks and len(self.sub_tasks) != 0:
+            # サブアイテムのステータスを確認し、ステータスを更新する
+            self._update_status_by_checking_sub_tasks()
 
         self.update_id_label(
             IdLabel.from_property(
@@ -182,47 +182,34 @@ class ScheduledTask(Task):
             return
 
         # サブアイテムのステータスが完了のものを取得する
-        done_tasks = [
-            task for task in self.sub_tasks if task.status == Status.COMPLETED
-        ]
+        done_tasks = ScheduledTasks(
+            [task for task in self.sub_tasks if task.status == Status.COMPLETED]
+        )
 
         # サブアイテムの予定人時合計を取得する
-        total_scheduled_hours = sum(
-            float(task.scheduled_man_hours) for task in self.sub_tasks
-        )
-        if total_scheduled_hours == 0:
+        sub_tasks_properties = self.sub_tasks.sum_properties()
+        total_scheduled_hours = sub_tasks_properties.scheduled_man_hours
+        if total_scheduled_hours == ManHours(0):
             self.update_progress_rate(ProgressRate(0.0))
             return
 
         # 完了済みサブアイテムの予定人時合計を取得する
-        done_scheduled_hours = sum(
-            float(task.scheduled_man_hours) for task in done_tasks
-        )
+        done_tasks_properties = done_tasks.sum_properties()
+        done_scheduled_hours = done_tasks_properties.scheduled_man_hours
 
         # 進捗率を計算する
-        progress = done_scheduled_hours / total_scheduled_hours
-        self.update_progress_rate(ProgressRate(progress))
+        self.update_progress_rate(
+            ProgressRate.from_man_hours(
+                dividends=done_scheduled_hours,
+                divisors=total_scheduled_hours,
+            )
+        )
 
     def update_progress_rate(self, progress_rate: ProgressRate):
         """進捗率を更新する"""
         if self.progress_rate != progress_rate:
             self._toggle_is_updated(f"進捗率: {self.progress_rate} -> {progress_rate}")
             self.progress_rate = progress_rate
-
-    def _aggregate_sub_man_hours(self) -> tuple[ManHours, ManHours]:
-        """サブアイテムの工数を集計する"""
-        if self.sub_tasks is None or len(self.sub_tasks) == 0:
-            return (ManHours(0), ManHours(0))
-        sub_scheduled_man_hours = 0.0
-        sub_executed_man_hours = 0.0
-        for sub_task in self.sub_tasks:
-            sub_task.aggregate_man_hours()
-            sub_scheduled_man_hours += float(sub_task.scheduled_man_hours)
-            sub_executed_man_hours += float(sub_task.executed_man_hours)
-        return (
-            ManHours(sub_scheduled_man_hours),
-            ManHours(sub_executed_man_hours),
-        )
 
     def _aggregate_executed_man_hours(self) -> ManHours:
         """実績タスクの工数を集計する"""
@@ -238,21 +225,24 @@ class ScheduledTask(Task):
     def aggregate_man_hours(self):
         """実績工数を集計し、ラベルを更新する"""
 
-        sub_scheduled_man_hours = ManHours(0)
         sub_executed_man_hours = ManHours(0)
 
         if len(self.sub_tasks) > 0:
             # サブアイテムの工数を集計する
-            sub_scheduled_man_hours, sub_executed_man_hours = (
-                self._aggregate_sub_man_hours()
+            sub_tasks_properties = self.sub_tasks.sum_properties()
+            # サブアイテムの実績人時を加算
+            sub_executed_man_hours = (
+                sub_executed_man_hours + sub_tasks_properties.executed_man_hours
             )
             # サブアイテムの予定人時を更新する
-            self.update_scheduled_man_hours(sub_scheduled_man_hours)
+            self.update_scheduled_man_hours(sub_tasks_properties.scheduled_man_hours)
 
         # 実績タスクの工数を集計する
-        executed_man_hours = self._aggregate_executed_man_hours()
+        executed_tasks_properties = self.executed_tasks.sum_properties()
 
-        self.update_executed_man_hours(sub_executed_man_hours + executed_man_hours)
+        self.update_executed_man_hours(
+            sub_executed_man_hours + executed_tasks_properties.man_hours
+        )
 
     def update_executed_man_hours(self, executed_man_hours: ManHours):
         """実績人時を更新する"""
@@ -270,16 +260,10 @@ class ScheduledTask(Task):
             )
             self.scheduled_man_hours = scheduled_man_hours
 
-    def update_executed_tasks(
-        self,
-        executed_tasks: list["ExecutedTask"],
-    ):
+    def update_executed_tasks(self, executed_tasks: ExecutedTasks):
         """実績タスクを更新する"""
         self.executed_tasks = executed_tasks
 
-    def update_sub_tasks(
-        self,
-        sub_tasks: list["ScheduledTask"],
-    ):
+    def update_sub_tasks(self, sub_tasks: "ScheduledTasks"):
         """サブアイテムを更新する"""
         self.sub_tasks = sub_tasks

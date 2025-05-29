@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from notiontaskr.domain.value_objects.man_hours import ManHours
+
 
 @dataclass
 class ProgressRate:
@@ -16,6 +18,15 @@ class ProgressRate:
             value = 1.0
 
         self.value = value
+
+    @classmethod
+    def from_man_hours(
+        cls, dividends: "ManHours", divisors: "ManHours"
+    ) -> "ProgressRate":
+        """ManHoursから進捗率を初期化する"""
+        if divisors == ManHours(0):
+            return cls(0.0)
+        return cls(float(dividends / divisors))
 
     def __float__(self) -> float:
         return self.value

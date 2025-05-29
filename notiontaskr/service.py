@@ -4,6 +4,8 @@ from flask import Flask, render_template, request
 
 from notiontaskr.application.task_application_service import TaskApplicationService
 
+from notiontaskr.domain.tags import Tags
+from notiontaskr.domain.value_objects.tag import Tag
 from notiontaskr.util.converter import dt_to_month_start_end
 
 service = TaskApplicationService()
@@ -46,7 +48,11 @@ def get_uptime_from_start_end():
     _, end_of_month = dt_to_month_start_end(end_dt)
 
     uptime_data_by_tag = asyncio.run(
-        service.get_uptime(from_=start_of_month, to=end_of_month, tags=tags)
+        service.get_uptime(
+            from_=start_of_month,
+            to=end_of_month,
+            tags=Tags.from_tags([Tag(tag.strip()) for tag in tags]),
+        )
     )
 
     # レスポンスをJSON形式で返す
@@ -74,7 +80,7 @@ def get_uptime_from_month():
         service.get_uptime(
             from_=start,
             to=end,
-            tags=tags,
+            tags=Tags.from_tags([Tag(tag.strip()) for tag in tags]),
         )
     )
 

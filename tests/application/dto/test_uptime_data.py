@@ -3,8 +3,32 @@ import json
 from notiontaskr.application.dto.uptime_data import UptimeData, UptimeDataByTag
 import pytest
 
+from notiontaskr.domain.value_objects.tag import Tag
+
+from notiontaskr.domain.value_objects.man_hours import ManHours
+
 
 class TestUptimeData:
+    def test_domainから初期化できること(self):
+        tag = Tag("tag1")
+        uptime = ManHours(5.0)
+        from_ = datetime(2024, 1, 1)
+        to = datetime(2024, 1, 31)
+
+        uptime_data = UptimeData.from_domain(
+            tag=tag,
+            uptime=uptime,
+            from_=from_,
+            to=to,
+        )
+
+        assert uptime_data.tag == str(tag)
+        assert uptime_data.uptime == float(uptime)
+        assert uptime_data.from_ == from_
+        assert uptime_data.to == to
+
+
+class TestUptimeDataByTag:
     def test_タグと稼働時間を登録できること(self):
         tag = "tag1"
         uptime = 5.0

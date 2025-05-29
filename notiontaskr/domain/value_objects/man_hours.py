@@ -21,6 +21,11 @@ class ManHours:
             raise NotImplementedError(f"ManHours同士の加算のみサポートしています。")
         return ManHours(self.value + other.value)
 
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        return self.__add__(other)
+
     def __float__(self):
         return self.value
 
@@ -37,3 +42,10 @@ class ManHours:
         if not isinstance(other, ManHours):
             return False
         return self.value == other.value
+
+    def __truediv__(self, other):
+        if not isinstance(other, ManHours):
+            raise NotImplementedError(f"ManHours同士の割り算のみサポートしています。")
+        if other.value == 0:
+            raise ZeroDivisionError("ManHoursの値で0で割ることはできません。")
+        return ManHours(self.value / other.value)

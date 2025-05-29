@@ -8,6 +8,8 @@ from notiontaskr.domain.executed_task import ExecutedTask
 from notiontaskr.infrastructure.operator import CheckboxOperator
 from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
 
+from notiontaskr.domain.executed_tasks import ExecutedTasks
+
 
 class ExecutedTaskRepository:
     def __init__(self, token, db_id):
@@ -19,7 +21,7 @@ class ExecutedTaskRepository:
 
     async def find_all(
         self, on_error: Callable[[Exception, dict], None]
-    ) -> List[ExecutedTask]:
+    ) -> ExecutedTasks:
         """全ての実績を取得する"""
         filter = (
             TaskSearchCondition()
@@ -36,7 +38,7 @@ class ExecutedTaskRepository:
         )
 
         # response_dataをScheduledTaskのリストに変換する
-        executed_tasks = []
+        executed_tasks = ExecutedTasks.from_empty()
         for data in response_data["results"]:  # type: ignore
             try:
                 executed_tasks.append(ExecutedTask.from_response_data(data))
@@ -48,7 +50,7 @@ class ExecutedTaskRepository:
         self,
         condition: TaskSearchCondition,
         on_error: Callable[[Exception, dict], None],
-    ) -> List[ExecutedTask]:
+    ) -> ExecutedTasks:
         """指定した実績を全て取得する"""
 
         filter = (
@@ -67,7 +69,7 @@ class ExecutedTaskRepository:
         )
 
         # response_dataをScheduledTaskのリストに変換する
-        executed_tasks = []
+        executed_tasks = ExecutedTasks.from_empty()
         for data in response_data["results"]:  # type: ignore
             try:
                 executed_tasks.append(ExecutedTask.from_response_data(data))
@@ -80,9 +82,9 @@ class ExecutedTaskRepository:
         self,
         condition: TaskSearchCondition,
         on_error: Callable[[Exception, dict], None],
-    ) -> List[ExecutedTask]:
+    ) -> ExecutedTasks:
         """指定した条件に一致する全ての実績タスクをページネーションを考慮して取得する"""
-        all_tasks = []
+        all_tasks = ExecutedTasks.from_empty()
         start_cursor = ""
         has_more = True
         while has_more:
@@ -100,7 +102,7 @@ class ExecutedTaskRepository:
         condition: TaskSearchCondition,
         on_error: Callable[[Exception, dict], None],
         start_cursor: str,
-    ) -> tuple[list[ExecutedTask], str, bool]:
+    ) -> tuple[ExecutedTasks, str, bool]:
         """タスクDBの指定タグの実績を全て取得する（ページネーション対応）"""
         filter = (
             TaskSearchCondition()
@@ -117,7 +119,7 @@ class ExecutedTaskRepository:
             query_params["start_cursor"] = start_cursor
 
         response_data = self.client.databases.query(**query_params)
-        executed_tasks = []
+        executed_tasks = ExecutedTasks.from_empty()
         for data in response_data["results"]:  # type: ignore
             try:
                 executed_tasks.append(ExecutedTask.from_response_data(data))

@@ -1,5 +1,7 @@
 from notiontaskr.domain.value_objects.progress_rate import ProgressRate
 
+from notiontaskr.domain.value_objects.man_hours import ManHours
+
 
 class Test_ProgressRate:
     class Test_初期化メソッド:
@@ -38,3 +40,12 @@ class Test_ProgressRate:
             progress_rate1 = ProgressRate(0.5)
             progress_rate2 = ProgressRate(0.75)
             assert progress_rate1 != progress_rate2
+
+    def test_ManHoursから初期化できること(self):
+        man_hours1 = ManHours(2.0)
+        man_hours2 = ManHours(3.0)
+        progress_rate = ProgressRate.from_man_hours(
+            dividends=man_hours1,
+            divisors=man_hours2,
+        )
+        assert progress_rate.value == 2.0 / 3.0

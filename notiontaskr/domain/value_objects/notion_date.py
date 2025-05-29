@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 @dataclass
@@ -12,6 +12,11 @@ class NotionDate:
             raise TypeError(f"開始日はdatetime型でなければなりません。")
         if not end:
             end = start
+        # tzinfo がない場合、UTC を追加
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=timezone.utc)
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=timezone.utc)
         if start > end:
             raise ValueError(
                 f"開始日`{start}`は終了日`{end}`よりも前でなければなりません。"
