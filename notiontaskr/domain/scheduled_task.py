@@ -168,6 +168,10 @@ class ScheduledTask(Task):
             # サブアイテムのステータスを確認し、ステータスを更新する
             self._update_status_by_checking_sub_tasks()
 
+        if self.is_delayed():
+            # タスクが遅延している場合は、ステータスを遅延にする
+            self.update_status(Status.DELAYED)
+
         self.update_id_label(
             IdLabel.from_property(
                 id=self.id,

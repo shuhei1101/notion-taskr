@@ -291,6 +291,24 @@ class TestScheduledTask:
             assert task.status == Status.IN_PROGRESS
             assert task.sub_tasks[0].status == Status.IN_PROGRESS
 
+        def test_is_delayedがTrueの場合はステータスを遅延にすること(self):
+            task = ScheduledTask(
+                page_id=Mock(),
+                name=Mock(),
+                tags=Mock(),
+                id=Mock(),
+                status=Status.NOT_STARTED,
+                parent_task_page_id=None,
+                date=NotionDate(
+                    start=datetime.now(timezone.utc)
+                    - timedelta(days=2),  # 現在時刻より2日前を設定
+                    end=None,  # 終了日はNoneに設定(startと同じ日付を想定)
+                ),
+            )
+            task.update_status = Mock()
+            task.update_status_by_checking_properties()
+            task.update_status.assert_called_once_with(Status.DELAYED)
+
     class Test_calc_progress_rate:
         class Test_自身のステータスが完了の場合:
             def test_自身の進捗率を1にすること(self):
