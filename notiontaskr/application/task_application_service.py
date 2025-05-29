@@ -209,6 +209,9 @@ class TaskApplicationService:
 
         scheduled_tasks_to_update = ScheduledTasks.from_empty()
 
+        # 取得した予定タスクを追加
+        scheduled_tasks_to_update.upsert_by_id(fetched_scheduled_tasks)
+
         # 実績タスクにIDを付与し、付与した予定タスクを取得(未付与のもののみ)
         scheduled_tasks_to_update.upsert_by_id(
             self.executed_task_service.get_scheduled_tasks_added_executed_id(
