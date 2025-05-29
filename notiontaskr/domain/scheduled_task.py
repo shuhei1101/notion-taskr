@@ -55,12 +55,15 @@ class ScheduledTask(Task):
                 number=task_number,
             )
 
-            start_date_str = data["properties"]["日付"]["date"]["start"]
-            end_date_str = data["properties"]["日付"]["date"]["end"]
-            notion_date = NotionDate.from_raw_date(
-                start=start_date_str,
-                end=end_date_str,
-            )
+            if data["properties"]["日付"]["date"]:
+                start_date_str = data["properties"]["日付"]["date"]["start"]
+                end_date_str = data["properties"]["日付"]["date"]["end"]
+                notion_date = NotionDate.from_raw_date(
+                    start=start_date_str,
+                    end=end_date_str,
+                )
+            else:
+                notion_date = None
 
             status = Status.from_str(data["properties"]["ステータス"]["status"]["name"])
             tags = Tags.from_empty()
@@ -160,8 +163,12 @@ class ScheduledTask(Task):
             # ステータスが中止の場合は、何もしない
             return
 
+        if not self.is_delayed() and self.status == Status.DELAYED:
+            # ステータスが遅延していない場合は、未着手に戻す
+            self.update_status(Status.NOT_STARTED)
+
         if self.executed_tasks and len(self.executed_tasks) != 0:
-            # 実績タスクのステータスを確認し、ステータスを更新する
+            # 実績タスクの進捗を確認し、ステータスを更新する
             self._update_status_by_checking_executed_tasks()
 
         if self.sub_tasks and len(self.sub_tasks) != 0:

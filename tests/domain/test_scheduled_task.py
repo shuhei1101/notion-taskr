@@ -309,6 +309,26 @@ class TestScheduledTask:
             task.update_status_by_checking_properties()
             task.update_status.assert_called_once_with(Status.DELAYED)
 
+        def test_ステータスが遅延時にis_delayedがFalseの場合はステータスを未着手にすること(
+            self,
+        ):
+            task = ScheduledTask(
+                page_id=Mock(),
+                name=Mock(),
+                tags=Mock(),
+                id=Mock(),
+                status=Status.DELAYED,
+                parent_task_page_id=None,
+                date=NotionDate(
+                    start=datetime.now(timezone.utc)
+                    + timedelta(days=2),  # 現在時刻より2日後を設定
+                    end=None,  # 終了日はNoneに設定(startと同じ日付を想定)
+                ),
+            )
+            task.update_status = Mock()
+            task.update_status_by_checking_properties()
+            task.update_status.assert_called_once_with(Status.NOT_STARTED)
+
     class Test_calc_progress_rate:
         class Test_自身のステータスが完了の場合:
             def test_自身の進捗率を1にすること(self):
