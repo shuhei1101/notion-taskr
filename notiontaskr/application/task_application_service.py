@@ -1,26 +1,23 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
-from typing import List
 
 import notiontaskr.config as config
-from notiontaskr.util.converter import dt_to_month_start_end, to_isoformat
+from notiontaskr.util.converter import to_isoformat
 from notiontaskr.app_logger import AppLogger
 from notiontaskr.app_timer import AppTimer
 from notiontaskr.gcs_handler import GCSHandler
 from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
 from notiontaskr.domain.executed_task_service import ExecutedTaskService
 from notiontaskr.domain.scheduled_task_service import ScheduledTaskService
-from notiontaskr.domain.executed_task import ExecutedTask
-from notiontaskr.domain.scheduled_task import ScheduledTask
-from notiontaskr.domain.task_service import TaskService
 from notiontaskr.infrastructure.executed_task_repository import ExecutedTaskRepository
 from notiontaskr.infrastructure.scheduled_task_repository import ScheduledTaskRepository
 from notiontaskr.infrastructure.operator import *
 from notiontaskr.infrastructure.task_search_condition import TaskSearchCondition
 from notiontaskr.infrastructure.scheduled_task_cache import ScheduledTaskCache
 from notiontaskr.application.dto.uptime_data import UptimeData, UptimeDataByTag
-
 from notiontaskr.domain.tags import Tags
+from notiontaskr.domain.scheduled_tasks import ScheduledTasks
+from notiontaskr.domain.executed_tasks import ExecutedTasks
 
 
 class TaskApplicationService:
@@ -37,9 +34,14 @@ class TaskApplicationService:
         self.scheduled_task_cache = ScheduledTaskCache(
             save_path=config.LOCAL_SCHEDULED_PICKLE_PATH
         )
+        self.scheduled_task_service = ScheduledTaskService()
+        self.executed_task_service = ExecutedTaskService()
 
     async def daily_task(self):
         """毎日0時に実行されるタスク"""
+
+        self.logger.info("デイリータスクを開始します。")
+        main_timer = AppTimer.init_and_start()
 
         gcs_handler = GCSHandler(
             bucket_name=config.BUCKET_NAME,
@@ -48,9 +50,7 @@ class TaskApplicationService:
             ),
         )
 
-        # notionから過去一年分の情報を取得し、Pickleに保存する
-        self.logger.info("デイリータスクを開始します。")
-        main_timer = AppTimer.init_and_start()
+        fetch_tasks_timer = AppTimer.init_and_start()
 
         # 過去一年分のタスクを取得
         # 条件作成(過去一年~未来)
@@ -80,53 +80,51 @@ class TaskApplicationService:
             ),
         )
 
+        self.logger.debug(
+            f"【処理時間】予定タスクと実績タスクの取得: {fetch_tasks_timer.get_elapsed_time()}秒"
+        )
+
+        self.logger.info(f"取得した予定タスクの数: {len(scheduled_tasks)}")
+        self.logger.info(f"取得した実績タスクの数: {len(executed_tasks)}")
+
+        update_task_timer = AppTimer.init_and_start()
+
         # 実績タスクにIDを付与する(未付与のもののみ)
-        _ = ExecutedTaskService.get_tasks_add_id_tag(
+        _ = self.executed_task_service.get_scheduled_tasks_added_executed_id(
             to=executed_tasks, source=scheduled_tasks
         )
 
         # 予定タスクに実績タスクを紐づける
-        _ = ScheduledTaskService.get_tasks_upserted_executed_tasks(
-            scheduled_tasks_by_id={
-                scheduled_task.id: scheduled_task for scheduled_task in scheduled_tasks
-            },
-            executed_tasks=executed_tasks,
+        _ = self.scheduled_task_service.get_tasks_upserted_executed_tasks(
+            to=scheduled_tasks,
+            source=executed_tasks,
             on_error=lambda e, task: self.logger.error(
-                f"予定タスク[{task.id.number}]と実績タスクの紐づけに失敗。エラー内容: {e}"
+                f"予定タスク[{task.scheduled_task_id.number}]と実績タスク[{task.id.number}]の紐づけに失敗。エラー内容: {e}"  # type: ignore
             ),
         )
 
         # 予定タスクにサブアイテムを紐づける
-        _ = ScheduledTaskService.get_tasks_appended_sub_tasks(
+        _ = self.scheduled_task_service.get_parent_tasks_appended_sub_tasks(
+            parent_tasks=scheduled_tasks,
             sub_tasks=scheduled_tasks,
-            parent_tasks_by_page_id={
-                scheduled_task.page_id: scheduled_task
-                for scheduled_task in scheduled_tasks
-            },
             on_error=lambda e, task: self.logger.error(
                 f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {e}"
             ),
         )
 
         # 予定タスクのプロパティを更新
-        for scheduled_task in scheduled_tasks:
-            self._update_scheduled_task_properties(scheduled_task)
+        self._update_scheduled_task_properties(scheduled_tasks)
 
         # 更新
         tasks = []
         tasks.append(self._update_scheduled_tasks(scheduled_tasks))
-        tasks.append(
-            self._update_executed_tasks(
-                [
-                    executed_task
-                    for scheduled_task in scheduled_tasks
-                    for executed_task in scheduled_task.executed_tasks
-                    if scheduled_task.executed_tasks
-                ]
-            )
+        tasks.append(self._update_executed_tasks(scheduled_tasks.get_executed_tasks()))
+
+        self.logger.debug(
+            f"【処理時間】予定タスクと実績タスクの更新: {update_task_timer.get_elapsed_time()}秒"
         )
 
-        _ = await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks)
 
         # pickleの保存
         await self._save_pickle(
@@ -199,96 +197,100 @@ class TaskApplicationService:
         # pickleから予定タスクを取得
         cache_scheduled_tasks = await self._load_pickle(gcs_handler=gcs_handler)
         if cache_scheduled_tasks is None:
+            self.logger.critical("キャッシュが空です。処理を終了します。")
             return
 
-        add_executed_id_timer = AppTimer.init_and_start()
-
-        # キャッシュの予定タスクを辞書に変換
-        scheduled_tasks_by_id = {
-            scheduled_task.id: scheduled_task
-            for scheduled_task in cache_scheduled_tasks  # type: ignore
-        }
-
         # キャッシュと取得した予定タスクをマージする
-        scheduled_tasks_by_id = ScheduledTaskService.merge_scheduled_tasks(
-            scheduled_tasks_by_id=scheduled_tasks_by_id,
-            sources=fetched_scheduled_tasks,
+        merged_scheduled_tasks = cache_scheduled_tasks.upserted_by_id(
+            fetched_scheduled_tasks
         )
 
+        timer = AppTimer.init_and_start()
+
+        scheduled_tasks_to_update = ScheduledTasks.from_empty()
+
         # 実績タスクにIDを付与し、付与した予定タスクを取得(未付与のもののみ)
-        scheduled_tasks_id_added = ExecutedTaskService.get_tasks_add_id_tag(
-            to=fetched_executed_tasks, source=list(scheduled_tasks_by_id.values())
+        scheduled_tasks_to_update.upsert_by_id(
+            self.executed_task_service.get_scheduled_tasks_added_executed_id(
+                to=fetched_executed_tasks,
+                source=merged_scheduled_tasks,
+            )
         )
 
         self.logger.debug(
-            f"【処理時間】実績タスクのID付与: {add_executed_id_timer.get_elapsed_time()}秒"
+            f"【処理時間】実績タスクのID付与: {timer.get_elapsed_time()}秒"
         )
-        calc_man_hours_timer = AppTimer.init_and_start()
+        timer = AppTimer.init_and_start()
 
-        # 予定タスクと実績タスクの紐づけ
-        scheduled_tasks_upserted_executed = ScheduledTaskService.get_tasks_upserted_executed_tasks(
-            scheduled_tasks_by_id=scheduled_tasks_by_id,
-            executed_tasks=fetched_executed_tasks,
-            on_error=lambda e, task: self.logger.error(
-                f"予定タスク[{task.id.number}]と実績タスクの紐づけに失敗。エラー内容: {e}"
-            ),
-        )
-
-        # キャッシュから予定タスクの親IDに一致する予定タスクを検索し、紐づける
-        parent_tasks_appended_child = ScheduledTaskService.get_tasks_appended_sub_tasks(
-            sub_tasks=fetched_scheduled_tasks,
-            parent_tasks_by_page_id={
-                scheduled_task.page_id: scheduled_task
-                for scheduled_task in list(scheduled_tasks_by_id.values())
-            },
-            on_error=lambda e, task: self.logger.error(
-                f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {e}"
-            ),
+        # 実績タスクの紐づけ(更新された予定タスクを取得)
+        scheduled_tasks_to_update.upsert_by_id(
+            self.scheduled_task_service.get_tasks_upserted_executed_tasks(
+                to=merged_scheduled_tasks,
+                source=fetched_executed_tasks,
+                on_error=lambda e, task: self.logger.error(
+                    f"予定タスク[{task.id.number}]と実績タスクの紐づけに失敗。エラー内容: {e}"
+                ),
+            )
         )
 
-        # 更新予定のタスクを作成
-        scheduled_tasks_to_update_by_id = {
-            scheduled_task.id: scheduled_task
-            for scheduled_task in fetched_scheduled_tasks
-            + scheduled_tasks_id_added
-            + scheduled_tasks_upserted_executed
-            + parent_tasks_appended_child
-        }
+        # 取得した予定タスクにサブアイテムを紐づける
+        scheduled_tasks_to_update.upsert_by_id(
+            self.scheduled_task_service.get_parent_tasks_appended_sub_tasks(
+                sub_tasks=merged_scheduled_tasks,
+                parent_tasks=fetched_scheduled_tasks,
+                on_error=lambda e, task: self.logger.error(
+                    f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {e}"
+                ),
+            )
+        )
+
+        # サブタスクの紐づけ(更新された親予定タスクを取得)
+        scheduled_tasks_to_update.upsert_by_id(
+            self.scheduled_task_service.get_parent_tasks_appended_sub_tasks(
+                sub_tasks=fetched_scheduled_tasks,
+                parent_tasks=merged_scheduled_tasks,
+                on_error=lambda e, task: self.logger.error(
+                    f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {e}"
+                ),
+            )
+        )
+
+        self.logger.debug(f"【処理時間】タスクの紐づけ: {timer.get_elapsed_time()}秒")
+
+        timer = AppTimer.init_and_start()
 
         # 予定タスクのプロパティを更新
-        for scheduled_task in list(scheduled_tasks_to_update_by_id.values()):
-            self._update_scheduled_task_properties(scheduled_task)
+        self._update_scheduled_task_properties(scheduled_tasks_to_update)
 
-        # 既存データを辞書に変換
-        update_executed_task_data = {task.id: task for task in fetched_executed_tasks}
+        self.logger.debug(
+            f"【処理時間】予定タスクのプロパティ更新: {timer.get_elapsed_time()}秒"
+        )
 
-        # 更新データを上書き
-        for scheduled_task in list(scheduled_tasks_to_update_by_id.values()):
-            for executed_task in scheduled_task.executed_tasks:
-                if update_executed_task_data.get(executed_task.id) is None:
-                    continue
-                update_executed_task_data[executed_task.id] = executed_task
+        timer = AppTimer.init_and_start()
 
         # 更新
         tasks = []
+        tasks.append(self._update_scheduled_tasks(scheduled_tasks_to_update))
         tasks.append(
-            self._update_scheduled_tasks(list(scheduled_tasks_to_update_by_id.values()))
-        )
-        tasks.append(
-            self._update_executed_tasks(list(update_executed_task_data.values()))
+            self._update_executed_tasks(scheduled_tasks_to_update.get_executed_tasks())
         )
 
         await asyncio.gather(*tasks)
 
+        self.logger.debug(f"【処理時間】更新API発行: {timer.get_elapsed_time()}秒")
+
+        timer = AppTimer.init_and_start()
+
+        merged_scheduled_tasks.upsert_by_id(scheduled_tasks_to_update)
+
         # pickleの保存
         await self._save_pickle(
-            scheduled_tasks=list(scheduled_tasks_to_update_by_id.values()),
+            scheduled_tasks=merged_scheduled_tasks,
             gcs_handler=gcs_handler,
         )
 
-        self.logger.debug(
-            f"【処理時間】実績タスクの工数計算: {calc_man_hours_timer.get_elapsed_time()}秒"
-        )
+        self.logger.debug(f"【処理時間】Pickleの保存: {timer.get_elapsed_time()}秒")
+
         self.logger.debug(f"【処理時間】合計: {main_timer.get_elapsed_time()}秒")
 
     async def get_uptime(
@@ -339,48 +341,28 @@ class TaskApplicationService:
         # DTOを返却
         return uptime_data_by_tag
 
-    def _update_scheduled_task_properties(self, scheduled_task: ScheduledTask):
+    def _update_scheduled_task_properties(self, scheduled_tasks: ScheduledTasks):
         """予定タスクのプロパティを更新するメソッド"""
-        # サブアイテムに親IDラベルを付与する
-        scheduled_task.update_sub_tasks_properties()
-        # サブアイテムの工数を集計し、ラベルを更新する
-        scheduled_task.aggregate_man_hours()
-        # 実績タスクのステータスを更新する
-        scheduled_task.update_status_by_checking_properties()
-        # 進捗率を更新する
-        scheduled_task.calc_progress_rate()
-        # 実績人時ラベルを更新する
-        scheduled_task.update_man_hours_label(
-            ManHoursLabel.from_man_hours(
-                executed_man_hours=scheduled_task.executed_man_hours,
-                scheduled_man_hours=scheduled_task.scheduled_man_hours,
-            )
-        )
-        # 予定タスクが持つ実績タスクのプロパティを更新する
-        scheduled_task.update_executed_tasks_properties()
-
-    async def _update_scheduled_tasks(
-        self,
-        scheduled_tasks: list[ScheduledTask],
-    ):
-        """予定タスクの実績工数を更新するメソッド"""
-        updated_scheduled_tasks = TaskService.get_updated_tasks(scheduled_tasks)
-        tasks = []
-        for updated_scheduled_task in updated_scheduled_tasks:
-            tasks.append(
-                self.scheduled_task_repo.update(
-                    scheduled_task=updated_scheduled_task,
-                    on_success=lambda task: self.logger.info(
-                        f"予定タスク[{task.id.number}]の更新: {task.update_contents}"
-                    ),
-                    on_error=lambda e, task: self.logger.error(
-                        f"予定タスク[{task.id.number}]の更新に失敗しました。 エラー内容: {e}"
-                    ),
+        for scheduled_task in scheduled_tasks:
+            # サブアイテムに親IDラベルを付与する
+            scheduled_task.update_sub_tasks_properties()
+            # サブアイテムの工数を集計し、ラベルを更新する
+            scheduled_task.aggregate_man_hours()
+            # 実績タスクのステータスを更新する
+            scheduled_task.update_status_by_checking_properties()
+            # 進捗率を更新する
+            scheduled_task.calc_progress_rate()
+            # 実績人時ラベルを更新する
+            scheduled_task.update_man_hours_label(
+                ManHoursLabel.from_man_hours(
+                    executed_man_hours=scheduled_task.executed_man_hours,
+                    scheduled_man_hours=scheduled_task.scheduled_man_hours,
                 )
             )
-        await asyncio.gather(*tasks)
+            # 予定タスクが持つ実績タスクのプロパティを更新する
+            scheduled_task.update_executed_tasks_properties()
 
-    async def _load_pickle(self, gcs_handler: GCSHandler) -> List[ScheduledTask] | None:
+    async def _load_pickle(self, gcs_handler: GCSHandler) -> ScheduledTasks | None:
         """GCSからPickleをダウンロードし、読み込むメソッド"""
         try:
             gcs_handler.download(
@@ -388,20 +370,20 @@ class TaskApplicationService:
                 to=self.scheduled_task_cache.save_path,
             )
             self.logger.info("PickleのGCSからのダウンロードに成功しました。")
+        except Exception as e:
+            self.logger.info(f"PickleのGCSからのダウンロードに失敗。エラー内容: {e}")
 
+        try:
             # Pickleから予定タスクを読み込む
             scheduled_task = self.scheduled_task_cache.load()
             self.logger.info("Pickleの読み込みに成功しました。")
             return scheduled_task
         except Exception as e:
-            self.logger.critical(
-                f"PickleのGCSからのダウンロードに失敗。エラー内容: {e}"
-            )
-            self.logger.critical("処理を終了します。")
+            self.logger.critical(f"Pickleの読み込みに失敗。エラー内容: {e}")
             return None
 
     async def _save_pickle(
-        self, scheduled_tasks: List[ScheduledTask], gcs_handler: GCSHandler
+        self, scheduled_tasks: ScheduledTasks, gcs_handler: GCSHandler
     ):
         """GCSにPickleをアップロードするメソッド"""
         try:
@@ -420,12 +402,33 @@ class TaskApplicationService:
             self.logger.critical(f"Pickleの保存に失敗。エラー内容: {e}")
             self.logger.critical("処理を終了します。")
 
+    async def _update_scheduled_tasks(
+        self,
+        scheduled_tasks: ScheduledTasks,
+    ):
+        """予定タスクの実績工数を更新するメソッド"""
+        updated_scheduled_tasks = scheduled_tasks.get_updated_tasks()
+        tasks = []
+        for updated_scheduled_task in updated_scheduled_tasks:
+            tasks.append(
+                self.scheduled_task_repo.update(
+                    scheduled_task=updated_scheduled_task,
+                    on_success=lambda task: self.logger.info(
+                        f"予定タスク[{task.id.number}]の更新: {task.update_contents}"
+                    ),
+                    on_error=lambda e, task: self.logger.error(
+                        f"予定タスク[{task.id.number}]の更新に失敗しました。 エラー内容: {e}"
+                    ),
+                )
+            )
+        await asyncio.gather(*tasks)
+
     async def _update_executed_tasks(
         self,
-        executed_tasks: list[ExecutedTask],
+        executed_tasks: ExecutedTasks,
     ):
         """実績タスクの予定タスクIDを更新するメソッド"""
-        updated_executed_tasks = TaskService.get_updated_tasks(executed_tasks)
+        updated_executed_tasks = executed_tasks.get_updated_tasks()
         tasks = []
         for updated_executed_task in updated_executed_tasks:
             tasks.append(
