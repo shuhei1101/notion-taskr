@@ -18,7 +18,9 @@ class TestNotionDate:
         def test_引数endがNoneのときendにstartが代入されること(self):
             date = NotionDate(datetime(2023, 1, 1), None)  # type: ignore
             assert date.start == datetime(2023, 1, 1, tzinfo=timezone.utc)
-            assert date.end == datetime(2023, 1, 1, tzinfo=timezone.utc)
+            assert date.end == datetime(
+                2023, 1, 1, 23, 59, 59, 999999, tzinfo=timezone.utc
+            )
 
         def test_引数startがendよりも後のときValueErrorが発生すること(self):
             with pytest.raises(ValueError):
@@ -32,7 +34,9 @@ class TestNotionDate:
         def test_引数endがNoneのときendにstartが代入されること(self):
             date = NotionDate.from_raw_date("2023-01-01", None)  # type: ignore
             assert date.start == datetime(2023, 1, 1, tzinfo=timezone.utc)
-            assert date.end == datetime(2023, 1, 1, tzinfo=timezone.utc)
+            assert date.end == datetime(
+                2023, 1, 1, 23, 59, 59, 999999, tzinfo=timezone.utc
+            )
 
         def test_引数startがISOフォーマットの文字列のとき正常に初期化されること(self):
             date = NotionDate.from_raw_date("2023-01-01", "2023-01-02")
