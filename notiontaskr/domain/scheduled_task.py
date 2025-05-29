@@ -15,6 +15,8 @@ from notiontaskr.domain.executed_tasks import ExecutedTasks
 
 from notiontaskr.domain.scheduled_tasks import ScheduledTasks
 
+from notiontaskr.domain.value_objects.notion_date import NotionDate
+
 
 @dataclass
 class ScheduledTask(Task):
@@ -53,6 +55,16 @@ class ScheduledTask(Task):
                 number=task_number,
             )
 
+            if data["properties"]["日付"]["date"]:
+                start_date_str = data["properties"]["日付"]["date"]["start"]
+                end_date_str = data["properties"]["日付"]["date"]["end"]
+                notion_date = NotionDate.from_raw_date(
+                    start=start_date_str,
+                    end=end_date_str,
+                )
+            else:
+                notion_date = None
+
             status = Status.from_str(data["properties"]["ステータス"]["status"]["name"])
             tags = Tags.from_empty()
             for tag in data["properties"]["タグ"]["multi_select"]:
@@ -79,6 +91,7 @@ class ScheduledTask(Task):
                 ],
                 sub_tasks=ScheduledTasks.from_empty(),
                 progress_rate=ProgressRate(data["properties"]["進捗率"]["number"]),
+                date=notion_date,
             )
 
             # IDラベルを更新
@@ -150,13 +163,21 @@ class ScheduledTask(Task):
             # ステータスが中止の場合は、何もしない
             return
 
+        if not self.is_delayed() and self.status == Status.DELAYED:
+            # ステータスが遅延していない場合は、未着手に戻す
+            self.update_status(Status.NOT_STARTED)
+
         if self.executed_tasks and len(self.executed_tasks) != 0:
-            # 実績タスクのステータスを確認し、ステータスを更新する
+            # 実績タスクの進捗を確認し、ステータスを更新する
             self._update_status_by_checking_executed_tasks()
 
         if self.sub_tasks and len(self.sub_tasks) != 0:
             # サブアイテムのステータスを確認し、ステータスを更新する
             self._update_status_by_checking_sub_tasks()
+
+        if self.is_delayed():
+            # タスクが遅延している場合は、ステータスを遅延にする
+            self.update_status(Status.DELAYED)
 
         self.update_id_label(
             IdLabel.from_property(
@@ -267,3 +288,17 @@ class ScheduledTask(Task):
     def update_sub_tasks(self, sub_tasks: "ScheduledTasks"):
         """サブアイテムを更新する"""
         self.sub_tasks = sub_tasks
+
+    def is_delayed(self) -> bool:
+        """タスクが遅延しているかどうかを判定する"""
+        if self.date is None:
+            return False
+        if self.status == Status.COMPLETED or self.status == Status.CANCELED:
+            return False
+
+        # 現在時刻
+        now = datetime.now(timezone.utc)
+        # タスクの終了日時が現在時刻よりも前で、ステータスが未着手または進行中の場合は遅延とみなす
+        return self.date.end < now and (
+            self.status == Status.NOT_STARTED or self.status == Status.IN_PROGRESS
+        )

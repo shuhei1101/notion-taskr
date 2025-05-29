@@ -18,7 +18,6 @@ from notiontaskr.domain.value_objects.tag import Tag
 class ExecutedTask(Task):
     """実績タスクモデル"""
 
-    date: Optional[NotionDate] = None
     man_hours: ManHours = field(default_factory=lambda: ManHours(0))
     scheduled_task_id: Optional[NotionId] = None  # 紐づいている予定タスクのID
     scheduled_task_page_id: Optional[PageId] = None  # 紐づいている予定タスクのページID
