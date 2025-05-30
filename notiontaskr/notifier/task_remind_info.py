@@ -1,9 +1,8 @@
 from dataclasses import dataclass
-from datetime import timedelta
-from typing import TYPE_CHECKING, Optional
+from datetime import datetime, timedelta
+from typing import Optional
 
-if TYPE_CHECKING:
-    from notiontaskr.domain.name_labels.remind_label import RemindLabel
+from notiontaskr.domain.value_objects.notion_date import NotionDate
 
 
 @dataclass
@@ -12,46 +11,44 @@ class TaskRemindInfo:
     has_before_end: bool = False
     before_start_minutes: timedelta = timedelta(minutes=5)
     before_end_minutes: timedelta = timedelta(minutes=5)
+    before_start_dt: Optional["datetime"] = None
+    before_end_dt: Optional["datetime"] = None
 
     @classmethod
     def from_raw_values(
         cls,
+        task_date: NotionDate,
         has_before_start: bool = False,
         has_before_end: bool = False,
-        before_start_minutes: Optional[int] = 5,
-        before_end_minutes: Optional[int] = 5,
+        raw_before_start_minutes: Optional[int] = 5,
+        raw_before_end_minutes: Optional[int] = 5,
     ) -> "TaskRemindInfo":
-        if before_start_minutes is None:
-            before_start_minutes = 5
-        if before_end_minutes is None:
-            before_end_minutes = 5
+        if raw_before_start_minutes is None:
+            raw_before_start_minutes = 5
+        if raw_before_end_minutes is None:
+            raw_before_end_minutes = 5
 
-        if before_start_minutes < 0:
+        if raw_before_start_minutes < 0:
             raise ValueError("before_start_minutesは0以上でなければなりません")
-        if before_end_minutes < 0:
+        if raw_before_end_minutes < 0:
             raise ValueError("before_end_minutesは0以上でなければなりません")
+
+        before_start_minutes = timedelta(minutes=raw_before_start_minutes)
+        before_end_minutes = timedelta(minutes=raw_before_end_minutes)
+
+        before_start_dt = None
+        before_end_dt = None
+
+        if has_before_start:
+            before_start_dt = task_date.start - before_start_minutes
+        if has_before_end:
+            before_end_dt = task_date.end - before_end_minutes
+
         return cls(
             has_before_start=has_before_start,
             has_before_end=has_before_end,
-            before_start_minutes=timedelta(minutes=before_start_minutes),
-            before_end_minutes=timedelta(minutes=before_end_minutes),
-        )
-
-    @classmethod
-    def from_remind_label(cls, label: "RemindLabel") -> "TaskRemindInfo":
-        if not label.value:
-            return cls()
-
-        parts = label.value.split("|")
-        # mを取り除いて整数に変換
-        before_start_minutes = int(parts[0].replace("m", "")) if parts[0] else 5
-        before_end_minutes = (
-            int(parts[1].replace("m", "")) if len(parts) > 1 and parts[1] else 5
-        )
-
-        return cls.from_raw_values(
-            has_before_start=bool(parts[0]),
-            has_before_end=bool(parts[1]),
             before_start_minutes=before_start_minutes,
             before_end_minutes=before_end_minutes,
+            before_start_dt=before_start_dt,
+            before_end_dt=before_end_dt,
         )

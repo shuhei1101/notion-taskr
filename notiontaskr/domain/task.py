@@ -11,7 +11,6 @@ from notiontaskr.domain.tags import Tags
 
 from notiontaskr.domain.value_objects.notion_date import NotionDate
 
-from notiontaskr.notifier.remind_datetime import RemindDateTime
 from notiontaskr.notifier.task_remind_info import TaskRemindInfo
 
 
@@ -129,28 +128,3 @@ class Task:
         :return: 表示用のタスク名
         """
         return str(self.name)
-
-    def get_remind_dt(self) -> Optional["RemindDateTime"]:
-        """リマインド日時を取得する
-
-        :return: リマインド日時
-        """
-        if not self.date or (
-            not self.remind_info.has_before_start
-            and not self.remind_info.has_before_end
-        ):
-            return None
-
-        before_start = None
-        before_end = None
-
-        if self.remind_info.has_before_start:
-            before_start = self.date.start - self.remind_info.before_start_minutes
-
-        if self.remind_info.has_before_end:
-            before_end = self.date.end - self.remind_info.before_end_minutes
-
-        return RemindDateTime(
-            before_start=before_start,
-            before_end=before_end,
-        )
