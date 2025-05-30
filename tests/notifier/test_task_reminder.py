@@ -1,12 +1,9 @@
-from datetime import datetime, timedelta
-from unittest.mock import Mock
+import asyncio
+from unittest.mock import AsyncMock, Mock
 from pytest import fixture
+import pytest
 
-from notiontaskr.domain.executed_task import ExecutedTask
-from notiontaskr.domain.task import Task
 from notiontaskr.notifier.notifiable import Notifiable
-from notiontaskr.notifier.remind_datetime import RemindDateTime
-from notiontaskr.notifier.task_remind_info import TaskRemindInfo
 from notiontaskr.notifier.task_reminder import TaskReminder
 
 
@@ -22,52 +19,44 @@ class TestTaskReminder:
         """Notifiableインターフェースをモックしたクラス"""
 
         class NotifiableMock(Notifiable):
-            def notify(self, message: str):
+            async def notify(self, message: str):
                 pass
 
         return NotifiableMock()
 
-    @fixture
-    def mock_executed_task(self) -> ExecutedTask:
-        return ExecutedTask(
-            page_id=Mock(),
-            name=Mock(),
-            tags=Mock(),
-            id=Mock(),
-            status=Mock(),
-            remind_info=TaskRemindInfo(),
-        )
-
     def test_コンストラクタでNotifiableを受け取ること(self, mock_notifier):
-
         task_reminder = TaskReminder(notifier=mock_notifier)
 
         assert task_reminder is not None
 
-    class Test_Remind:
-        def test_開始前通知がある場合に現在時刻と比較して通知すること(
-            self, mock_notifier: Notifiable, mock_executed_task: Task
+    class Test_リマインドを実行:
+        def test_タスクが開始前リマインド時刻のときリマインドを送ること(
+            self, mock_notifier: Notifiable
         ):
-            task_reminder = TaskReminder(notifier=mock_notifier)
-
-            # モックの現在時刻を設定
-            mock_executed_task.remind_info = TaskRemindInfo.from_raw_values(
-                has_before_start=True,
-                before_start_minutes=30,  # 30分前に通知
-            )
-
-            mock_executed_task.get_remind_dt = Mock(
-                return_value=RemindDateTime(
-                    before_start=datetime.now(),  # 現在時刻
-                    before_end=None,  # 終了後の通知はなし
-                )
-            )
-
-            # notifyメソッドをモック化
-            mock_notifier.notify = Mock()
-
-            # リマインドを実行
-            task_reminder.remind(mock_executed_task)
-
-            # モックのnotifyメソッドが呼び出されたことを確認
+            task = Mock(is_remind_time_before_start=Mock(return_value=True))
+            mock_notifier.notify = AsyncMock()
+            reminder = TaskReminder(notifier=mock_notifier)
+            asyncio.run(reminder.remind(task))
             mock_notifier.notify.assert_called()
+
+        def test_タスクが終了前リマインド時刻のときリマインドを送ること(
+            self, mock_notifier: Notifiable
+        ):
+            task = Mock(is_remind_time_before_end=Mock(return_value=True))
+            mock_notifier.notify = AsyncMock()
+            reminder = TaskReminder(notifier=mock_notifier)
+            asyncio.run(reminder.remind(task))
+            mock_notifier.notify.assert_called()
+
+        def test_タスクがリマインド時刻でないとき例外を送ること(
+            self, mock_notifier: Notifiable
+        ):
+            task = Mock(
+                is_remind_time_before_start=Mock(return_value=False),
+                is_remind_time_before_end=Mock(return_value=False),
+            )
+            mock_notifier.notify = AsyncMock()
+            reminder = TaskReminder(notifier=mock_notifier)
+
+            with pytest.raises(ValueError):
+                asyncio.run(reminder.remind(task))
