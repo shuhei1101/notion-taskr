@@ -8,9 +8,7 @@ from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.page_id import PageId
 from notiontaskr.domain.value_objects.status import Status
 from notiontaskr.domain.tags import Tags
-
 from notiontaskr.domain.value_objects.notion_date import NotionDate
-
 from notiontaskr.notifier.task_remind_info import TaskRemindInfo
 
 

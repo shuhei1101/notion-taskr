@@ -15,16 +15,6 @@ class Tasks(ABC, Generic[T]):
     _tasks: List[T]
 
     @abstractmethod
-    def _get_tasks(self) -> List[T]:  # type: ignore
-        """タスクのリストを取得する
-
-        :return Tasks: Tasksを継承したクラスのインスタンス
-
-        このメソッドは、各実装クラスで自身のタスクのリストを返すように実装すること
-        """
-        pass
-
-    @abstractmethod
     def get_updated_tasks(self) -> Self:
         """変更されたタスクを取得する"""
         pass
@@ -47,9 +37,9 @@ class Tasks(ABC, Generic[T]):
 
     def upsert_by_id(self, tasks: Self) -> None:
         """IDで重複を除去したタスクのリストを追加もしくは更新する"""
-        for task in tasks._get_tasks():
+        for task in tasks._tasks:
             self.append(task)
-        self._tasks = self.get_unique_tasks_by_id()._get_tasks()
+        self._tasks = self.get_unique_tasks_by_id()._tasks
 
     def get_unique_tasks_by_id(self) -> Self:
         """IDで重複を除去したタスクのリストを取得する"""
@@ -66,23 +56,33 @@ class Tasks(ABC, Generic[T]):
     def get_tasks_by_tag(self, tags: "Tags") -> dict[Tag, "Self"]:
         """指定したタグを持つ予定タスクを取得する"""
         scheduled_tasks_by_tags = {tag: self.from_empty() for tag in tags}
-        for task in self._get_tasks():
+        for task in self._tasks:
             for task_tag in task.tags:
                 if task_tag in tags:
                     scheduled_tasks_by_tags[task_tag].append(task)
         return scheduled_tasks_by_tags
 
+    def get_remind_tasks(self) -> "Self":
+        """リマインド対象のタスクを取得する"""
+        return self.from_tasks(
+            [
+                task
+                for task in self._tasks
+                if task.remind_info.has_before_start or task.remind_info.has_before_end
+            ]
+        )
+
     def __len__(self) -> int:
         """タスクの数を取得する"""
-        return len(self._get_tasks())
+        return len(self._tasks)
 
     def __getitem__(self, index: int):
         """タスクを取得する"""
-        return self._get_tasks()[index]
+        return self._tasks[index]
 
     def __iter__(self) -> Iterator[T]:
         """タスクをイテレートする"""
-        return iter(self._get_tasks())
+        return iter(self._tasks)
 
     def append(self, task: "T"):
         """スケジュールタスクを追加する"""

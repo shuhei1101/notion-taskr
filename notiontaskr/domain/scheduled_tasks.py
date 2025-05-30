@@ -18,9 +18,6 @@ class ScheduledTasks(Tasks["ScheduledTask"]):
 
     _tasks: List["ScheduledTask"]
 
-    def _get_tasks(self):
-        return self._tasks
-
     @classmethod
     def from_empty(cls):
         return cls(_tasks=[])
