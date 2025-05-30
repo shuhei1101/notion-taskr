@@ -15,6 +15,18 @@ class TaskRemindInfo:
     before_end_dt: Optional["datetime"] = None
 
     @classmethod
+    def from_empty(cls) -> "TaskRemindInfo":
+        """空のリマインド情報を生成する"""
+        return cls(
+            has_before_start=False,
+            has_before_end=False,
+            before_start_minutes=timedelta(minutes=5),
+            before_end_minutes=timedelta(minutes=5),
+            before_start_dt=None,
+            before_end_dt=None,
+        )
+
+    @classmethod
     def from_raw_values(
         cls,
         task_date: NotionDate,

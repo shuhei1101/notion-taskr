@@ -84,3 +84,14 @@ class TestTaskRemindInfo:
                 + datetime.timedelta(minutes=1),
             )
             assert not remind_info.is_remind_time_before_end()
+
+    class Test_空で初期化:
+        def test_空のリマインド情報を生成できること(self):
+            remind_info = TaskRemindInfo.from_empty()
+
+            assert remind_info.has_before_start is False
+            assert remind_info.has_before_end is False
+            assert remind_info.before_start_minutes == datetime.timedelta(minutes=5)
+            assert remind_info.before_end_minutes == datetime.timedelta(minutes=5)
+            assert remind_info.before_start_dt is None
+            assert remind_info.before_end_dt is None

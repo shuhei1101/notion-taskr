@@ -81,11 +81,16 @@ class ScheduledTask(Task):
                 "number"
             )
             before_end_minutes = data["properties"]["終了前通知時間(分)"].get("number")
+
+            remind_info = TaskRemindInfo.from_empty()
+
+            if notion_date:
             remind_info = TaskRemindInfo.from_raw_values(
+                    task_date=notion_date,
                 has_before_start=has_before_start,
                 has_before_end=has_before_end,
-                before_start_minutes=before_start_minutes,
-                before_end_minutes=before_end_minutes,
+                    raw_before_start_minutes=before_start_minutes,
+                    raw_before_end_minutes=before_end_minutes,
             )
 
             instance = cls(
