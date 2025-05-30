@@ -85,13 +85,13 @@ class ScheduledTask(Task):
             remind_info = TaskRemindInfo.from_empty()
 
             if notion_date:
-            remind_info = TaskRemindInfo.from_raw_values(
+                remind_info = TaskRemindInfo.from_raw_values(
                     task_date=notion_date,
-                has_before_start=has_before_start,
-                has_before_end=has_before_end,
+                    has_before_start=has_before_start,
+                    has_before_end=has_before_end,
                     raw_before_start_minutes=before_start_minutes,
                     raw_before_end_minutes=before_end_minutes,
-            )
+                )
 
             instance = cls(
                 page_id=PageId(data["id"]),
