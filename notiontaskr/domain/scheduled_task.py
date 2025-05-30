@@ -12,14 +12,9 @@ from notiontaskr.domain.value_objects.status import Status
 from notiontaskr.domain.tags import Tags
 from notiontaskr.domain.value_objects.tag import Tag
 from notiontaskr.domain.executed_tasks import ExecutedTasks
-
 from notiontaskr.domain.scheduled_tasks import ScheduledTasks
-
 from notiontaskr.domain.value_objects.notion_date import NotionDate
-
 from notiontaskr.notifier.task_remind_info import TaskRemindInfo
-
-from notiontaskr.domain.name_labels.remind_label import RemindLabel
 
 
 @dataclass
@@ -84,13 +79,12 @@ class ScheduledTask(Task):
 
             remind_info = TaskRemindInfo.from_empty()
 
-            if notion_date:
-                remind_info = TaskRemindInfo.from_raw_values(
-                    has_before_start=has_before_start,
-                    has_before_end=has_before_end,
-                    raw_before_start_minutes=before_start_minutes,
-                    raw_before_end_minutes=before_end_minutes,
-                )
+            remind_info = TaskRemindInfo.from_raw_values(
+                has_before_start=has_before_start,
+                has_before_end=has_before_end,
+                raw_before_start_minutes=before_start_minutes,
+                raw_before_end_minutes=before_end_minutes,
+            )
 
             instance = cls(
                 page_id=PageId(data["id"]),
@@ -122,13 +116,6 @@ class ScheduledTask(Task):
                 IdLabel.from_property(
                     id=notion_id,
                     status=status,
-                )
-            )
-
-            # リマインドラベルを更新
-            instance.update_remind_label(
-                RemindLabel.from_property(
-                    remind_info,
                 )
             )
 

@@ -1,6 +1,5 @@
 import datetime
 
-from notiontaskr.domain.value_objects.notion_date import NotionDate
 from notiontaskr.notifier.task_remind_info import TaskRemindInfo
 
 

@@ -2,7 +2,6 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, Mock
 from pytest import fixture
-import pytest
 
 from notiontaskr.domain.task import Task
 from notiontaskr.domain.tasks import Tasks
