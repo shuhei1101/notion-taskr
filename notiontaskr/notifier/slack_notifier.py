@@ -9,8 +9,11 @@ class SlackNotifier(Notifiable):
     def __init__(self, webhook_url: str):
         self.webhook_url = webhook_url
 
-    def notify(self, message: str) -> None:
-        """Slackにメッセージを送信する"""
+    async def notify(self, message: str) -> None:
+        """Slackにメッセージを送信する
+
+        :raise ValueError: Slack通知に失敗した場合
+        """
 
         payload = {"text": message}
         response = requests.post(self.webhook_url, json=payload)
