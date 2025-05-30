@@ -128,3 +128,11 @@ class Task:
         :return: 表示用のタスク名
         """
         return str(self.name)
+
+    def is_remind_time_before_start(self) -> bool:
+        """現在時刻が開始前リマインド時刻かどうか"""
+        return self.remind_info.is_remind_time_before_start()
+
+    def is_remind_time_before_end(self) -> bool:
+        """現在時刻が終了前リマインド時刻かどうか"""
+        return self.remind_info.is_remind_time_before_end()
