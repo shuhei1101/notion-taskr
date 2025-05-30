@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
 from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
@@ -15,7 +14,6 @@ from notiontaskr.notifier.task_remind_info import TaskRemindInfo
 
 if TYPE_CHECKING:
     from notiontaskr.domain.name_labels.id_label import IdLabel
-    from notiontaskr.domain.name_labels.remind_label import RemindLabel
 
 
 @dataclass
@@ -112,14 +110,6 @@ class Task:
         if self.status != status:
             self._toggle_is_updated(f"ステータス: {self.status} -> {status}")
             self.status = status
-
-    def update_remind_label(self, label: Optional["RemindLabel"]):
-        """リマインドラベルを更新し、is_updatedをTrueにする"""
-        if self.name.remind_label != label:
-            self._toggle_is_updated(
-                f"リマインドラベル: {self.name.remind_label} -> {label}"
-            )
-            self.name.register_remind_label(label)
 
     def update_remind_info(self, remind_info: "TaskRemindInfo"):
         """リマインド情報を更新し、is_updatedをTrueにする"""

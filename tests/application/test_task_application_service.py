@@ -11,8 +11,8 @@ service = TaskApplicationService()
 
 def main():
     # _get_uptime()
-    # _daily_task()
-    _regular_task()
+    _daily_task()
+    # _regular_task()
 
 
 def _regular_task():
