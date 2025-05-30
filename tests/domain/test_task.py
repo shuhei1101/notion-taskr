@@ -1,7 +1,12 @@
+from datetime import datetime, timezone
 from unittest.mock import Mock
 
 from notiontaskr.domain.task import Task
 import pytest
+
+from notiontaskr.domain.value_objects.notion_date import NotionDate
+from notiontaskr.notifier.remind_datetime import RemindDateTime
+from notiontaskr.notifier.task_remind_info import TaskRemindInfo
 
 
 class TestTask:
@@ -15,7 +20,7 @@ class TestTask:
             status=Mock(),
         )
 
-    class Test___init__:
+    class Test_コンストラクタ:
 
         def test_どんな値でも例外が発生せず初期化可能なこと(self):
             task = Task(
@@ -125,3 +130,65 @@ class TestTask:
         def test_タスク名を取得すること(self, empty_task: Task):
             empty_task.name = Mock(__str__=Mock(return_value="タスク名"))
             assert empty_task.get_display_name() == "タスク名"
+
+    class Test_Remind関連:
+        def test_リマインド開始時刻を計算できること(self, empty_task: Task):
+            empty_task.remind_info = TaskRemindInfo.from_raw_values(
+                has_before_start=True,
+                has_before_end=False,
+                before_start_minutes=30,
+                before_end_minutes=None,
+            )
+            empty_task.date = NotionDate(
+                start=datetime(2023, 10, 1, 9, 30),
+                end=None,
+            )
+            remind_dt = empty_task.get_remind_dt()
+            if remind_dt is None:
+                raise AssertionError("RemindDateTime should not be None")
+            assert remind_dt.before_start == datetime(
+                2023, 10, 1, 9, 0, tzinfo=timezone.utc
+            )
+
+        def test_リマインド終了時刻を計算できること(self, empty_task: Task):
+            empty_task.remind_info = TaskRemindInfo.from_raw_values(
+                has_before_start=False,
+                has_before_end=True,
+                before_start_minutes=None,
+                before_end_minutes=30,
+            )
+            empty_task.date = NotionDate(
+                start=datetime(2023, 10, 1, 9, 30),
+                end=datetime(2023, 10, 1, 10, 30),
+            )
+            remind_dt = empty_task.get_remind_dt()
+            if remind_dt is None:
+                raise AssertionError("RemindDateTime should not be None")
+            assert remind_dt.before_end == datetime(
+                2023, 10, 1, 10, 0, tzinfo=timezone.utc
+            )
+
+        def test_リマインド日時がNoneの場合はNoneを返すこと(self, empty_task: Task):
+            empty_task.remind_info = TaskRemindInfo.from_raw_values(
+                has_before_start=False,
+                has_before_end=False,
+                before_start_minutes=None,
+                before_end_minutes=None,
+            )
+            empty_task.date = None
+            assert empty_task.get_remind_dt() is None
+
+        def test_リマインド日時が開始前と終了後の両方がNoneの場合はNoneを返すこと(
+            self, empty_task: Task
+        ):
+            empty_task.remind_info = TaskRemindInfo.from_raw_values(
+                has_before_start=False,
+                has_before_end=False,
+                before_start_minutes=None,
+                before_end_minutes=None,
+            )
+            empty_task.date = NotionDate(
+                start=datetime(2023, 10, 1, 9, 30),
+                end=datetime(2023, 10, 1, 10, 30),
+            )
+            assert empty_task.get_remind_dt() is None

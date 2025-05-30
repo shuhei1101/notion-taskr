@@ -2,6 +2,8 @@ from dataclasses import dataclass
 import re
 from typing import TYPE_CHECKING, Optional
 
+from notiontaskr.domain.name_labels.remind_label import RemindLabel
+
 
 if TYPE_CHECKING:
     from notiontaskr.domain.name_labels.id_label import IdLabel
@@ -17,6 +19,7 @@ class TaskName(LabelRegisterable):
     id_label: Optional["IdLabel"] = None  # IDラベル
     man_hours_label: Optional["ManHoursLabel"] = None  # 人時ラベル
     parent_id_label: Optional["ParentIdLabel"] = None  # 親IDラベル
+    remind_label: Optional["NameLabel"] = None  # リマインドラベル
 
     @classmethod
     def from_raw_task_name(cls, raw_task_name: str):
@@ -83,3 +86,7 @@ class TaskName(LabelRegisterable):
     def register_parent_id_label(self, label: "ParentIdLabel"):
         """親IDラベルを登録するメソッド"""
         self.parent_id_label = label
+
+    def register_remind_label(self, label: "RemindLabel"):
+        """リマインドラベルを登録するメソッド"""
+        self.remind_label = label

@@ -3,6 +3,7 @@ from datetime import datetime
 from notiontaskr.util.converter import (
     dt_to_month_start_end,
     remove_variant_selectors,
+    timedelta_to_minutes,
     to_isoformat,
     truncate_decimal,
 )
@@ -52,3 +53,15 @@ class Test_dt_to_month_start_end:
         start, end = dt_to_month_start_end(dt)
         assert start == datetime(2023, 10, 1, 0, 0)
         assert end == datetime(2023, 10, 31, 23, 59)
+
+
+class Test_timedelta_to_minutes:
+    def test_timedeltaを分に変換できること(self):
+        td = datetime(2023, 10, 1, 12, 0, 0) - datetime(2023, 10, 1, 11, 30, 0)
+        result = timedelta_to_minutes(td)
+        assert result == 30
+
+    def test_timedelta以外の値を渡すとValueErrorが発生すること(self):
+        td = "30 minutes"
+        with pytest.raises(ValueError):
+            timedelta_to_minutes(td)  # type: ignore

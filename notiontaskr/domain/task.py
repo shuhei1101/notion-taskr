@@ -11,10 +11,13 @@ from notiontaskr.domain.tags import Tags
 
 from notiontaskr.domain.value_objects.notion_date import NotionDate
 
+from notiontaskr.notifier.remind_datetime import RemindDateTime
 from notiontaskr.notifier.task_remind_info import TaskRemindInfo
+
 
 if TYPE_CHECKING:
     from notiontaskr.domain.name_labels.id_label import IdLabel
+    from notiontaskr.domain.name_labels.remind_label import RemindLabel
 
 
 @dataclass
@@ -26,7 +29,9 @@ class Task:
     tags: Tags
     id: NotionId
     status: Status
-    remind_info: "TaskRemindInfo"
+    remind_info: "TaskRemindInfo" = field(
+        default_factory=lambda: TaskRemindInfo()
+    )  # リマインド情報
     is_updated: bool = False
     parent_task_page_id: Optional["PageId"] = None  # 親タスクId
     update_contents: List[str] = field(
@@ -60,27 +65,27 @@ class Task:
         self.is_updated = True
         self.update_contents.append(update_message)
 
-    def update_man_hours_label(self, man_hours_label: "ManHoursLabel"):
+    def update_man_hours_label(self, label: "ManHoursLabel"):
         """工数ラベルを登録し、is_updatedをTrueにする"""
-        if self.name.man_hours_label != man_hours_label:
+        if self.name.man_hours_label != label:
             self._toggle_is_updated(
-                f"工数ラベル: {self.name.man_hours_label} -> {man_hours_label}"
+                f"工数ラベル: {self.name.man_hours_label} -> {label}"
             )
-            self.name.man_hours_label = man_hours_label
+            self.name.register_man_hours_label(label)
 
     def update_id_label(self, label: "IdLabel"):
         """IDラベルを登録し、is_updatedをTrueにする"""
         if self.name.id_label != label:
             self._toggle_is_updated(f"IDラベル: {self.name.id_label} -> {label}")
-            self.name.id_label = label
+            self.name.register_id_label(label)
 
-    def update_parent_id_label(self, parent_id_label: "ParentIdLabel"):
+    def update_parent_id_label(self, label: "ParentIdLabel"):
         """親IDラベルを更新する"""
-        if self.name.parent_id_label != parent_id_label:
+        if self.name.parent_id_label != label:
             self._toggle_is_updated(
-                f"親IDラベル: {self.name.parent_id_label} -> {parent_id_label}"
+                f"親IDラベル: {self.name.parent_id_label} -> {label}"
             )
-            self.name.parent_id_label = parent_id_label
+            self.name.register_parent_id_label(label)
 
     def update_name(self, name: TaskName):
         """タスク名を更新し、is_updatedをTrueにする"""
@@ -110,9 +115,42 @@ class Task:
             self._toggle_is_updated(f"ステータス: {self.status} -> {status}")
             self.status = status
 
+    def update_remind_label(self, label: "RemindLabel"):
+        """リマインドラベルを更新し、is_updatedをTrueにする"""
+        if self.name.remind_label != label:
+            self._toggle_is_updated(
+                f"リマインドラベル: {self.name.remind_label} -> {label}"
+            )
+            self.name.register_remind_label(label)
+
     def get_display_name(self) -> str:
         """表示用のタスク名を取得する
 
         :return: 表示用のタスク名
         """
         return str(self.name)
+
+    def get_remind_dt(self) -> Optional["RemindDateTime"]:
+        """リマインド日時を取得する
+
+        :return: リマインド日時
+        """
+        if not self.date or (
+            not self.remind_info.has_before_start
+            and not self.remind_info.has_before_end
+        ):
+            return None
+
+        before_start = None
+        before_end = None
+
+        if self.remind_info.has_before_start:
+            before_start = self.date.start - self.remind_info.before_start_minutes
+
+        if self.remind_info.has_before_end:
+            before_end = self.date.end - self.remind_info.before_end_minutes
+
+        return RemindDateTime(
+            before_start=before_start,
+            before_end=before_end,
+        )

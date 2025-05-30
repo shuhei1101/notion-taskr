@@ -17,6 +17,10 @@ from notiontaskr.domain.scheduled_tasks import ScheduledTasks
 
 from notiontaskr.domain.value_objects.notion_date import NotionDate
 
+from notiontaskr.notifier.task_remind_info import TaskRemindInfo
+
+from notiontaskr.domain.name_labels.remind_label import RemindLabel
+
 
 @dataclass
 class ScheduledTask(Task):
@@ -70,6 +74,20 @@ class ScheduledTask(Task):
             for tag in data["properties"]["タグ"]["multi_select"]:
                 tags.append(Tag(tag["name"]))
 
+            # リマインド情報の設定
+            has_before_start = data["properties"]["開始前通知"]["checkbox"]
+            has_before_end = data["properties"]["終了前通知"]["checkbox"]
+            before_start_minutes = data["properties"]["開始前通知時間(分)"].get(
+                "number"
+            )
+            before_end_minutes = data["properties"]["終了前通知時間(分)"].get("number")
+            remind_info = TaskRemindInfo.from_raw_values(
+                has_before_start=has_before_start,
+                has_before_end=has_before_end,
+                before_start_minutes=before_start_minutes,
+                before_end_minutes=before_end_minutes,
+            )
+
             instance = cls(
                 page_id=PageId(data["id"]),
                 name=task_name,
@@ -92,6 +110,7 @@ class ScheduledTask(Task):
                 sub_tasks=ScheduledTasks.from_empty(),
                 progress_rate=ProgressRate(data["properties"]["進捗率"]["number"]),
                 date=notion_date,
+                remind_info=remind_info,
             )
 
             # IDラベルを更新
@@ -99,6 +118,13 @@ class ScheduledTask(Task):
                 IdLabel.from_property(
                     id=notion_id,
                     status=status,
+                )
+            )
+
+            # リマインドラベルを更新
+            instance.update_remind_label(
+                RemindLabel.from_property(
+                    remind_info,
                 )
             )
 

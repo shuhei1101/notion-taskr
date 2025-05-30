@@ -13,6 +13,10 @@ from notiontaskr.domain.tags import Tags
 
 from notiontaskr.domain.value_objects.tag import Tag
 
+from notiontaskr.notifier.task_remind_info import TaskRemindInfo
+
+from notiontaskr.domain.name_labels.remind_label import RemindLabel
+
 
 @dataclass
 class ExecutedTask(Task):
@@ -47,7 +51,21 @@ class ExecutedTask(Task):
             for tag in data["properties"]["タグ"]["multi_select"]:
                 tags.append(Tag(tag["name"]))
 
-            return cls(
+            # リマインド情報の設定
+            has_before_start = data["properties"]["開始前通知"]["checkbox"]
+            has_before_end = data["properties"]["終了前通知"]["checkbox"]
+            before_start_minutes = data["properties"]["開始前通知時間(分)"].get(
+                "number"
+            )
+            before_end_minutes = data["properties"]["終了前通知時間(分)"].get("number")
+            remind_info = TaskRemindInfo.from_raw_values(
+                has_before_start=has_before_start,
+                has_before_end=has_before_end,
+                before_start_minutes=before_start_minutes,
+                before_end_minutes=before_end_minutes,
+            )
+
+            instance = cls(
                 page_id=PageId(data["id"]),
                 name=task_name,
                 tags=tags,
@@ -81,7 +99,11 @@ class ExecutedTask(Task):
                     if data["properties"]["予定タスク"]["relation"]
                     else None
                 ),
+                remind_info=remind_info,
             )
+
+            return instance
+
         except KeyError as e:
             raise ValueError(f"In ExecutedTask[{task_number}] initialize error, {e}")
         except ValueError as e:
