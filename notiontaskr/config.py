@@ -24,9 +24,7 @@ TASK_DB_ID = os.getenv("TASK_DB_ID")
 
 # ------------- Slack API設定 -------------
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")  # SlackのWebhook URL
-if not SLACK_WEBHOOK_URL:
-    raise ValueError("環境変数`SLACK_WEBHOOK_URL`が設定されていません。")
-NOTIFIER = SlackNotifier(webhook_url=SLACK_WEBHOOK_URL)
+NOTIFIER = SlackNotifier(webhook_url=SLACK_WEBHOOK_URL)  # type: ignore
 
 # ------------- pickleファイル設定 -------------
 BUCKET_NAME = "notion-api-bucket"  # GCSバケット名
