@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, List
 
+from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
 from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
 from notiontaskr.domain.value_objects.man_hours import ManHours
 from notiontaskr.domain.executed_tasks import ExecutedTasks
@@ -16,9 +17,6 @@ class ScheduledTasks(Tasks["ScheduledTask"]):
     """スケジュールタスクを管理するクラス"""
 
     _tasks: List["ScheduledTask"]
-
-    def _get_tasks(self):
-        return self._tasks
 
     @classmethod
     def from_empty(cls):
@@ -67,3 +65,24 @@ class ScheduledTasks(Tasks["ScheduledTask"]):
             if task.executed_tasks:
                 executed_tasks.extend(task.executed_tasks)
         return executed_tasks
+
+    def update_tasks_properties(self):
+        """スケジュールタスクのプロパティを更新する"""
+        for task in self._tasks:
+            # サブアイテムに親IDラベルを付与する
+            task.update_sub_tasks_properties()
+            # サブアイテムの工数を集計し、ラベルを更新する
+            task.aggregate_man_hours()
+            # 予定タスクのステータスを更新する
+            task.update_status_by_checking_properties()
+            # 進捗率を更新する
+            task.calc_progress_rate()
+            # 実績人時ラベルを更新する
+            task.update_man_hours_label(
+                ManHoursLabel.from_man_hours(
+                    executed_man_hours=task.executed_man_hours,
+                    scheduled_man_hours=task.scheduled_man_hours,
+                )
+            )
+            # 予定タスクが持つ実績タスクのプロパティを更新する
+            task.update_executed_tasks_properties()

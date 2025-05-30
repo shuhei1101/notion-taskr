@@ -1,7 +1,11 @@
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock
 
 from notiontaskr.domain.task import Task
 import pytest
+
+from notiontaskr.domain.value_objects.notion_date import NotionDate
+from notiontaskr.notifier.task_remind_info import TaskRemindInfo
 
 
 class TestTask:
@@ -15,7 +19,7 @@ class TestTask:
             status=Mock(),
         )
 
-    class Test___init__:
+    class Test_コンストラクタ:
 
         def test_どんな値でも例外が発生せず初期化可能なこと(self):
             task = Task(

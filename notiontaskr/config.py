@@ -1,6 +1,8 @@
 import os
 import emoji
 
+from notiontaskr.notifier.slack_notifier import SlackNotifier
+
 # ------------- ディレクトリ設定 -------------
 PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
 LOG_DIR = os.path.join(PROJECT_DIR, "logs")
@@ -20,6 +22,12 @@ LOG_PATH = os.path.join(LOG_DIR, "app.log")  # ログファイルの出力先
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
 TASK_DB_ID = os.getenv("TASK_DB_ID")
 
+# ------------- Slack API設定 -------------
+SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")  # SlackのWebhook URL
+if not SLACK_WEBHOOK_URL:
+    raise ValueError("環境変数`SLACK_WEBHOOK_URL`が設定されていません。")
+NOTIFIER = SlackNotifier(webhook_url=SLACK_WEBHOOK_URL)
+
 # ------------- pickleファイル設定 -------------
 BUCKET_NAME = "notion-api-bucket"  # GCSバケット名
 LOCAL_SCHEDULED_PICKLE_PATH = os.path.join(
@@ -34,8 +42,9 @@ BUCKET_SCHEDULED_PICKLE_PATH = (
 ID_EMOJI = emoji.emojize(":label:")
 MAN_HOURS_EMOJI = emoji.emojize(":stopwatch:")
 PARENT_ID_EMOJI = emoji.emojize(":deciduous_tree:")
+REMIND_EMOJI = emoji.emojize(":bell:")
 
 # 動作確認用
 if __name__ == "__main__":
-    print(emoji.demojize("🏷️"))
-    print(emoji.emojize(":label:"))
+    print(emoji.demojize("🔔"))
+    print(emoji.emojize(":bell:"))

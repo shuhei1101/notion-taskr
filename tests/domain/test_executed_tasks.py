@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from notiontaskr.domain.executed_tasks import ExecutedTasks
 from pytest import fixture
 
@@ -9,6 +10,7 @@ from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.status import Status
 from notiontaskr.domain.tags import Tags
 from notiontaskr.domain.value_objects.man_hours import ManHours
+from notiontaskr.notifier.task_reminder import TaskReminder
 
 
 class TestExecutedTasks:
@@ -172,3 +174,12 @@ class TestExecutedTasks:
         )
         result_data = scheduled_tasks.sum_properties()
         assert result_data.man_hours == ManHours(2.0)
+
+    class Test_リマインド対象のタスクを取得:
+
+        @patch.object(TaskReminder, "is_remind_time_before_start", return_value=True)
+        def test_リマインド対象のタスクを取得できること(self, task1: ExecutedTask):
+            executed_tasks = ExecutedTasks.from_tasks([task1])
+            remind_tasks = executed_tasks.get_remind_tasks()
+            assert len(remind_tasks) == 1
+            assert remind_tasks[0] == task1

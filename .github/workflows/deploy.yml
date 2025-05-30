@@ -19,6 +19,7 @@ env:
   DAILY_JOB_IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPO_NAME }}/${{ vars.DAILY_JOB_NAME }}-daily_job  # ジョブ用のDockerイメージ名
   NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
   TASK_DB_ID: ${{ secrets.TASK_DB_ID }}  # NotionのデータベースID
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}  # SlackのWebhook URL
  
 jobs:
   deploy:
@@ -86,7 +87,7 @@ jobs:
           --region $GCP_REGION \
           --service-account $SERVICE_ACCOUNT_NAME \
           --platform managed \
-          --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
+          --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }},SLACK_WEBHOOK_URL=${{ env.SLACK_WEBHOOK_URL }} \
           --allow-unauthenticated
 
     # ジョブをCloud Runにデプロイ（作成または更新） 
@@ -101,7 +102,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
-            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }},SLACK_WEBHOOK_URL=${{ env.SLACK_WEBHOOK_URL }} \
             --tasks=1
         else
           echo "Creating new job..."
@@ -112,7 +113,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
-            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }},SLACK_WEBHOOK_URL=${{ env.SLACK_WEBHOOK_URL }} \
             --tasks=1
         fi
 
@@ -128,7 +129,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
-            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }},SLACK_WEBHOOK_URL=${{ env.SLACK_WEBHOOK_URL }} \
             --tasks=1
         else
           echo "Creating new job..."
@@ -139,7 +140,7 @@ jobs:
             --service-account $SERVICE_ACCOUNT_NAME \
             --task-timeout=50s \
             --max-retries=0 \
-            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }} \
+            --set-env-vars NOTION_TOKEN=${{ env.NOTION_TOKEN }},TASK_DB_ID=${{ env.TASK_DB_ID }},SLACK_WEBHOOK_URL=${{ env.SLACK_WEBHOOK_URL }} \
             --tasks=1
         fi
 

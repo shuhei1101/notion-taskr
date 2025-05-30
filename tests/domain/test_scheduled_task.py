@@ -1,5 +1,4 @@
-import copy
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 import pytest
 from datetime import datetime, timedelta, timezone
 
@@ -41,6 +40,10 @@ class TestScheduledTask:
                     },
                     "進捗率": {"number": 80},
                     "日付": {"date": {"start": "2023-10-01", "end": None}},
+                    "開始前通知": {"checkbox": True},
+                    "終了前通知": {"checkbox": False},
+                    "開始前通知時間(分)": {"number": 30},
+                    "終了前通知時間(分)": {"number": None},
                 },
             }
             task = ScheduledTask.from_response_data(data)

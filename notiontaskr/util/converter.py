@@ -42,3 +42,10 @@ def dt_to_month_start_end(dt: datetime) -> tuple[datetime, datetime]:
 
     end_date = next_month - timedelta(minutes=1)
     return start_date, end_date
+
+
+def timedelta_to_minutes(td: timedelta) -> int:
+    """timedeltaを分に変換する"""
+    if not isinstance(td, timedelta):
+        raise ValueError(f"Invalid type: {type(td)}. Must be timedelta.")
+    return int(td.total_seconds() // 60)  # 秒を分に変換
