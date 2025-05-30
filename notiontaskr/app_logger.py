@@ -12,7 +12,7 @@ class AppLogger:
 
     def __init__(self):
         if not hasattr(self, "_initialized"):
-            self.logger = logging.getLogger("AppLogger")
+            self.logger = logging.getLogger("notiontaskr")
             self.logger.setLevel(config.LOG_LEVEL)
 
             # StreamHandler
@@ -32,26 +32,6 @@ class AppLogger:
 
             self._initialized = True
 
-    def debug(self, message):
-        self.logger.debug(message)
-
-    def info(self, message):
-        self.logger.info(message)
-
-    def error(self, message):
-        self.logger.error(message)
-
-    def warning(self, message):
-        self.logger.warning(message)
-
-    def critical(self, message):
-        self.logger.critical(message)
-
-
-# 動作確認用
-if __name__ == "__main__":
-    AppLogger().debug("This is a debug message")
-    AppLogger().info("This is an info message")
-    AppLogger().warning("This is a warning message")
-    AppLogger().error("This is an error message")
-    AppLogger().critical("This is a critical message")
+    def get(self):
+        """ロガーを返す"""
+        return self.logger
