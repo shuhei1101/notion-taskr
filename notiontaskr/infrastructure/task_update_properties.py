@@ -30,14 +30,32 @@ class TaskUpdateProperties(ABC):
         self.properties["ステータス"] = {"status": {"name": str(self.task.status)}}
         return self
 
-    def set_scheduled_flag(self, scheduled_flag: bool):
-        """予定フラグの更新"""
-        self.properties["予定フラグ"] = {"checkbox": {"equals": scheduled_flag}}
+    def set_has_before_start(self):
+        """開始前通知の更新"""
+        self.properties["開始前通知"] = {
+            "checkbox": self.task.remind_info.has_before_start
+        }
         return self
 
-    def set_price(self, price: float):
-        """価格の更新"""
-        self.properties["Price"] = {"number": price}
+    def set_has_before_end(self):
+        """終了前通知の更新"""
+        self.properties["終了前通知"] = {
+            "checkbox": self.task.remind_info.has_before_end
+        }
+        return self
+
+    def set_before_start_minutes(self):
+        """開始前通知時間(分)の更新"""
+        self.properties["開始前通知時間(分)"] = {
+            "number": int(self.task.remind_info.before_start_minutes)
+        }
+        return self
+
+    def set_before_end_minutes(self):
+        """終了前通知時間(分)の更新"""
+        self.properties["終了前通知時間(分)"] = {
+            "number": int(self.task.remind_info.before_end_minutes)
+        }
         return self
 
     def build(self):

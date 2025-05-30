@@ -1,8 +1,6 @@
-from datetime import datetime
 import emoji
 
 from notiontaskr.domain.name_labels.remind_label import RemindLabel
-from notiontaskr.domain.value_objects.notion_date import NotionDate
 from notiontaskr.notifier.task_remind_info import TaskRemindInfo
 
 
@@ -11,15 +9,13 @@ class TestRemindLabel:
 
         label = RemindLabel.from_property(
             remind_info=TaskRemindInfo.from_raw_values(
-                task_date=NotionDate(
-                    start=datetime(2023, 10, 1, 10, 0),
-                    end=datetime(2023, 10, 1, 12, 0),
-                ),
                 has_before_start=True,
                 raw_before_start_minutes=5,
                 has_before_end=False,
             )
         )
+
+        assert label is not None
 
         assert label.key == emoji.emojize(":bell:")
         assert label.value == "5m|"
@@ -27,15 +23,13 @@ class TestRemindLabel:
     def test_開始後時間のみ存在する場合に初期化できること(self):
         label = RemindLabel.from_property(
             remind_info=TaskRemindInfo.from_raw_values(
-                task_date=NotionDate(
-                    start=datetime(2023, 10, 1, 10, 0),
-                    end=datetime(2023, 10, 1, 12, 0),
-                ),
                 has_before_start=False,
                 has_before_end=True,
                 raw_before_end_minutes=10,
             )
         )
+
+        assert label is not None
 
         assert label.key == emoji.emojize(":bell:")
         assert label.value == "|10m"
@@ -43,16 +37,14 @@ class TestRemindLabel:
     def test_開始前後時間が両方存在する場合に初期化できること(self):
         label = RemindLabel.from_property(
             remind_info=TaskRemindInfo.from_raw_values(
-                task_date=NotionDate(
-                    start=datetime(2023, 10, 1, 10, 0),
-                    end=datetime(2023, 10, 1, 12, 0),
-                ),
                 has_before_start=True,
                 raw_before_start_minutes=5,
                 has_before_end=True,
                 raw_before_end_minutes=10,
             )
         )
+
+        assert label is not None
 
         assert label.key == emoji.emojize(":bell:")
         assert label.value == "5m|10m"

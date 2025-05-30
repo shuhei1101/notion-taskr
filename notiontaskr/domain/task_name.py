@@ -61,9 +61,22 @@ class TaskName(LabelRegisterable):
             display_strs.append(self.man_hours_label.get_display_str())
         if self.parent_id_label:
             display_strs.append(self.parent_id_label.get_display_str())
+        if self.remind_label:
+            display_strs.append(self.remind_label.get_display_str())
 
         # 文字列を結合
         return ("".join(display_strs)).strip()
+
+    def get_remind_message(self) -> str:
+        """リマインドメッセージを取得する"""
+        message_parts = []
+        if self.id_label:
+            message_parts.append(self.id_label.get_display_str() + " ")
+        message_parts.append(self.task_name + " ")
+        if self.parent_id_label:
+            message_parts.append(self.parent_id_label.get_display_str())
+
+        return "".join(message_parts)
 
     def __eq__(self, other: object):
         if not isinstance(other, TaskName):
@@ -87,6 +100,6 @@ class TaskName(LabelRegisterable):
         """親IDラベルを登録するメソッド"""
         self.parent_id_label = label
 
-    def register_remind_label(self, label: "RemindLabel"):
+    def register_remind_label(self, label: Optional["RemindLabel"]):
         """リマインドラベルを登録するメソッド"""
         self.remind_label = label

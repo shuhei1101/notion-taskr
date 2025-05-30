@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from notiontaskr.domain.name_labels.label_registerable import LabelRegisterable
 from notiontaskr.domain.name_labels.name_label import NameLabel
@@ -12,8 +13,11 @@ from notiontaskr.util.converter import timedelta_to_minutes
 class RemindLabel(NameLabel):
 
     @classmethod
-    def from_property(cls, remind_info: TaskRemindInfo) -> "RemindLabel":
+    def from_property(cls, remind_info: TaskRemindInfo) -> Optional["RemindLabel"]:
         """親IDラベルを生成する"""
+
+        if not remind_info.has_before_start and not remind_info.has_before_end:
+            return None
 
         parts = [
             (

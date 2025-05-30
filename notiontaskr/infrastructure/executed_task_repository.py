@@ -144,6 +144,10 @@ class ExecutedTaskRepository:
                 .set_status()
                 .set_parent_task_page_id()
                 .set_scheduled_task_page_id()
+                .set_has_before_start()
+                .set_has_before_end()
+                .set_before_start_minutes()
+                .set_before_end_minutes()
                 .build()
             )
 

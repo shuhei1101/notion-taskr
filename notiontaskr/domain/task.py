@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
 from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
@@ -112,7 +113,7 @@ class Task:
             self._toggle_is_updated(f"ステータス: {self.status} -> {status}")
             self.status = status
 
-    def update_remind_label(self, label: "RemindLabel"):
+    def update_remind_label(self, label: Optional["RemindLabel"]):
         """リマインドラベルを更新し、is_updatedをTrueにする"""
         if self.name.remind_label != label:
             self._toggle_is_updated(
@@ -120,17 +121,17 @@ class Task:
             )
             self.name.register_remind_label(label)
 
+    def update_remind_info(self, remind_info: "TaskRemindInfo"):
+        """リマインド情報を更新し、is_updatedをTrueにする"""
+        if self.remind_info != remind_info:
+            self._toggle_is_updated(
+                f"リマインド情報: {self.remind_info} -> {remind_info}"
+            )
+            self.remind_info = remind_info
+
     def get_display_name(self) -> str:
         """表示用のタスク名を取得する
 
         :return: 表示用のタスク名
         """
         return str(self.name)
-
-    def is_remind_time_before_start(self) -> bool:
-        """現在時刻が開始前リマインド時刻かどうか"""
-        return self.remind_info.is_remind_time_before_start()
-
-    def is_remind_time_before_end(self) -> bool:
-        """現在時刻が終了前リマインド時刻かどうか"""
-        return self.remind_info.is_remind_time_before_end()

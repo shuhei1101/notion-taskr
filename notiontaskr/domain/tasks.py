@@ -4,6 +4,7 @@ from typing import Generic, Iterator, Type, TypeVar, List, Self
 from notiontaskr.domain.task import Task
 from notiontaskr.domain.tags import Tags
 from notiontaskr.domain.value_objects.tag import Tag
+from notiontaskr.notifier.task_reminder import TaskReminder
 
 T = TypeVar("T", bound=Task)
 SelfType = TypeVar("SelfType", bound="Tasks")
@@ -68,7 +69,8 @@ class Tasks(ABC, Generic[T]):
             [
                 task
                 for task in self._tasks
-                if task.remind_info.has_before_start or task.remind_info.has_before_end
+                if TaskReminder.is_remind_time_before_start(task)
+                or TaskReminder.is_remind_time_before_end(task)
             ]
         )
 

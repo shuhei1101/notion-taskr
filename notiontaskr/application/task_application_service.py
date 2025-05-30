@@ -2,11 +2,11 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 
 import notiontaskr.config as config
+from notiontaskr.notifier.task_reminder import TaskReminder
 from notiontaskr.util.converter import to_isoformat
 from notiontaskr.app_logger import AppLogger
 from notiontaskr.app_timer import AppTimer
 from notiontaskr.gcs_handler import GCSHandler
-from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
 from notiontaskr.domain.executed_task_service import ExecutedTaskService
 from notiontaskr.domain.scheduled_task_service import ScheduledTaskService
 from notiontaskr.infrastructure.executed_task_repository import ExecutedTaskRepository
@@ -36,6 +36,9 @@ class TaskApplicationService:
         )
         self.scheduled_task_service = ScheduledTaskService()
         self.executed_task_service = ExecutedTaskService()
+        self.reminder = TaskReminder(
+            notifier=config.NOTIFIER,
+        )
 
     async def daily_task(self):
         """毎日0時に実行されるタスク"""
@@ -270,6 +273,19 @@ class TaskApplicationService:
 
         # === Slackリマインド通知 ===
         timer = AppTimer.init_and_start()
+
+        # 非同期でリマインド通知を実行
+        asyncio.create_task(
+            self.reminder.remind(
+                tasks=merged_scheduled_tasks.get_executed_tasks().get_remind_tasks(),
+                on_success=lambda task: self.logger.info(
+                    f"リマインド通知に成功。タスクID: {task.name.get_remind_message()}"
+                ),
+                on_error=lambda e, task: self.logger.error(
+                    f"リマインド通知に失敗。タスクID: {task.name.get_remind_message()}, エラー内容: {e}"
+                ),
+            )
+        )
 
         self.logger.info(f"【処理時間】Slack通知: {timer.get_elapsed_time()}秒")
 

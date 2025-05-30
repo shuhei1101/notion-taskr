@@ -156,6 +156,10 @@ class ScheduledTaskRepository:
                 .set_scheduled_man_hours()
                 .set_executed_man_hours()
                 .set_progress_rate()
+                .set_has_before_start()
+                .set_has_before_end()
+                .set_before_start_minutes()
+                .set_before_end_minutes()
                 .build()
             )
 

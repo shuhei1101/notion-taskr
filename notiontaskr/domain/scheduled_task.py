@@ -86,7 +86,6 @@ class ScheduledTask(Task):
 
             if notion_date:
                 remind_info = TaskRemindInfo.from_raw_values(
-                    task_date=notion_date,
                     has_before_start=has_before_start,
                     has_before_end=has_before_end,
                     raw_before_start_minutes=before_start_minutes,
@@ -146,6 +145,7 @@ class ScheduledTask(Task):
             executed_task.update_status(self.status)
             executed_task.update_parent_task_page_id(self.parent_task_page_id)
             executed_task.update_scheduled_task_page_id(self.page_id)
+            executed_task.update_remind_info(self.remind_info)
 
     def update_sub_tasks_properties(self):
         """サブアイテムのプロパティを更新する"""

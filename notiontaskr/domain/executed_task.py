@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Optional
 
 from notiontaskr.domain.task import Task
@@ -55,7 +54,6 @@ class ExecutedTask(Task):
             )
             before_end_minutes = data["properties"]["終了前通知時間(分)"].get("number")
             remind_info = TaskRemindInfo.from_raw_values(
-                task_date=notion_date,
                 has_before_start=has_before_start,
                 has_before_end=has_before_end,
                 raw_before_start_minutes=before_start_minutes,

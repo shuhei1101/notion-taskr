@@ -1,18 +1,15 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from notiontaskr.domain.value_objects.notion_date import NotionDate
+from notiontaskr.notifier.remind_minutes import RemindMinutes
 
 
 @dataclass
 class TaskRemindInfo:
     has_before_start: bool = False
     has_before_end: bool = False
-    before_start_minutes: timedelta = timedelta(minutes=5)
-    before_end_minutes: timedelta = timedelta(minutes=5)
-    before_start_dt: Optional["datetime"] = None
-    before_end_dt: Optional["datetime"] = None
+    before_start_minutes: RemindMinutes = RemindMinutes(minutes=5)
+    before_end_minutes: RemindMinutes = RemindMinutes(minutes=5)
 
     @classmethod
     def from_empty(cls) -> "TaskRemindInfo":
@@ -20,16 +17,13 @@ class TaskRemindInfo:
         return cls(
             has_before_start=False,
             has_before_end=False,
-            before_start_minutes=timedelta(minutes=5),
-            before_end_minutes=timedelta(minutes=5),
-            before_start_dt=None,
-            before_end_dt=None,
+            before_start_minutes=RemindMinutes(minutes=5),
+            before_end_minutes=RemindMinutes(minutes=5),
         )
 
     @classmethod
     def from_raw_values(
         cls,
-        task_date: NotionDate,
         has_before_start: bool = False,
         has_before_end: bool = False,
         raw_before_start_minutes: Optional[int] = 5,
@@ -45,42 +39,22 @@ class TaskRemindInfo:
         if raw_before_end_minutes < 0:
             raise ValueError("before_end_minutesは0以上でなければなりません")
 
-        before_start_minutes = timedelta(minutes=raw_before_start_minutes)
-        before_end_minutes = timedelta(minutes=raw_before_end_minutes)
-
-        before_start_dt = None
-        before_end_dt = None
-
-        if has_before_start:
-            before_start_dt = task_date.start - before_start_minutes
-        if has_before_end:
-            before_end_dt = task_date.end - before_end_minutes
+        before_start_minutes = RemindMinutes(minutes=raw_before_start_minutes)
+        before_end_minutes = RemindMinutes(minutes=raw_before_end_minutes)
 
         return cls(
             has_before_start=has_before_start,
             has_before_end=has_before_end,
             before_start_minutes=before_start_minutes,
             before_end_minutes=before_end_minutes,
-            before_start_dt=before_start_dt,
-            before_end_dt=before_end_dt,
         )
 
-    def is_remind_time_before_start(self) -> bool:
-        """開始前のリマインド時刻が現在かどうかを判定する"""
-        if self.before_start_dt is None:
-            return False
-
-        now_hm = datetime.now(timezone.utc).replace(second=0, microsecond=0)
-        before_start_hm = self.before_start_dt.replace(second=0, microsecond=0)
-
-        return now_hm == before_start_hm
-
-    def is_remind_time_before_end(self) -> bool:
-        """終了前のリマインド時刻が現在かどうかを判定する"""
-        if self.before_end_dt is None:
-            return False
-
-        now_hm = datetime.now(timezone.utc).replace(second=0, microsecond=0)
-        before_end_hm = self.before_end_dt.replace(second=0, microsecond=0)
-
-        return now_hm == before_end_hm
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TaskRemindInfo):
+            return NotImplemented
+        return (
+            self.has_before_start == other.has_before_start
+            and self.has_before_end == other.has_before_end
+            and self.before_start_minutes == other.before_start_minutes
+            and self.before_end_minutes == other.before_end_minutes
+        )

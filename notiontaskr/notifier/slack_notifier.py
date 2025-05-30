@@ -19,6 +19,4 @@ class SlackNotifier(Notifiable):
         response = requests.post(self.webhook_url, json=payload)
 
         if response.status_code != 200:
-            raise ValueError(
-                f"Slack通知に失敗しました: {response.status_code} - {response.text}"
-            )
+            print(f"Slack通知に失敗しました: {response.status_code} - {response.text}")
