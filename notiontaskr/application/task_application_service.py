@@ -113,7 +113,7 @@ class TaskApplicationService:
         )
 
         # 予定タスクのプロパティを更新
-        self._update_scheduled_task_properties(scheduled_tasks)
+        scheduled_tasks.update_tasks_properties()
 
         # 更新
         tasks = []
@@ -194,25 +194,24 @@ class TaskApplicationService:
             self.logger.debug(f"【処理時間】合計: {main_timer.get_elapsed_time()}秒")
             return
 
-        # pickleから予定タスクを取得
+        # === pickleから予定タスクを取得 ===
         cache_scheduled_tasks = await self._load_pickle(gcs_handler=gcs_handler)
         if cache_scheduled_tasks is None:
             self.logger.critical("キャッシュが空です。処理を終了します。")
             return
 
-        # キャッシュと取得した予定タスクをマージする
+        # === キャッシュと取得予定タスクをマージ ===
         merged_scheduled_tasks = cache_scheduled_tasks.upserted_by_id(
             fetched_scheduled_tasks
         )
 
+        # === 実績タスクID付与 + 付与された予定タスク取得 ===
         timer = AppTimer.init_and_start()
-
         scheduled_tasks_to_update = ScheduledTasks.from_empty()
 
         # 取得した予定タスクを追加
         scheduled_tasks_to_update.upsert_by_id(fetched_scheduled_tasks)
 
-        # 実績タスクにIDを付与し、付与した予定タスクを取得(未付与のもののみ)
         scheduled_tasks_to_update.upsert_by_id(
             self.executed_task_service.get_scheduled_tasks_added_executed_id(
                 to=fetched_executed_tasks,
@@ -223,9 +222,11 @@ class TaskApplicationService:
         self.logger.debug(
             f"【処理時間】実績タスクのID付与: {timer.get_elapsed_time()}秒"
         )
+
+        # === タスクの紐づけ ===
         timer = AppTimer.init_and_start()
 
-        # 実績タスクの紐づけ(更新された予定タスクを取得)
+        # 実績タスクの紐づけ
         scheduled_tasks_to_update.upsert_by_id(
             self.scheduled_task_service.get_tasks_upserted_executed_tasks(
                 to=merged_scheduled_tasks,
@@ -236,7 +237,7 @@ class TaskApplicationService:
             )
         )
 
-        # 取得した予定タスクにサブアイテムを紐づける
+        # サブアイテム紐づけ
         scheduled_tasks_to_update.upsert_by_id(
             self.scheduled_task_service.get_parent_tasks_appended_sub_tasks(
                 sub_tasks=merged_scheduled_tasks,
@@ -247,7 +248,6 @@ class TaskApplicationService:
             )
         )
 
-        # サブタスクの紐づけ(更新された親予定タスクを取得)
         scheduled_tasks_to_update.upsert_by_id(
             self.scheduled_task_service.get_parent_tasks_appended_sub_tasks(
                 sub_tasks=fetched_scheduled_tasks,
@@ -260,33 +260,34 @@ class TaskApplicationService:
 
         self.logger.debug(f"【処理時間】タスクの紐づけ: {timer.get_elapsed_time()}秒")
 
+        # === 予定タスクのプロパティ更新 ===
         timer = AppTimer.init_and_start()
-
-        # 予定タスクのプロパティを更新
-        self._update_scheduled_task_properties(scheduled_tasks_to_update)
+        scheduled_tasks_to_update.update_tasks_properties()
 
         self.logger.debug(
             f"【処理時間】予定タスクのプロパティ更新: {timer.get_elapsed_time()}秒"
         )
 
+        # === Slackリマインド通知 ===
         timer = AppTimer.init_and_start()
 
-        # 更新
+        self.logger.info(f"【処理時間】Slack通知: {timer.get_elapsed_time()}秒")
+
+        # === 更新API発行 ===
+        timer = AppTimer.init_and_start()
         tasks = []
         tasks.append(self._update_scheduled_tasks(scheduled_tasks_to_update))
         tasks.append(
             self._update_executed_tasks(scheduled_tasks_to_update.get_executed_tasks())
         )
-
         await asyncio.gather(*tasks)
 
         self.logger.debug(f"【処理時間】更新API発行: {timer.get_elapsed_time()}秒")
 
+        # === Pickleの保存 ===
         timer = AppTimer.init_and_start()
-
         merged_scheduled_tasks.upsert_by_id(scheduled_tasks_to_update)
 
-        # pickleの保存
         await self._save_pickle(
             scheduled_tasks=merged_scheduled_tasks,
             gcs_handler=gcs_handler,
@@ -343,27 +344,6 @@ class TaskApplicationService:
 
         # DTOを返却
         return uptime_data_by_tag
-
-    def _update_scheduled_task_properties(self, scheduled_tasks: ScheduledTasks):
-        """予定タスクのプロパティを更新するメソッド"""
-        for scheduled_task in scheduled_tasks:
-            # サブアイテムに親IDラベルを付与する
-            scheduled_task.update_sub_tasks_properties()
-            # サブアイテムの工数を集計し、ラベルを更新する
-            scheduled_task.aggregate_man_hours()
-            # 予定タスクのステータスを更新する
-            scheduled_task.update_status_by_checking_properties()
-            # 進捗率を更新する
-            scheduled_task.calc_progress_rate()
-            # 実績人時ラベルを更新する
-            scheduled_task.update_man_hours_label(
-                ManHoursLabel.from_man_hours(
-                    executed_man_hours=scheduled_task.executed_man_hours,
-                    scheduled_man_hours=scheduled_task.scheduled_man_hours,
-                )
-            )
-            # 予定タスクが持つ実績タスクのプロパティを更新する
-            scheduled_task.update_executed_tasks_properties()
 
     async def _load_pickle(self, gcs_handler: GCSHandler) -> ScheduledTasks | None:
         """GCSからPickleをダウンロードし、読み込むメソッド"""
