@@ -28,7 +28,7 @@ class NotionDate:
         self.end = end
 
     @classmethod
-    def from_raw_date(cls, start: str, end: str):
+    def from_raw_date(cls, start: str, end: Optional[str]):
         """文字列からNotionDateを生成する"""
         end_date = None
         if not start:
