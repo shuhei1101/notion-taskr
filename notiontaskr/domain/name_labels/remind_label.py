@@ -31,7 +31,7 @@ class RemindLabel(NameLabel):
                 else ""
             ),
         ]
-        value = "|".join(parts)
+        value = "~".join(parts)
 
         return cls(
             key=config.REMIND_EMOJI,

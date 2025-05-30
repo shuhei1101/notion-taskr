@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Callable, Optional
 from notiontaskr.notifier.notifiable import Notifiable
@@ -19,7 +18,6 @@ class TaskReminder:
         on_success=Callable[["Task"], None],
         on_error=Callable[[Exception, "Task"], None],
     ) -> None:
-        async_tasks = []
         for task in tasks.get_remind_tasks():
             try:
                 if self.is_remind_time_before_start(task):
@@ -31,18 +29,13 @@ class TaskReminder:
                 else:
                     raise ValueError(f"リマインド時刻が現在ではありません: {task.name}")
 
-                async_tasks.append(
-                    self.notifier.notify(
-                        message=message,
-                    )
+                await self.notifier.notify(
+                    message=message,
                 )
                 on_success(task)
 
             except Exception as e:
                 on_error(e, task)
-
-        if async_tasks:
-            await asyncio.gather(*async_tasks)
 
     @staticmethod
     def get_before_start_dt(task: "Task") -> Optional["datetime"]:

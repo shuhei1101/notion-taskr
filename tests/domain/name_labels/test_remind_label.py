@@ -18,7 +18,7 @@ class TestRemindLabel:
         assert label is not None
 
         assert label.key == emoji.emojize(":bell:")
-        assert label.value == "5m|"
+        assert label.value == "5m~"
 
     def test_開始後時間のみ存在する場合に初期化できること(self):
         label = RemindLabel.from_property(
@@ -32,7 +32,7 @@ class TestRemindLabel:
         assert label is not None
 
         assert label.key == emoji.emojize(":bell:")
-        assert label.value == "|10m"
+        assert label.value == "~10m"
 
     def test_開始前後時間が両方存在する場合に初期化できること(self):
         label = RemindLabel.from_property(
@@ -47,4 +47,4 @@ class TestRemindLabel:
         assert label is not None
 
         assert label.key == emoji.emojize(":bell:")
-        assert label.value == "5m|10m"
+        assert label.value == "5m~10m"

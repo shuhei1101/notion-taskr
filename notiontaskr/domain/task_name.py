@@ -70,11 +70,9 @@ class TaskName(LabelRegisterable):
     def get_remind_message(self) -> str:
         """リマインドメッセージを取得する"""
         message_parts = []
+        message_parts.append(self.task_name)
         if self.id_label:
-            message_parts.append(self.id_label.get_display_str() + " ")
-        message_parts.append(self.task_name + " ")
-        if self.parent_id_label:
-            message_parts.append(self.parent_id_label.get_display_str())
+            message_parts.append(f"ID{self.id_label.value}")
 
         return "".join(message_parts)
 
@@ -86,6 +84,7 @@ class TaskName(LabelRegisterable):
             and self.id_label == other.id_label
             and self.man_hours_label == other.man_hours_label
             and self.parent_id_label == other.parent_id_label
+            and self.remind_label == other.remind_label
         )
 
     def register_id_label(self, label: "IdLabel"):
