@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Optional
 
 from notiontaskr.domain.task import Task
@@ -8,14 +9,9 @@ from notiontaskr.domain.value_objects.notion_date import NotionDate
 from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.page_id import PageId
 from notiontaskr.domain.value_objects.status import Status
-
 from notiontaskr.domain.tags import Tags
-
 from notiontaskr.domain.value_objects.tag import Tag
-
 from notiontaskr.notifier.task_remind_info import TaskRemindInfo
-
-from notiontaskr.domain.name_labels.remind_label import RemindLabel
 
 
 @dataclass
@@ -59,10 +55,11 @@ class ExecutedTask(Task):
             )
             before_end_minutes = data["properties"]["終了前通知時間(分)"].get("number")
             remind_info = TaskRemindInfo.from_raw_values(
+                task_date=notion_date,
                 has_before_start=has_before_start,
                 has_before_end=has_before_end,
-                before_start_minutes=before_start_minutes,
-                before_end_minutes=before_end_minutes,
+                raw_before_start_minutes=before_start_minutes,
+                raw_before_end_minutes=before_end_minutes,
             )
 
             instance = cls(

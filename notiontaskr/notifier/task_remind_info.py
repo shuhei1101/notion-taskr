@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from notiontaskr.domain.value_objects.notion_date import NotionDate
@@ -52,3 +52,23 @@ class TaskRemindInfo:
             before_start_dt=before_start_dt,
             before_end_dt=before_end_dt,
         )
+
+    def is_remind_time_before_start(self) -> bool:
+        """開始前のリマインド時刻が現在かどうかを判定する"""
+        if self.before_start_dt is None:
+            return False
+
+        now_hm = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        before_start_hm = self.before_start_dt.replace(second=0, microsecond=0)
+
+        return now_hm == before_start_hm
+
+    def is_remind_time_before_end(self) -> bool:
+        """終了前のリマインド時刻が現在かどうかを判定する"""
+        if self.before_end_dt is None:
+            return False
+
+        now_hm = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        before_end_hm = self.before_end_dt.replace(second=0, microsecond=0)
+
+        return now_hm == before_end_hm

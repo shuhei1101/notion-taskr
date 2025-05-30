@@ -2,13 +2,9 @@ from dataclasses import dataclass
 
 from notiontaskr.domain.name_labels.label_registerable import LabelRegisterable
 from notiontaskr.domain.name_labels.name_label import NameLabel
-
 from notiontaskr.notifier.task_remind_info import TaskRemindInfo
-
 from notiontaskr import config
-
 from notiontaskr.util.validator import is_emoji_matches
-
 from notiontaskr.util.converter import timedelta_to_minutes
 
 

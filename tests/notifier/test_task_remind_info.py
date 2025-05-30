@@ -53,3 +53,34 @@ class TestTaskRemindInfo:
         # 5分が設定されていること
         assert remind_info.before_start_minutes == datetime.timedelta(minutes=5)
         assert remind_info.before_end_minutes == datetime.timedelta(minutes=5)
+
+    class Test_リマインド時刻が現在か判定する:
+        def test_開始前リマインド時刻が現在のときTrueを返す(self):
+            remind_info = TaskRemindInfo(
+                before_start_dt=datetime.datetime.now(datetime.timezone.utc),
+                before_end_dt=None,
+            )
+            assert remind_info.is_remind_time_before_start()
+
+        def test_開始前リマインド時刻が現在でないときFalseを返す(self):
+            remind_info = TaskRemindInfo(
+                before_start_dt=datetime.datetime.now(datetime.timezone.utc)
+                + datetime.timedelta(minutes=1),
+                before_end_dt=None,
+            )
+            assert not remind_info.is_remind_time_before_start()
+
+        def test_終了前リマインド時刻が現在のときTrueを返す(self):
+            remind_info = TaskRemindInfo(
+                before_start_dt=None,
+                before_end_dt=datetime.datetime.now(datetime.timezone.utc),
+            )
+            assert remind_info.is_remind_time_before_end()
+
+        def test_終了前リマインド時刻が現在でないときFalseを返す(self):
+            remind_info = TaskRemindInfo(
+                before_start_dt=None,
+                before_end_dt=datetime.datetime.now(datetime.timezone.utc)
+                + datetime.timedelta(minutes=1),
+            )
+            assert not remind_info.is_remind_time_before_end()
