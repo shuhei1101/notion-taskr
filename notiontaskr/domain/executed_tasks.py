@@ -50,3 +50,13 @@ class ExecutedTasks(Tasks[ExecutedTask]):
         return ExecutedTasks.from_tasks(
             [task for task in self._tasks if task.is_updated]
         )
+
+    def get_remind_tasks(self) -> "ExecutedTasks":
+        """リマインド対象のタスクを取得する"""
+        return ExecutedTasks.from_tasks(
+            [
+                task
+                for task in self._tasks
+                if task.remind_info.has_before_start or task.remind_info.has_before_end
+            ]
+        )

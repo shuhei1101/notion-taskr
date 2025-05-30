@@ -172,3 +172,12 @@ class TestExecutedTasks:
         )
         result_data = scheduled_tasks.sum_properties()
         assert result_data.man_hours == ManHours(2.0)
+
+    class Test_リマインド対象のタスクを取得:
+        def test_リマインド対象のタスクを取得できること(self, task1: ExecutedTask):
+            task1.remind_info.has_before_start = True
+            task1.remind_info.has_before_end = False
+            executed_tasks = ExecutedTasks.from_tasks([task1])
+            remind_tasks = executed_tasks.get_remind_tasks()
+            assert len(remind_tasks) == 1
+            assert remind_tasks[0] == task1
