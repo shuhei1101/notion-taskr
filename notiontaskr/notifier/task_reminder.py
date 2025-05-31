@@ -21,10 +21,10 @@ class TaskReminder:
         for task in tasks.get_remind_tasks():
             try:
                 if self.is_remind_time_before_start(task):
-                    message = f"開始{str(task.remind_info.before_start_minutes)}分前: {task.name.get_remind_message()}"
+                    message = f"{str(task.remind_info.before_start_minutes)}分後に開始: {task.name.get_remind_message()}"
 
                 elif self.is_remind_time_before_end(task):
-                    message = f"終了{str(task.remind_info.before_end_minutes)}分後: {task.name.get_remind_message()}"
+                    message = f"{str(task.remind_info.before_end_minutes)}分後に終了: {task.name.get_remind_message()}"
 
                 else:
                     raise ValueError(f"リマインド時刻が現在ではありません: {task.name}")

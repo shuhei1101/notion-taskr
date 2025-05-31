@@ -12,6 +12,8 @@ from notiontaskr.domain.tags import Tags
 from notiontaskr.domain.value_objects.tag import Tag
 from notiontaskr.notifier.task_remind_info import TaskRemindInfo
 
+from notiontaskr import config
+
 
 @dataclass
 class ExecutedTask(Task):
@@ -103,8 +105,10 @@ class ExecutedTask(Task):
                     TaskRemindInfo.from_raw_values(
                         has_before_start=has_before_start,
                         has_before_end=has_before_end,
-                        raw_before_start_minutes=before_start_minutes or 5,
-                        raw_before_end_minutes=before_end_minutes or 5,
+                        raw_before_start_minutes=before_start_minutes
+                        or config.DEFAULT_BEFORE_START_MINUTES,
+                        raw_before_end_minutes=before_end_minutes
+                        or config.DEFAULT_BEFORE_END_MINUTES,
                     )
                 )
 
