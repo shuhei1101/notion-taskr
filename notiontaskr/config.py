@@ -33,7 +33,7 @@ TASK_DB_ID = os.getenv("TASK_DB_ID")
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")  # SlackのWebhook URL
 NOTIFIER = SlackNotifier(webhook_url=SLACK_WEBHOOK_URL)  # type: ignore
 DEFAULT_BEFORE_START_MINUTES = 5  # 開始前通知のデフォルト時間（分）
-DEFAULT_BEFORE_END_MINUTES = 15  # 終了前通知のデフォルト時間（分）
+DEFAULT_BEFORE_END_MINUTES = 5  # 終了前通知のデフォルト時間（分）
 
 # ==================== pickleファイル設定 ====================
 BUCKET_NAME = "notion-api-bucket"  # GCSバケット名
