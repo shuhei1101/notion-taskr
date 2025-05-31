@@ -20,6 +20,7 @@ from notiontaskr.application.dto.uptime_data import UptimeData, UptimeDataByTag
 from notiontaskr.domain.tags import Tags
 from notiontaskr.domain.scheduled_tasks import ScheduledTasks
 from notiontaskr.domain.executed_tasks import ExecutedTasks
+from notiontaskr.util.traceback_converter import TracebackConverter
 
 
 class TaskApplicationService:
@@ -59,7 +60,7 @@ class TaskApplicationService:
             gcs_handler = GCSHandler(
                 bucket_name=config.BUCKET_NAME,
                 on_error=lambda e: self.logger.error(
-                    f"GCSの初期化に失敗。エラー内容: {e}",
+                    f"GCSの初期化に失敗。エラー内容: {TracebackConverter(e).get_all()}",
                 ),
             )
             timer.snap_delta("GCSハンドラーの初期化完了")
@@ -80,7 +81,7 @@ class TaskApplicationService:
         scheduled_tasks = await self.scheduled_task_repo.find_all_by_condition(
             condition=condition,
             on_error=lambda e, data: self.logger.error(
-                f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+                f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {TracebackConverter(e).get_all()}"
             ),
         )
 
@@ -88,7 +89,7 @@ class TaskApplicationService:
         executed_tasks = await self.executed_task_repo.find_all_by_condition(
             condition=condition,
             on_error=lambda e, data: self.logger.error(
-                f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+                f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {TracebackConverter(e).get_all()}"
             ),
         )
 
@@ -108,7 +109,7 @@ class TaskApplicationService:
             to=scheduled_tasks,
             source=executed_tasks,
             on_error=lambda e, task: self.logger.error(
-                f"予定タスク[{task.scheduled_task_id.number}]と実績タスク[{task.id.number}]の紐づけに失敗。エラー内容: {e}"  # type: ignore
+                f"予定タスク[{task.scheduled_task_id.number}]と実績タスク[{task.id.number}]の紐づけに失敗。エラー内容: {TracebackConverter(e).get_all()}"  # type: ignore
             ),
         )
 
@@ -117,7 +118,7 @@ class TaskApplicationService:
             parent_tasks=scheduled_tasks,
             sub_tasks=scheduled_tasks,
             on_error=lambda e, task: self.logger.error(
-                f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {e}"
+                f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {TracebackConverter(e).get_all()}"
             ),
         )
 
@@ -172,7 +173,7 @@ class TaskApplicationService:
             gcs_handler = GCSHandler(
                 bucket_name=config.BUCKET_NAME,
                 on_error=lambda e: self.logger.error(
-                    f"GCSの初期化に失敗。エラー内容: {e}",
+                    f"GCSの初期化に失敗。エラー内容: {TracebackConverter(e).get_all()}",
                 ),
             )
 
@@ -227,26 +228,26 @@ class TaskApplicationService:
             self.scheduled_task_repo.find_by_condition(
                 condition=condition,
                 on_error=lambda e, data: self.logger.error(
-                    f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+                    f"予定タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {TracebackConverter(e).get_all()}"
                 ),
             ),
             self.executed_task_repo.find_by_condition(
                 condition=condition,
                 on_error=lambda e, data: self.logger.error(
-                    f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+                    f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {TracebackConverter(e).get_all()}"
                 ),
             ),
             # リマインド用タスクの取得
             self.executed_task_repo.find_by_condition(
                 condition=before_start_remind_condition,
                 on_error=lambda e, data: self.logger.error(
-                    f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+                    f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {TracebackConverter(e).get_all()}"
                 ),
             ),
             self.executed_task_repo.find_by_condition(
                 condition=before_end_remind_condition,
                 on_error=lambda e, data: self.logger.error(
-                    f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+                    f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {TracebackConverter(e).get_all()}"
                 ),
             ),
         )
@@ -315,7 +316,7 @@ class TaskApplicationService:
                     to=merged_scheduled_tasks,
                     source=fetched_executed_tasks,
                     on_error=lambda e, task: self.logger.error(
-                        f"予定タスク[{task.id.number}]と実績タスクの紐づけに失敗。エラー内容: {e}"
+                        f"予定タスク[{task.id.number}]と実績タスクの紐づけに失敗。エラー内容: {TracebackConverter(e).get_all()}"
                     ),
                 )
             )
@@ -326,7 +327,7 @@ class TaskApplicationService:
                     sub_tasks=merged_scheduled_tasks,
                     parent_tasks=fetched_scheduled_tasks,
                     on_error=lambda e, task: self.logger.error(
-                        f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {e}"
+                        f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {TracebackConverter(e).get_all()}"
                     ),
                 )
             )
@@ -337,7 +338,7 @@ class TaskApplicationService:
                     sub_tasks=fetched_scheduled_tasks,
                     parent_tasks=merged_scheduled_tasks,
                     on_error=lambda e, task: self.logger.error(
-                        f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {e}"
+                        f"予定タスク[{task.id.number}]とサブアイテムの紐づけに失敗。エラー内容: {TracebackConverter(e).get_all()}"
                     ),
                 )
             )
@@ -373,7 +374,7 @@ class TaskApplicationService:
                         f"Slack通知送信(タスクID: {task.name.get_remind_message()})"
                     ),
                     on_error=lambda e, task: self.logger.error(
-                        f"Slack通知失敗(タスクID: {task.name.get_remind_message()}) エラー内容: {e}"
+                        f"Slack通知失敗(タスクID: {task.name.get_remind_message()}) エラー内容: {TracebackConverter(e).get_all()}"
                     ),
                 )
             )
@@ -450,7 +451,7 @@ class TaskApplicationService:
         fetched_executed_tasks = await self.executed_task_repo.find_by_condition(
             condition=condition,
             on_error=lambda e, data: self.logger.error(
-                f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+                f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {TracebackConverter(e).get_all()}"
             ),
         )
         timer.snap_delta("Notionから実績タスクの取得完了")
@@ -493,7 +494,9 @@ class TaskApplicationService:
                 )
                 self.logger.info("PickleをGCSからダウンロード成功")
         except Exception as e:
-            self.logger.info(f"PickleをGCSからダウンロード失敗。エラー内容: {e}")
+            self.logger.info(
+                f"PickleをGCSからダウンロード失敗。エラー内容: {TracebackConverter(e).get_all()}"
+            )
 
         try:
             # Pickleから予定タスクを読み込む
@@ -501,7 +504,9 @@ class TaskApplicationService:
             self.logger.info(f"Pickleの読み込みに成功: {cache.save_path}")
             return obj
         except Exception as e:
-            self.logger.critical(f"Pickleの読み込みに失敗。エラー内容: {e}")
+            self.logger.critical(
+                f"Pickleの読み込みに失敗。エラー内容: {TracebackConverter(e).get_all()}"
+            )
             return None
 
     async def _save_pickle(
@@ -519,7 +524,9 @@ class TaskApplicationService:
             self.logger.info(f"Pickleの保存に成功: {cache.save_path}")
 
         except Exception as e:
-            self.logger.critical(f"Pickleの保存に失敗。エラー内容: {e}")
+            self.logger.critical(
+                f"Pickleの保存に失敗。エラー内容: {TracebackConverter(e).get_all()}"
+            )
 
         try:
             if not config.DEBUG_MODE and gcs_handler is not None:
@@ -530,7 +537,9 @@ class TaskApplicationService:
                 )
                 self.logger.info("PickleをGCSへアップロード成功")
         except Exception as e:
-            self.logger.error(f"PickleをGCSへアップロード失敗。エラー内容: {e}")
+            self.logger.error(
+                f"PickleをGCSへアップロード失敗。エラー内容: {TracebackConverter(e).get_all()}"
+            )
 
     async def _update_scheduled_tasks(
         self,
@@ -547,7 +556,7 @@ class TaskApplicationService:
                         f"予定タスク[{task.id.number}]の更新: {task.update_contents}"
                     ),
                     on_error=lambda e, task: self.logger.error(
-                        f"予定タスク[{task.id.number}]の更新に失敗しました。 エラー内容: {e}"
+                        f"予定タスク[{task.id.number}]の更新に失敗しました。 エラー内容: {TracebackConverter(e).get_all()}"
                     ),
                 )
             )
@@ -568,7 +577,7 @@ class TaskApplicationService:
                         f"実績タスク[{task.id.number}]の更新: {task.update_contents}"
                     ),
                     on_error=lambda e, task: self.logger.error(
-                        f"実績タスク[{task.id.number}]の更新に失敗しました。 エラー内容: {e}"
+                        f"実績タスク[{task.id.number}]の更新に失敗しました。 エラー内容: {TracebackConverter(e).get_all()}"
                     ),
                 )
             )
