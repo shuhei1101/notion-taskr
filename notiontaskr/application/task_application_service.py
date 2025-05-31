@@ -242,8 +242,9 @@ class TaskApplicationService:
         merged_executed_tasks = cache_executed_tasks.upserted_by_id(
             fetched_executed_tasks
         )
-        has_fetched_tasks = fetched_scheduled_tasks or fetched_executed_tasks
-        if has_fetched_tasks:
+        has_fetched_scheduled_tasks = len(merged_scheduled_tasks) > 0
+        has_fetched_executed_tasks = len(merged_executed_tasks) > 0
+        if has_fetched_scheduled_tasks and has_fetched_executed_tasks:
             # ========== タスクの更新 ==========
 
             # 更新対象タスクの初期化
@@ -321,11 +322,11 @@ class TaskApplicationService:
             )
         )
 
-        timer.snap_delta("Slack通知完了")
+        timer.snap_delta("Slack通知処理完了")
 
-        if has_fetched_tasks:
-            # ========== Pickleの保存 ==========
-            tasks = []
+        # ========== Pickleの保存 ==========
+        tasks = []
+        if has_fetched_scheduled_tasks:
             # 予定タスク
             tasks.append(
                 self._save_pickle(
@@ -335,6 +336,7 @@ class TaskApplicationService:
                     cache=self.scheduled_task_cache,
                 )
             )
+        if has_fetched_executed_tasks:
             # 実績タスク
             tasks.append(
                 self._save_pickle(
@@ -344,7 +346,10 @@ class TaskApplicationService:
                     cache=self.executed_task_cache,
                 )
             )
-            timer.snap_delta("Pickleの保存完了")
+
+        await asyncio.gather(*tasks)
+
+        timer.snap_delta("Pickleの保存処理完了")
 
         timer.snap_total("処理完了")
 
