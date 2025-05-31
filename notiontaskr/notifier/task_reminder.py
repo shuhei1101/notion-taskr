@@ -45,7 +45,10 @@ class TaskReminder:
 
         before_start_dt = None
 
-        if task.remind_info.has_before_start:
+        if (
+            task.remind_info.has_before_start
+            and task.remind_info.before_start_minutes is not None
+        ):
             before_start_dt = task.date.start - task.remind_info.before_start_minutes
 
         return before_start_dt
@@ -58,7 +61,10 @@ class TaskReminder:
 
         before_end_dt = None
 
-        if task.remind_info.has_before_end:
+        if (
+            task.remind_info.has_before_end
+            and task.remind_info.before_end_minutes is not None
+        ):
             before_end_dt = task.date.end - task.remind_info.before_end_minutes
 
         return before_end_dt

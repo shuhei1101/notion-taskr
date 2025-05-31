@@ -1,7 +1,9 @@
 from enum import Enum
 
+
 class TextOperator(Enum):
-    '''テキスト検索の演算子'''
+    """テキスト検索の演算子"""
+
     # 完全一致
     EQUALS = "equals"
     # 部分一致
@@ -11,8 +13,10 @@ class TextOperator(Enum):
     # 後方一致
     ENDS_WITH = "ends_with"
 
+
 class StatusOperator(Enum):
-    '''セレクト検索の演算子'''
+    """セレクト検索の演算子"""
+
     # 完全一致
     EQUALS = "equals"
     # 空
@@ -20,19 +24,24 @@ class StatusOperator(Enum):
     # 空でない
     IS_NOT_EMPTY = "is_not_empty"
 
+
 class CheckboxOperator(Enum):
-    '''チェックボックス検索の演算子'''
+    """チェックボックス検索の演算子"""
+
     # 完全一致
     EQUALS = "equals"
 
+
 class MultiSelectOperator(Enum):
-    '''マルチセレクト検索の演算子'''
+    """マルチセレクト検索の演算子"""
+
     # 指定されたタグを含むページを取得
     CONTAINS = "contains"
 
+
 class DateOperator(Enum):
-    '''日付検索の演算子
-    
+    """日付検索の演算子
+
     ### Notion APIのドキュメントに記載されている演算子一覧
     (演算子: 意味)
     - equals: 完全一致
@@ -47,7 +56,8 @@ class DateOperator(Enum):
     - next_month: 次の1か月
     - next_year: 次の1年
     - this_week: 今週
-    '''
+    """
+
     # 完全一致
     EQUALS = "equals"
     # 指定日より前

@@ -8,8 +8,8 @@ from notiontaskr.notifier.remind_minutes import RemindMinutes
 class TaskRemindInfo:
     has_before_start: bool = False
     has_before_end: bool = False
-    before_start_minutes: RemindMinutes = RemindMinutes(minutes=5)
-    before_end_minutes: RemindMinutes = RemindMinutes(minutes=5)
+    before_start_minutes: Optional[RemindMinutes] = RemindMinutes(minutes=5)
+    before_end_minutes: Optional[RemindMinutes] = RemindMinutes(minutes=5)
 
     @classmethod
     def from_empty(cls) -> "TaskRemindInfo":
@@ -17,8 +17,8 @@ class TaskRemindInfo:
         return cls(
             has_before_start=False,
             has_before_end=False,
-            before_start_minutes=RemindMinutes(minutes=5),
-            before_end_minutes=RemindMinutes(minutes=5),
+            before_start_minutes=None,
+            before_end_minutes=None,
         )
 
     @classmethod
@@ -26,21 +26,22 @@ class TaskRemindInfo:
         cls,
         has_before_start: bool = False,
         has_before_end: bool = False,
-        raw_before_start_minutes: Optional[int] = 5,
-        raw_before_end_minutes: Optional[int] = 5,
+        raw_before_start_minutes: Optional[int] = None,
+        raw_before_end_minutes: Optional[int] = None,
     ) -> "TaskRemindInfo":
         if raw_before_start_minutes is None:
-            raw_before_start_minutes = 5
+            before_start_minutes = None
+        else:
+            if raw_before_start_minutes < 0:
+                raise ValueError("before_start_minutesは0以上でなければなりません")
+            before_start_minutes = RemindMinutes(minutes=raw_before_start_minutes)
+
         if raw_before_end_minutes is None:
-            raw_before_end_minutes = 5
-
-        if raw_before_start_minutes < 0:
-            raise ValueError("before_start_minutesは0以上でなければなりません")
-        if raw_before_end_minutes < 0:
-            raise ValueError("before_end_minutesは0以上でなければなりません")
-
-        before_start_minutes = RemindMinutes(minutes=raw_before_start_minutes)
-        before_end_minutes = RemindMinutes(minutes=raw_before_end_minutes)
+            before_end_minutes = None
+        else:
+            if raw_before_end_minutes < 0:
+                raise ValueError("before_end_minutesは0以上でなければなりません")
+            before_end_minutes = RemindMinutes(minutes=raw_before_end_minutes)
 
         return cls(
             has_before_start=has_before_start,
@@ -57,4 +58,12 @@ class TaskRemindInfo:
             and self.has_before_end == other.has_before_end
             and self.before_start_minutes == other.before_start_minutes
             and self.before_end_minutes == other.before_end_minutes
+        )
+
+    def __str__(self) -> str:
+        return (
+            f"開始前通知={self.has_before_start}, "
+            f"終了前通知={self.has_before_end}, "
+            f"開始前通知時間(分)={self.before_start_minutes}, "
+            f"終了前通知時間(分)={self.before_end_minutes})"
         )

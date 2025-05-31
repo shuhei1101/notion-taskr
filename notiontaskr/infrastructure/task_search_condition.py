@@ -1,4 +1,3 @@
-from notiontaskr.domain.value_objects.status import Status
 from notiontaskr.infrastructure.operator import *
 
 
@@ -76,3 +75,49 @@ class TaskSearchCondition:
         例: 1875ffa1-def1-4c34-8875-e559eb6e5853
         """
         pass
+
+    # 開始前通知時刻のフィルターを生成する
+    def where_before_start_minutes(self, operator: DateOperator, date: str | dict = {}):
+        """開始前通知時刻のフィルターを生成する
+
+        "開始前通知時刻": {
+            "id": "dcUh",
+            "type": "formula",
+            "formula": {
+                "type": "date",
+                "date": {
+                "start": "2025-05-31T15:40:00.000+09:00",
+                "end": null,
+                "time_zone": null
+                }
+            }
+        },
+        """
+        self.conditions = {
+            "property": "開始前通知時刻",
+            "formula": {"date": {operator.value: date}},
+        }
+        return self
+
+    # 終了前通知時刻のフィルターを生成する
+    def where_before_end_minutes(self, operator: DateOperator, date: str | dict = {}):
+        """終了前通知時刻のフィルターを生成する
+
+        "終了前通知時刻": {
+            "id": "dcUh",
+            "type": "formula",
+            "formula": {
+                "type": "date",
+                "date": {
+                "start": "2025-05-31T15:40:00.000+09:00",
+                "end": null,
+                "time_zone": null
+                }
+            }
+        },
+        """
+        self.conditions = {
+            "property": "終了前通知時刻",
+            "formula": {"date": {operator.value: date}},
+        }
+        return self

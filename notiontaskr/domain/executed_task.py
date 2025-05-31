@@ -97,6 +97,17 @@ class ExecutedTask(Task):
                 remind_info=remind_info,
             )
 
+            if not before_start_minutes or not before_end_minutes:
+                # 開始前通知時間と終了前通知時間が設定されていない場合はデフォルト値を設定
+                instance.update_remind_info(
+                    TaskRemindInfo.from_raw_values(
+                        has_before_start=has_before_start,
+                        has_before_end=has_before_end,
+                        raw_before_start_minutes=before_start_minutes or 5,
+                        raw_before_end_minutes=before_end_minutes or 5,
+                    )
+                )
+
             return instance
 
         except KeyError as e:

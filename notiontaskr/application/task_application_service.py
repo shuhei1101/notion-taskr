@@ -191,8 +191,39 @@ class TaskApplicationService:
             ),
         )
 
+        # 条件作成(リマインド時間が1分前~1分後)
+        before_start_remind_condition = TaskSearchCondition().and_(
+            TaskSearchCondition().where_before_start_minutes(
+                operator=DateOperator.ON_OR_AFTER,
+                date=to_isoformat(
+                    datetime.now(timezone.utc) - timedelta(minutes=1, seconds=30)
+                ),
+            ),
+            TaskSearchCondition().where_before_start_minutes(
+                operator=DateOperator.ON_OR_BEFORE,
+                date=to_isoformat(
+                    datetime.now(timezone.utc) + timedelta(minutes=1, seconds=30)
+                ),
+            ),
+        )
+        before_end_remind_condition = TaskSearchCondition().and_(
+            TaskSearchCondition().where_before_end_minutes(
+                operator=DateOperator.ON_OR_AFTER,
+                date=to_isoformat(
+                    datetime.now(timezone.utc) - timedelta(minutes=1, seconds=30)
+                ),
+            ),
+            TaskSearchCondition().where_before_end_minutes(
+                operator=DateOperator.ON_OR_BEFORE,
+                date=to_isoformat(
+                    datetime.now(timezone.utc) + timedelta(minutes=1, seconds=30)
+                ),
+            ),
+        )
+
         # タスクの取得
         results = await asyncio.gather(
+            # タスクの取得
             self.scheduled_task_repo.find_by_condition(
                 condition=condition,
                 on_error=lambda e, data: self.logger.error(
@@ -205,12 +236,31 @@ class TaskApplicationService:
                     f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
                 ),
             ),
+            # リマインド用タスクの取得
+            self.executed_task_repo.find_by_condition(
+                condition=before_start_remind_condition,
+                on_error=lambda e, data: self.logger.error(
+                    f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+                ),
+            ),
+            self.executed_task_repo.find_by_condition(
+                condition=before_end_remind_condition,
+                on_error=lambda e, data: self.logger.error(
+                    f"実績タスク[{data['properties']['ID']['unique_id']['number']}]の取得に失敗。エラー内容: {e}"
+                ),
+            ),
         )
-        fetched_scheduled_tasks, fetched_executed_tasks = results[0], results[1]
 
+        # 更新用タスクの取得
+        fetched_scheduled_tasks, fetched_executed_tasks = results[0], results[1]
         timer.snap_delta("Notionからタスクの取得完了")
         self.logger.info(f"取得した予定タスクの数: {len(fetched_scheduled_tasks)}")
         self.logger.info(f"取得した実績タスクの数: {len(fetched_executed_tasks)}")
+
+        # リマインド用タスクの取得
+        fetched_remind_tasks = results[2].upserted_by_id(results[3])
+        self.logger.info(f"取得したリマインド用タスクの数: {len(fetched_remind_tasks)}")
+        has_fetched_remind_tasks = len(fetched_remind_tasks) > 0
 
         # ========== pickleからタスクを取得 ==========
         # 予定タスク
@@ -300,29 +350,39 @@ class TaskApplicationService:
             tasks.append(self._update_scheduled_tasks(scheduled_tasks_to_update))
             tasks.append(
                 self._update_executed_tasks(
-                    scheduled_tasks_to_update.get_executed_tasks()
+                    fetched_executed_tasks.upserted_by_id(
+                        scheduled_tasks_to_update.get_executed_tasks()
+                    )
                 )
             )
             await asyncio.gather(*tasks)
 
             timer.snap_delta("タスクの更新完了")
+        else:
+            self.logger.warning(
+                "取得したタスクがありません。更新処理をスキップします。"
+            )
 
         # ========== Slackリマインド通知 ==========
-
-        # 非同期でリマインド通知を実行
-        asyncio.create_task(
-            self.reminder.remind(
-                tasks=merged_executed_tasks.get_remind_tasks(),
-                on_success=lambda task: self.logger.info(
-                    f"Slack通知送信(タスクID: {task.name.get_remind_message()})"
-                ),
-                on_error=lambda e, task: self.logger.error(
-                    f"Slack通知失敗(タスクID: {task.name.get_remind_message()}) エラー内容: {e}"
-                ),
+        if has_fetched_remind_tasks:
+            # 非同期でリマインド通知を実行
+            asyncio.create_task(
+                self.reminder.remind(
+                    tasks=fetched_remind_tasks.get_remind_tasks(),
+                    on_success=lambda task: self.logger.info(
+                        f"Slack通知送信(タスクID: {task.name.get_remind_message()})"
+                    ),
+                    on_error=lambda e, task: self.logger.error(
+                        f"Slack通知失敗(タスクID: {task.name.get_remind_message()}) エラー内容: {e}"
+                    ),
+                )
             )
-        )
 
-        timer.snap_delta("Slack通知処理完了")
+            timer.snap_delta("Slack通知処理完了")
+        else:
+            self.logger.warning(
+                "リマインド対象のタスクがありません。Slack通知をスキップします。"
+            )
 
         # ========== Pickleの保存 ==========
         tasks = []
@@ -336,6 +396,10 @@ class TaskApplicationService:
                     cache=self.scheduled_task_cache,
                 )
             )
+        else:
+            self.logger.warning(
+                "取得した予定タスクがありません。Pickleの保存をスキップします。"
+            )
         if has_fetched_executed_tasks:
             # 実績タスク
             tasks.append(
@@ -345,6 +409,10 @@ class TaskApplicationService:
                     bucket_path=config.BUCKET_EXECUTED_PICKLE_PATH,
                     cache=self.executed_task_cache,
                 )
+            )
+        else:
+            self.logger.warning(
+                "取得した実績タスクがありません。Pickleの保存をスキップします。"
             )
 
         await asyncio.gather(*tasks)

@@ -28,13 +28,3 @@ class TestTaskRemindInfo:
         assert remind_info.before_start_minutes == datetime.timedelta(minutes=5)
         assert remind_info.has_before_end is False
         assert remind_info.before_end_minutes == datetime.timedelta(minutes=5)
-
-    def test_start_minutesを設定しない場合のデフォルト値が適用されること(self):
-        remind_info = TaskRemindInfo.from_raw_values(
-            has_before_start=True,
-            has_before_end=True,
-        )
-
-        # 5分が設定されていること
-        assert remind_info.before_start_minutes == datetime.timedelta(minutes=5)
-        assert remind_info.before_end_minutes == datetime.timedelta(minutes=5)
