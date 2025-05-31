@@ -292,9 +292,9 @@ class TaskApplicationService:
         merged_executed_tasks = cache_executed_tasks.upserted_by_id(
             fetched_executed_tasks
         )
-        has_fetched_scheduled_tasks = len(merged_scheduled_tasks) > 0
-        has_fetched_executed_tasks = len(merged_executed_tasks) > 0
-        if has_fetched_scheduled_tasks and has_fetched_executed_tasks:
+        has_fetched_scheduled_tasks = len(fetched_scheduled_tasks) > 0
+        has_fetched_executed_tasks = len(fetched_executed_tasks) > 0
+        if has_fetched_scheduled_tasks or has_fetched_executed_tasks:
             # ========== タスクの更新 ==========
 
             # 更新対象タスクの初期化
