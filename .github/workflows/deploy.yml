@@ -144,3 +144,9 @@ jobs:
             --tasks=1
         fi
 
+    - name: run daily job
+      run: |
+        curl -X POST https://${{ env.SERVICE_NAME }}-${{  env.GCP_PROJECT_ID }}.${{ env.GCP_REGION }}.run.app/run-daily-task \
+          -H "Content-Type: application/json" \
+          -d '{"task": "daily"}'
+
