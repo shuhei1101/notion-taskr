@@ -11,16 +11,13 @@ class TaskRemindInfo:
     before_end_minutes: Optional[RemindMinutes] = None
     has_before_start: bool = False
     has_before_end: bool = False
+    has_start: bool = False
+    has_end: bool = False
 
     @classmethod
     def from_empty(cls) -> "TaskRemindInfo":
         """空のリマインド情報を生成する"""
-        return cls(
-            has_before_start=False,
-            has_before_end=False,
-            before_start_minutes=None,
-            before_end_minutes=None,
-        )
+        return cls()
 
     @classmethod
     def from_raw_values(
@@ -29,6 +26,8 @@ class TaskRemindInfo:
         has_before_end: bool = False,
         raw_before_start_minutes: Optional[int] = None,
         raw_before_end_minutes: Optional[int] = None,
+        has_start: bool = False,
+        has_end: bool = False,
     ) -> "TaskRemindInfo":
         if raw_before_start_minutes is None:
             before_start_minutes = None
@@ -49,23 +48,25 @@ class TaskRemindInfo:
             has_before_end=has_before_end,
             before_start_minutes=before_start_minutes,
             before_end_minutes=before_end_minutes,
+            has_start=has_start,
+            has_end=has_end,
         )
 
     @classmethod
     def from_response_data(cls, data: dict) -> "TaskRemindInfo":
         """レスポンスデータからインスタンスを生成する"""
         try:
-            has_before_start = data["properties"]["開始前通知"]["checkbox"]
-            has_before_end = data["properties"]["終了前通知"]["checkbox"]
-            before_start_minutes = data["properties"]["開始前通知時間(分)"].get(
-                "number"
-            )
-            before_end_minutes = data["properties"]["終了前通知時間(分)"].get("number")
             return cls.from_raw_values(
-                has_before_start=has_before_start,
-                has_before_end=has_before_end,
-                raw_before_start_minutes=before_start_minutes,
-                raw_before_end_minutes=before_end_minutes,
+                has_before_start=data["properties"]["開始前通知"]["checkbox"],
+                has_before_end=data["properties"]["終了前通知"]["checkbox"],
+                raw_before_start_minutes=data["properties"]["開始前通知時間(分)"].get(
+                    "number"
+                ),
+                raw_before_end_minutes=data["properties"]["終了前通知時間(分)"].get(
+                    "number"
+                ),
+                has_start=data["properties"]["開始通知"]["checkbox"],
+                has_end=data["properties"]["終了通知"]["checkbox"],
             )
         except (KeyError, TypeError) as e:
             raise ValueError(f"レスポンスデータに必要なキーが存在しません")
@@ -115,5 +116,7 @@ class TaskRemindInfo:
             f"開始前通知={self.has_before_start}, "
             f"終了前通知={self.has_before_end}, "
             f"開始前通知時間(分)={self.before_start_minutes}, "
-            f"終了前通知時間(分)={self.before_end_minutes})"
+            f"終了前通知時間(分)={self.before_end_minutes}), "
+            f"開始通知={self.has_start}, "
+            f"終了通知={self.has_end}"
         )

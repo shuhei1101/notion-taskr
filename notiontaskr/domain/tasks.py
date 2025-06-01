@@ -71,6 +71,8 @@ class Tasks(ABC, Generic[T]):
                 for task in self._tasks
                 if TaskReminder.is_remind_time_before_start(task)
                 or TaskReminder.is_remind_time_before_end(task)
+                or TaskReminder.is_remind_time_equal_start(task)
+                or TaskReminder.is_remind_time_equal_end(task)
             ]
         )
 

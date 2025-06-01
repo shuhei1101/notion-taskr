@@ -260,6 +260,7 @@ class TaskApplicationService:
 
         # リマインド用タスクの取得
         fetched_remind_tasks = results[2].upserted_by_id(results[3])
+        cast(ExecutedTasks, fetched_remind_tasks)
         self.logger.info(f"取得したリマインド用タスクの数: {len(fetched_remind_tasks)}")
         has_fetched_remind_tasks = len(fetched_remind_tasks) > 0
 

@@ -71,6 +71,24 @@ class TestTaskReminder:
             asyncio.run(reminder.remind(mock_tasks, on_success=Mock(), on_error=Mock()))
             mock_notifier.notify.assert_called()
 
+        def test_タスクが開始時刻のときリマインドを送ること(
+            self, mock_notifier: Notifiable, mock_tasks: Tasks
+        ):
+            mock_notifier.notify = AsyncMock()
+            reminder = TaskReminder(notifier=mock_notifier)
+            reminder.is_remind_time_equal_start = Mock(return_value=True)
+            asyncio.run(reminder.remind(mock_tasks, on_success=Mock(), on_error=Mock()))
+            mock_notifier.notify.assert_called()
+
+        def test_タスクが終了時刻のときリマインドを送ること(
+            self, mock_notifier: Notifiable, mock_tasks: Tasks
+        ):
+            mock_notifier.notify = AsyncMock()
+            reminder = TaskReminder(notifier=mock_notifier)
+            reminder.is_remind_time_equal_end = Mock(return_value=True)
+            asyncio.run(reminder.remind(mock_tasks, on_success=Mock(), on_error=Mock()))
+            mock_notifier.notify.assert_called()
+
         def test_タスクがリマインド時刻でないとき例外を送ること(
             self, mock_notifier: Notifiable, mock_tasks: Tasks
         ):
@@ -155,3 +173,31 @@ class TestTaskReminder:
             )
 
             assert TaskReminder.is_remind_time_before_end(task) is True
+
+        def test_開始時刻が現在のときTrueを返す(self):
+            task = Task(
+                page_id=Mock(),
+                name=Mock(),
+                tags=Mock(),
+                id=Mock(),
+                status=Mock(),
+                remind_info=TaskRemindInfo(has_start=True),
+            )
+            task.date = NotionDate(start=datetime.now(timezone.utc), end=None)
+
+            assert TaskReminder.is_remind_time_equal_start(task) is True
+
+        def test_終了時刻が現在のときTrueを返す(self):
+            task = Task(
+                page_id=Mock(),
+                name=Mock(),
+                tags=Mock(),
+                id=Mock(),
+                status=Mock(),
+                remind_info=TaskRemindInfo(has_end=True),
+            )
+            task.date = NotionDate(
+                start=datetime.now(timezone.utc), end=datetime.now(timezone.utc)
+            )
+
+            assert TaskReminder.is_remind_time_equal_end(task) is True

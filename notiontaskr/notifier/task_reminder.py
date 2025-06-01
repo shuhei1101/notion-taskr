@@ -26,6 +26,11 @@ class TaskReminder:
                 elif self.is_remind_time_before_end(task):
                     message = f"{str(task.remind_info.before_end_minutes)}分後終了: {task.name.get_remind_message()}"
 
+                elif self.is_remind_time_equal_start(task):
+                    message = f"開始: {task.name.get_remind_message()}"
+                elif self.is_remind_time_equal_end(task):
+                    message = f"終了: {task.name.get_remind_message()}"
+
                 else:
                     raise ValueError(f"リマインド時刻が現在ではありません: {task.name}")
 
@@ -92,3 +97,25 @@ class TaskReminder:
         before_end_hm = before_end_dt.replace(second=0, microsecond=0)
 
         return now_hm == before_end_hm
+
+    @staticmethod
+    def is_remind_time_equal_start(task: "Task") -> bool:
+        """開始時刻が現在かどうかを判定する"""
+        if task.date is None or not task.remind_info.has_start:
+            return False
+
+        now_hm = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        start_hm = task.date.start.replace(second=0, microsecond=0)
+
+        return now_hm == start_hm
+
+    @staticmethod
+    def is_remind_time_equal_end(task: "Task") -> bool:
+        """終了時刻が現在かどうかを判定する"""
+        if task.date is None or not task.remind_info.has_end:
+            return False
+
+        now_hm = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        end_hm = task.date.end.replace(second=0, microsecond=0)
+
+        return now_hm == end_hm
