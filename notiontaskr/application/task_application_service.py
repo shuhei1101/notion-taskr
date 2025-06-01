@@ -192,18 +192,18 @@ class TaskApplicationService:
             ),
         )
 
-        # 条件作成(リマインド時間が1分前~1分後)
+        # 条件作成(リマインド時間が15分前~15分後)
         before_start_remind_condition = TaskSearchCondition().and_(
             TaskSearchCondition().where_before_start_minutes(
                 operator=DateOperator.ON_OR_AFTER,
                 date=to_isoformat(
-                    datetime.now(timezone.utc) - timedelta(minutes=1, seconds=30)
+                    datetime.now(timezone.utc) - timedelta(minutes=15, seconds=30)
                 ),
             ),
             TaskSearchCondition().where_before_start_minutes(
                 operator=DateOperator.ON_OR_BEFORE,
                 date=to_isoformat(
-                    datetime.now(timezone.utc) + timedelta(minutes=1, seconds=30)
+                    datetime.now(timezone.utc) + timedelta(minutes=15, seconds=30)
                 ),
             ),
         )
@@ -211,13 +211,13 @@ class TaskApplicationService:
             TaskSearchCondition().where_before_end_minutes(
                 operator=DateOperator.ON_OR_AFTER,
                 date=to_isoformat(
-                    datetime.now(timezone.utc) - timedelta(minutes=1, seconds=30)
+                    datetime.now(timezone.utc) - timedelta(minutes=15, seconds=30)
                 ),
             ),
             TaskSearchCondition().where_before_end_minutes(
                 operator=DateOperator.ON_OR_BEFORE,
                 date=to_isoformat(
-                    datetime.now(timezone.utc) + timedelta(minutes=1, seconds=30)
+                    datetime.now(timezone.utc) + timedelta(minutes=15, seconds=30)
                 ),
             ),
         )
