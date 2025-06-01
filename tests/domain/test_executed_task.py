@@ -31,6 +31,8 @@ class TestExecutedTask:
                     },
                     "開始前通知": {"checkbox": True},
                     "終了前通知": {"checkbox": False},
+                    "開始通知": {"checkbox": True},
+                    "終了通知": {"checkbox": False},
                     "開始前通知時間(分)": {"number": 30},
                     "終了前通知時間(分)": {"number": None},
                 },

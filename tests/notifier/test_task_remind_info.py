@@ -46,6 +46,8 @@ class TestTaskRemindInfo:
                 "properties": {
                     "開始前通知": {"checkbox": True},
                     "終了前通知": {"checkbox": True},
+                    "開始通知": {"checkbox": True},
+                    "終了通知": {"checkbox": True},
                     "開始前通知時間(分)": {"number": 5},
                     "終了前通知時間(分)": {"number": 10},
                 }
