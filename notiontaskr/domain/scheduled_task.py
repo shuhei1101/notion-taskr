@@ -4,16 +4,20 @@ from datetime import datetime, timezone
 from notiontaskr.domain.name_labels.id_label import IdLabel
 from notiontaskr.domain.task import Task
 from notiontaskr.domain.task_name import TaskName
+from notiontaskr.domain.update_content import UpdateContent
+from notiontaskr.domain.value_objects.executed_man_hours import ExecutedManHours
 from notiontaskr.domain.value_objects.man_hours import ManHours
 from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.page_id import PageId
+from notiontaskr.domain.value_objects.parent_task_page_id import ParentTaskPageId
 from notiontaskr.domain.value_objects.progress_rate import ProgressRate
+from notiontaskr.domain.value_objects.scheduled_man_hours import ScheduledManHours
 from notiontaskr.domain.value_objects.status import Status
 from notiontaskr.domain.tags import Tags
-from notiontaskr.domain.value_objects.tag import Tag
 from notiontaskr.domain.executed_tasks import ExecutedTasks
 from notiontaskr.domain.scheduled_tasks import ScheduledTasks
 from notiontaskr.domain.value_objects.notion_date import NotionDate
+from notiontaskr.domain.value_objects.sub_task_page_ids import SubTaskPageIds
 from notiontaskr.notifier.task_remind_info import TaskRemindInfo
 
 
@@ -21,13 +25,17 @@ from notiontaskr.notifier.task_remind_info import TaskRemindInfo
 class ScheduledTask(Task):
     """予定タスクモデル"""
 
-    scheduled_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
-    executed_man_hours: ManHours = field(default_factory=lambda: ManHours(0))
+    scheduled_man_hours: ScheduledManHours = field(
+        default_factory=lambda: ScheduledManHours(0)
+    )
+    executed_man_hours: ExecutedManHours = field(
+        default_factory=lambda: ExecutedManHours(0)
+    )
     executed_tasks: ExecutedTasks = field(
         default_factory=lambda: ExecutedTasks.from_empty()
     )  # 紐づいている実績タスク
-    sub_task_page_ids: list["PageId"] = field(
-        default_factory=list
+    sub_task_page_ids: SubTaskPageIds = field(
+        default_factory=SubTaskPageIds
     )  # サブアイテムのページID
     sub_tasks: "ScheduledTasks" = field(
         default_factory=lambda: ScheduledTasks(_tasks=[])
@@ -46,78 +54,49 @@ class ScheduledTask(Task):
 
         task_number = data["properties"]["ID"]["unique_id"]["number"]
         try:
-            task_name = TaskName.from_raw_task_name(
-                data["properties"]["名前"]["title"][0]["plain_text"]
-            )
-            notion_id = NotionId(
-                prefix=data["properties"]["ID"]["unique_id"]["prefix"],
-                number=task_number,
-            )
+            # ========== タスクID ==========
+            notion_id = NotionId.from_response_data(data)
 
-            if data["properties"]["日付"]["date"]:
-                start_date_str = data["properties"]["日付"]["date"]["start"]
-                end_date_str = data["properties"]["日付"]["date"]["end"]
-                notion_date = NotionDate.from_raw_date(
-                    start=start_date_str,
-                    end=end_date_str,
-                )
-            else:
+            # ========== 日付 ==========
+            try:
+                notion_date = NotionDate.from_response_data(data)
+            except ValueError as e:
                 notion_date = None
 
-            status = Status.from_str(data["properties"]["ステータス"]["status"]["name"])
-            tags = Tags.from_empty()
-            for tag in data["properties"]["タグ"]["multi_select"]:
-                tags.append(Tag(tag["name"]))
+            # ========== ステータス ==========
+            status = Status.from_response_data(data)
 
-            # リマインド情報の設定
-            has_before_start = data["properties"]["開始前通知"]["checkbox"]
-            has_before_end = data["properties"]["終了前通知"]["checkbox"]
-            before_start_minutes = data["properties"]["開始前通知時間(分)"].get(
-                "number"
-            )
-            before_end_minutes = data["properties"]["終了前通知時間(分)"].get("number")
-
-            remind_info = TaskRemindInfo.from_empty()
-
-            remind_info = TaskRemindInfo.from_raw_values(
-                has_before_start=has_before_start,
-                has_before_end=has_before_end,
-                raw_before_start_minutes=before_start_minutes,
-                raw_before_end_minutes=before_end_minutes,
-            )
-
+            # ========== インスタンス生成 ==========
             instance = cls(
-                page_id=PageId(data["id"]),
-                name=task_name,
-                tags=tags,
+                page_id=PageId.from_response_data_for_scheduled_task(data),
+                name=TaskName.from_response_data(data),
+                tags=Tags.from_response_data(data),
                 id=notion_id,
                 status=status,
-                parent_task_page_id=(
-                    PageId(
-                        value=data["properties"]["親アイテム"]["relation"][0]["id"],
-                    )
-                    if data["properties"]["親アイテム"]["relation"]
-                    else None
+                parent_task_page_id=ParentTaskPageId.from_response_data_for_scheduled_task(
+                    data
                 ),
-                scheduled_man_hours=ManHours(data["properties"]["人時(予)"]["number"]),
-                executed_man_hours=ManHours(data["properties"]["人時(実)"]["number"]),
-                sub_task_page_ids=[
-                    PageId(relation["id"])
-                    for relation in data["properties"]["サブアイテム"]["relation"]
-                ],
+                scheduled_man_hours=ScheduledManHours.from_response_data(data),
+                executed_man_hours=ExecutedManHours.from_response_data(data),
+                sub_task_page_ids=SubTaskPageIds.from_response_data(data),
                 sub_tasks=ScheduledTasks.from_empty(),
-                progress_rate=ProgressRate(data["properties"]["進捗率"]["number"]),
+                progress_rate=ProgressRate.from_response_data(data),
                 date=notion_date,
-                remind_info=remind_info,
+                remind_info=TaskRemindInfo.from_response_data(data),
             )
 
-            # IDラベルを更新
+            # ========== IDラベルの更新 ==========
             instance.update_id_label(
                 IdLabel.from_property(
                     id=notion_id,
                     status=status,
                 )
             )
+
+            # ========== リマインド情報の更新 ==========
+            if not instance.remind_info.has_value():
+                # 開始前通知時間と終了前通知時間が設定されていない場合はデフォルト値で更新
+                instance.update_remind_info(instance.remind_info.get_default_self())
 
             return instance
         except KeyError as e:
@@ -247,7 +226,13 @@ class ScheduledTask(Task):
     def update_progress_rate(self, progress_rate: ProgressRate):
         """進捗率を更新する"""
         if self.progress_rate != progress_rate:
-            self._toggle_is_updated(f"進捗率: {self.progress_rate} -> {progress_rate}")
+            self._toggle_is_updated(
+                UpdateContent(
+                    key="進捗率",
+                    original_value=str(self.progress_rate),
+                    update_value=str(progress_rate),
+                )
+            )
             self.progress_rate = progress_rate
 
     def _aggregate_executed_man_hours(self) -> ManHours:
@@ -264,7 +249,7 @@ class ScheduledTask(Task):
     def aggregate_man_hours(self):
         """実績工数を集計し、ラベルを更新する"""
 
-        sub_executed_man_hours = ManHours(0)
+        sub_executed_man_hours = ExecutedManHours(0)
 
         if len(self.sub_tasks) > 0:
             # サブアイテムの工数を集計する
@@ -287,17 +272,25 @@ class ScheduledTask(Task):
         """実績人時を更新する"""
         if self.executed_man_hours != executed_man_hours:
             self._toggle_is_updated(
-                f"実績人時: {self.executed_man_hours} -> {executed_man_hours}"
+                UpdateContent(
+                    key="実績人時",
+                    original_value=str(self.executed_man_hours),
+                    update_value=str(executed_man_hours),
+                )
             )
-            self.executed_man_hours = executed_man_hours
+            self.executed_man_hours = executed_man_hours  # type: ignore
 
     def update_scheduled_man_hours(self, scheduled_man_hours: ManHours):
         """予定人時を更新する"""
         if self.scheduled_man_hours != scheduled_man_hours:
             self._toggle_is_updated(
-                f"予定人時: {self.scheduled_man_hours} -> {scheduled_man_hours}"
+                UpdateContent(
+                    key="予定人時",
+                    original_value=str(self.scheduled_man_hours),
+                    update_value=str(scheduled_man_hours),
+                )
             )
-            self.scheduled_man_hours = scheduled_man_hours
+            self.scheduled_man_hours = scheduled_man_hours  # type: ignore
 
     def update_executed_tasks(self, executed_tasks: ExecutedTasks):
         """実績タスクを更新する"""

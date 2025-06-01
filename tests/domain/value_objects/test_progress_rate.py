@@ -1,3 +1,4 @@
+import pytest
 from notiontaskr.domain.value_objects.progress_rate import ProgressRate
 
 from notiontaskr.domain.value_objects.man_hours import ManHours
@@ -49,3 +50,16 @@ class Test_ProgressRate:
             divisors=man_hours2,
         )
         assert progress_rate.value == 2.0 / 3.0
+
+    class Test_response_dataからのインスタンス生成:
+        """例: data["properties"]["進捗率"]["number"]"""
+
+        def test_レスポンスデータからインスタンスを生成できること(self):
+            response_data = {"properties": {"進捗率": {"number": 0.75}}}
+            progress_rate = ProgressRate.from_response_data(response_data)
+            assert progress_rate.value == 0.75
+
+        def test_レスポンスデータに進捗率がない場合はValueErrorを発生させること(self):
+            response_data = {"properties": {}}
+            with pytest.raises(ValueError):
+                ProgressRate.from_response_data(response_data)

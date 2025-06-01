@@ -15,5 +15,15 @@ class Status(Enum):
                 return status
         raise ValueError(f"無効なステータスです: {label}")
 
+    @classmethod
+    def from_response_data(cls, data: dict) -> "Status":
+        """レスポンスデータからステータスを生成する
+
+        :param data: レスポンスデータ
+        :return: Statusオブジェクト
+        """
+        status_str = data["properties"]["ステータス"]["status"]["name"]
+        return cls.from_str(status_str)
+
     def __str__(self):
         return self.value

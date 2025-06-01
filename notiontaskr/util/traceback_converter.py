@@ -32,7 +32,7 @@ class TracebackConverter:
         }
 
         # JSONを一行に変換
-        return json.dumps(error_info, separators=(",", ":"))
+        return json.dumps(error_info, separators=(",", ":"), ensure_ascii=False)
 
     def get_origin(self):
         """エラーの発生源のみ取得し、JSON形式で返却"""
@@ -48,7 +48,7 @@ class TracebackConverter:
             "error_message": str(self.e),
         }
         # ここで一行のJSON形式に変換
-        return json.dumps(origin_info, separators=(",", ":"))
+        return json.dumps(origin_info, separators=(",", ":"), ensure_ascii=False)
 
 
 # 動作確認用

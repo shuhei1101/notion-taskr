@@ -28,6 +28,21 @@ class ProgressRate:
             return cls(0.0)
         return cls(float(dividends / divisors))
 
+    @classmethod
+    def from_response_data(cls, data: dict) -> "ProgressRate":
+        """レスポンスデータからProgressRateのインスタンスを生成します。
+
+        Args:
+            data (dict): レスポンスデータ。
+
+        Returns:
+            ProgressRate: レスポンスデータから生成されたProgressRateインスタンス。
+        """
+        try:
+            return cls(value=data["properties"]["進捗率"]["number"])
+        except KeyError:
+            raise ValueError("レスポンスデータに進捗率が含まれていません。")
+
     def __float__(self) -> float:
         return self.value
 

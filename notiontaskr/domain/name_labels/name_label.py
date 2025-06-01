@@ -14,8 +14,7 @@ class NameLabel(ABC):
     key: str
     value: str
 
-    def get_display_str(self) -> str:
-        """表示用の文字列を返す"""
+    def __str__(self) -> str:
         return f"[{self.key}{self.value}]"
 
     @classmethod

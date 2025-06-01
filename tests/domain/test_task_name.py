@@ -37,9 +37,9 @@ class TestTaskName:
         def test_タスク名を順番どおりに結合して表示すること(self):
             task_name = TaskName(
                 task_name="タスク名",
-                id_label=Mock(get_display_str=Mock(return_value="[ID1]")),
-                man_hours_label=Mock(get_display_str=Mock(return_value="[人時]")),
-                parent_id_label=Mock(get_display_str=Mock(return_value="[親ID]")),
+                id_label=Mock(__str__=Mock(return_value="[ID1]")),
+                man_hours_label=Mock(__str__=Mock(return_value="[人時]")),
+                parent_id_label=Mock(__str__=Mock(return_value="[親ID]")),
             )
 
             assert str(task_name) == "[ID1] タスク名 [人時][親ID]"
@@ -50,8 +50,8 @@ class TestTaskName:
             task_name = TaskName(
                 task_name="タスク名",
                 id_label=None,
-                man_hours_label=Mock(get_display_str=Mock(return_value="[人時]")),
-                parent_id_label=Mock(get_display_str=Mock(return_value="[親ID]")),
+                man_hours_label=Mock(__str__=Mock(return_value="[人時]")),
+                parent_id_label=Mock(__str__=Mock(return_value="[親ID]")),
             )
             assert str(task_name) == "タスク名 [人時][親ID]"
 
@@ -124,3 +124,29 @@ class TestTaskName:
                 mock_label = Mock()
                 task_name.register_parent_id_label(mock_label)
                 assert task_name.parent_id_label == mock_label
+
+    class Test_notionのresponse_dataからのインスタンス生成:
+        """
+
+        例: data["properties"]["名前"]["title"][0]["plain_text"]
+        """
+
+        def test_タスク名を正しく設定できること(self):
+            response_data = {
+                "properties": {
+                    "名前": {"title": [{"plain_text": "[1234] タスク名 [親1324]"}]}
+                }
+            }
+            task_name = TaskName.from_response_data(response_data)
+            assert task_name.task_name == "タスク名"
+            assert task_name.id_label is not None
+            assert task_name.id_label.value == "1234"
+            assert task_name.parent_id_label is not None
+            assert task_name.parent_id_label.value == "1324"
+
+        def test_response_dataに異常がある場合はValueErrorを発生させること(
+            self,
+        ):
+            response_data = {"properties": "例外データ"}
+            with pytest.raises(ValueError):
+                TaskName.from_response_data(response_data)

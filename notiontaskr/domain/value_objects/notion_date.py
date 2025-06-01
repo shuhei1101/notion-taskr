@@ -37,3 +37,13 @@ class NotionDate:
             end_date = datetime.fromisoformat(end)
         start_date = datetime.fromisoformat(start)
         return cls(start=start_date, end=end_date)
+
+    @classmethod
+    def from_response_data(cls, data: dict) -> "NotionDate":
+        """レスポンスデータからインスタンスを生成する"""
+        try:
+            start_date_str = data["properties"]["日付"]["date"]["start"]
+            end_date_str = data["properties"]["日付"]["date"]["end"]
+            return cls.from_raw_date(start=start_date_str, end=end_date_str)
+        except (KeyError, TypeError, KeyError) as e:
+            raise ValueError(f"レスポンスデータに必要なキーが存在しません: {e}")

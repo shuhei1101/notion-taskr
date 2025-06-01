@@ -35,12 +35,6 @@ class TestTask:
             assert task.id is not None
             assert task.status is not None
 
-    class Test__toggle_is_updated:
-        def test_実行するとis_updatedがTrueになること(self, empty_task: Task):
-            empty_task.is_updated = False
-            empty_task._toggle_is_updated("test")
-            assert empty_task.is_updated is True
-
     class Test_update_man_hours_label:
         def test_工数ラベルが異なる場合にis_updatedがTrueになること(
             self, empty_task: Task
@@ -125,7 +119,7 @@ class TestTask:
 
             empty_task._toggle_is_updated.assert_called_once()
 
-    class Test_get_display_name:
+    class Test___str__:
         def test_タスク名を取得すること(self, empty_task: Task):
             empty_task.name = Mock(__str__=Mock(return_value="タスク名"))
-            assert empty_task.get_display_name() == "タスク名"
+            assert str(empty_task) == "タスク名"

@@ -32,3 +32,27 @@ class TestNotionId:
         def test_異なる型のときFalseを返すこと(self):
             notion_id = NotionId("1234567890")
             assert notion_id != 1234567890
+
+    class Test_notionのresponse_dataからのインスタンス生成:
+        """
+        例:
+        data["properties"]["ID"]["unique_id"]["prefix"]
+        data["properties"]["ID"]["unique_id"]["number"]
+        """
+
+        def test_レスポンスデータからインスタンスを生成できること(self):
+            response_data = {
+                "properties": {
+                    "ID": {
+                        "unique_id": {"prefix": "notiontaskr-", "number": "1234567890"}
+                    }
+                }
+            }
+            notion_id = NotionId.from_response_data(response_data)
+            assert notion_id.number == "1234567890"
+            assert notion_id.prefix == "notiontaskr-"
+
+        def test_レスポンスデータにIDがない場合はValueErrorを発生させること(self):
+            response_data = {"properties": {}}
+            with pytest.raises(ValueError):
+                NotionId.from_response_data(response_data)

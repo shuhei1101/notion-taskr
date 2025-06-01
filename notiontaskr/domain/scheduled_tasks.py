@@ -3,10 +3,12 @@ from typing import TYPE_CHECKING, List
 
 from notiontaskr.domain.name_labels.man_hours_label import ManHoursLabel
 from notiontaskr.domain.name_labels.parent_id_label import ParentIdLabel
+from notiontaskr.domain.value_objects.executed_man_hours import ExecutedManHours
 from notiontaskr.domain.value_objects.man_hours import ManHours
 from notiontaskr.domain.executed_tasks import ExecutedTasks
 from notiontaskr.domain.tasks import Tasks
 from notiontaskr.domain.value_objects.notion_id import NotionId
+from notiontaskr.domain.value_objects.scheduled_man_hours import ScheduledManHours
 
 if TYPE_CHECKING:
     from notiontaskr.domain.scheduled_task import ScheduledTask
@@ -38,17 +40,19 @@ class ScheduledTasks(Tasks["ScheduledTask"]):
     class AggregatePropertiesResult:
         """集計結果の型"""
 
-        scheduled_man_hours: ManHours
-        executed_man_hours: ManHours
+        scheduled_man_hours: ScheduledManHours
+        executed_man_hours: ExecutedManHours
 
     def sum_properties(self) -> "AggregatePropertiesResult":
         """タスクのプロパティを集計する"""
         return self.AggregatePropertiesResult(
             executed_man_hours=sum(
-                (task.executed_man_hours for task in self._tasks), start=ManHours(0)
+                (task.executed_man_hours for task in self._tasks),
+                start=ExecutedManHours(0),
             ),
             scheduled_man_hours=sum(
-                (task.scheduled_man_hours for task in self._tasks), start=ManHours(0)
+                (task.scheduled_man_hours for task in self._tasks),
+                start=ScheduledManHours(0),
             ),
         )
 

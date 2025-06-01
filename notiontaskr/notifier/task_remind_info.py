@@ -1,15 +1,16 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from notiontaskr import config
 from notiontaskr.notifier.remind_minutes import RemindMinutes
 
 
 @dataclass
 class TaskRemindInfo:
+    before_start_minutes: Optional[RemindMinutes] = None
+    before_end_minutes: Optional[RemindMinutes] = None
     has_before_start: bool = False
     has_before_end: bool = False
-    before_start_minutes: Optional[RemindMinutes] = RemindMinutes(minutes=5)
-    before_end_minutes: Optional[RemindMinutes] = RemindMinutes(minutes=5)
 
     @classmethod
     def from_empty(cls) -> "TaskRemindInfo":
@@ -48,6 +49,55 @@ class TaskRemindInfo:
             has_before_end=has_before_end,
             before_start_minutes=before_start_minutes,
             before_end_minutes=before_end_minutes,
+        )
+
+    @classmethod
+    def from_response_data(cls, data: dict) -> "TaskRemindInfo":
+        """レスポンスデータからインスタンスを生成する"""
+        try:
+            has_before_start = data["properties"]["開始前通知"]["checkbox"]
+            has_before_end = data["properties"]["終了前通知"]["checkbox"]
+            before_start_minutes = data["properties"]["開始前通知時間(分)"].get(
+                "number"
+            )
+            before_end_minutes = data["properties"]["終了前通知時間(分)"].get("number")
+            return cls.from_raw_values(
+                has_before_start=has_before_start,
+                has_before_end=has_before_end,
+                raw_before_start_minutes=before_start_minutes,
+                raw_before_end_minutes=before_end_minutes,
+            )
+        except (KeyError, TypeError) as e:
+            raise ValueError(f"レスポンスデータに必要なキーが存在しません")
+
+    def get_default_self(self):
+        """デフォルト値で初期化する"""
+        before_start_minutes = self.before_start_minutes
+        if before_start_minutes is None:
+            before_start_minutes = RemindMinutes(
+                minutes=config.DEFAULT_BEFORE_START_MINUTES
+            )
+
+        before_end_minutes = self.before_end_minutes
+        if before_end_minutes is None:
+            before_end_minutes = RemindMinutes(
+                minutes=config.DEFAULT_BEFORE_END_MINUTES
+            )
+
+        return TaskRemindInfo(
+            has_before_start=self.has_before_start,
+            has_before_end=self.has_before_end,
+            before_start_minutes=before_start_minutes,
+            before_end_minutes=before_end_minutes,
+        )
+
+    def has_value(self) -> bool:
+        """値が存在するか調べる"""
+        return (
+            self.has_before_start
+            or self.has_before_end
+            or self.before_start_minutes is not None
+            or self.before_end_minutes is not None
         )
 
     def __eq__(self, other: object) -> bool:

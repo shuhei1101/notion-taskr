@@ -18,6 +18,21 @@ class Tags:
             tags=tags,
         )
 
+    @classmethod
+    def from_response_data(cls, data: dict) -> "Tags":
+        """レスポンスデータからTagsを生成する
+
+        :param data: レスポンスデータ
+        :return: Tagsオブジェクト
+        """
+        try:
+            tags = [
+                Tag(tag["name"]) for tag in data["properties"]["タグ"]["multi_select"]
+            ]
+            return cls.from_tags(tags)
+        except (KeyError, IndexError, TypeError):
+            raise ValueError("タグの生成に失敗。レスポンスデータ構造が不正です。")
+
     def append(self, tag: Tag):
         self.tags.append(tag)
 

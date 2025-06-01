@@ -48,3 +48,36 @@ class TestNotionDate:
         ):
             with pytest.raises(ValueError):
                 NotionDate.from_raw_date("2023/01/01", "2023/01/02")
+
+    class Test_notionのresponse_dataからのインスタンス生成:
+        """例:
+
+        start_date_str = data["properties"]["日付"]["date"]["start"]
+        end_date_str = data["properties"]["日付"]["date"]["end"]
+        notion_date = NotionDate.from_raw_date(
+            start=start_date_str,
+            end=end_date_str,
+        )
+        """
+
+        def test_正しい形式のresponse_dataからNotionDateを生成できること(self):
+            response_data = {
+                "properties": {
+                    "日付": {
+                        "date": {
+                            "start": "2023-01-01T00:00:00Z",
+                            "end": "2023-01-02T00:00:00Z",
+                        }
+                    }
+                }
+            }
+            notion_date = NotionDate.from_response_data(response_data)
+            assert notion_date.start == datetime(2023, 1, 1, tzinfo=timezone.utc)
+            assert notion_date.end == datetime(2023, 1, 2, tzinfo=timezone.utc)
+
+        def test_response_dataに日付情報がない場合はValueErrorを発生させること(
+            self,
+        ):
+            response_data = {"properties": {"日付": {}}}
+            with pytest.raises(ValueError):
+                NotionDate.from_response_data(response_data)

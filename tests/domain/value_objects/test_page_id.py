@@ -28,3 +28,18 @@ class Test_PageId:
         def test_インスタンスを文字列に変換できること(self):
             page_id = PageId("123")
             assert str(page_id) == "123"
+
+    class Test_notionのresponse_dataからのインスタンス生成:
+        """
+        例: data["id"]
+        """
+
+        def test_レスポンスデータからインスタンスを生成できること(self):
+            response_data = {"id": "123"}
+            page_id = PageId.from_response_data_for_scheduled_task(response_data)
+            assert page_id.value == "123"
+
+        def test_レスポンスデータにidがない場合はValueErrorを発生させること(self):
+            response_data = {}
+            with pytest.raises(ValueError):
+                PageId.from_response_data_for_scheduled_task(response_data)

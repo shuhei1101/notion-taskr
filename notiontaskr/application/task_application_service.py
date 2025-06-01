@@ -360,9 +360,7 @@ class TaskApplicationService:
 
             timer.snap_delta("タスクの更新完了")
         else:
-            self.logger.warning(
-                "取得したタスクがありません。更新処理をスキップします。"
-            )
+            self.logger.info("取得したタスクがありません。更新処理をスキップします。")
 
         # ========== Slackリマインド通知 ==========
         if has_fetched_remind_tasks:
@@ -381,7 +379,7 @@ class TaskApplicationService:
 
             timer.snap_delta("Slack通知処理完了")
         else:
-            self.logger.warning(
+            self.logger.info(
                 "リマインド対象のタスクがありません。Slack通知をスキップします。"
             )
 
@@ -398,7 +396,7 @@ class TaskApplicationService:
                 )
             )
         else:
-            self.logger.warning(
+            self.logger.info(
                 "取得した予定タスクがありません。Pickleの保存をスキップします。"
             )
         if has_fetched_executed_tasks:
@@ -412,7 +410,7 @@ class TaskApplicationService:
                 )
             )
         else:
-            self.logger.warning(
+            self.logger.info(
                 "取得した実績タスクがありません。Pickleの保存をスキップします。"
             )
 
@@ -547,6 +545,9 @@ class TaskApplicationService:
     ):
         """予定タスクの実績工数を更新するメソッド"""
         updated_scheduled_tasks = scheduled_tasks.get_updated_tasks()
+        if not updated_scheduled_tasks:
+            self.logger.info("更新対象の予定タスクがありません。処理をスキップします。")
+            return
         tasks = []
         for updated_scheduled_task in updated_scheduled_tasks:
             tasks.append(
@@ -568,6 +569,9 @@ class TaskApplicationService:
     ):
         """実績タスクの予定タスクIDを更新するメソッド"""
         updated_executed_tasks = executed_tasks.get_updated_tasks()
+        if not updated_executed_tasks:
+            self.logger.info("更新対象の実績タスクがありません。処理をスキップします。")
+            return
         tasks = []
         for updated_executed_task in updated_executed_tasks:
             tasks.append(

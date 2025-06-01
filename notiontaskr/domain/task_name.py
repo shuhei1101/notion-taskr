@@ -43,6 +43,19 @@ class TaskName(LabelRegisterable):
 
         return instance
 
+    @classmethod
+    def from_response_data(cls, data: dict) -> "TaskName":
+        """レスポンスデータからインスタンスを生成する
+
+        :param data: レスポンスデータ
+        :return: TaskNameオブジェクト
+        """
+        try:
+            task_name = data["properties"]["名前"]["title"][0]["plain_text"]
+            return cls.from_raw_task_name(task_name)
+        except (KeyError, IndexError, TypeError):
+            raise ValueError("タスク名の生成に失敗。レスポンスデータ構造が不正です。")
+
     def __str__(self):
         """表示用の文字列を返す
 
@@ -52,12 +65,12 @@ class TaskName(LabelRegisterable):
 
         # 表示順に文字列を追加
         if self.id_label:
-            display_strs.append(self.id_label.get_display_str())
+            display_strs.append(str(self.id_label))
         display_strs.append(" " + self.task_name + " ")
         if self.man_hours_label:
-            display_strs.append(self.man_hours_label.get_display_str())
+            display_strs.append(str(self.man_hours_label))
         if self.parent_id_label:
-            display_strs.append(self.parent_id_label.get_display_str())
+            display_strs.append(str(self.parent_id_label))
 
         # 文字列を結合
         return ("".join(display_strs)).strip()

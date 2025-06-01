@@ -2,6 +2,8 @@ from abc import ABC
 
 from notiontaskr.domain.task import Task
 
+from notiontaskr import config
+
 
 class TaskUpdateProperties(ABC):
     """タスクの更新用プロパティ辞書を生成するクラス"""
@@ -12,9 +14,7 @@ class TaskUpdateProperties(ABC):
 
     def set_name(self):
         """名前の更新"""
-        self.properties["名前"] = {
-            "title": [{"text": {"content": self.task.get_display_name()}}]
-        }
+        self.properties["名前"] = {"title": [{"text": {"content": str(self.task)}}]}
         return self
 
     def set_parent_task_page_id(self):
@@ -47,14 +47,20 @@ class TaskUpdateProperties(ABC):
     def set_before_start_minutes(self):
         """開始前通知時間(分)の更新"""
         self.properties["開始前通知時間(分)"] = {
-            "number": int(self.task.remind_info.before_start_minutes)
+            "number": int(
+                self.task.remind_info.before_start_minutes
+                or config.DEFAULT_BEFORE_START_MINUTES
+            )
         }
         return self
 
     def set_before_end_minutes(self):
         """終了前通知時間(分)の更新"""
         self.properties["終了前通知時間(分)"] = {
-            "number": int(self.task.remind_info.before_end_minutes)
+            "number": int(
+                self.task.remind_info.before_end_minutes
+                or config.DEFAULT_BEFORE_END_MINUTES
+            )
         }
         return self
 

@@ -3,16 +3,17 @@ from typing import Optional
 
 from notiontaskr.domain.task import Task
 from notiontaskr.domain.task_name import TaskName
+from notiontaskr.domain.update_content import UpdateContent
 from notiontaskr.domain.value_objects.man_hours import ManHours
 from notiontaskr.domain.value_objects.notion_date import NotionDate
 from notiontaskr.domain.value_objects.notion_id import NotionId
 from notiontaskr.domain.value_objects.page_id import PageId
+from notiontaskr.domain.value_objects.parent_task_page_id import ParentTaskPageId
+from notiontaskr.domain.value_objects.scheduled_task_id import ScheduledTaskId
+from notiontaskr.domain.value_objects.scheduled_task_page_id import ScheduledTaskPageId
 from notiontaskr.domain.value_objects.status import Status
 from notiontaskr.domain.tags import Tags
-from notiontaskr.domain.value_objects.tag import Tag
 from notiontaskr.notifier.task_remind_info import TaskRemindInfo
-
-from notiontaskr import config
 
 
 @dataclass
@@ -20,11 +21,13 @@ class ExecutedTask(Task):
     """実績タスクモデル"""
 
     man_hours: ManHours = field(default_factory=lambda: ManHours(0))
-    scheduled_task_id: Optional[NotionId] = None  # 紐づいている予定タスクのID
-    scheduled_task_page_id: Optional[PageId] = None  # 紐づいている予定タスクのページID
+    scheduled_task_id: Optional[ScheduledTaskId] = None  # 紐づいている予定タスクのID
+    scheduled_task_page_id: Optional[ScheduledTaskPageId] = (
+        None  # 紐づいている予定タスクのページID
+    )
 
     @classmethod
-    def from_response_data(cls, data):
+    def from_response_data(cls, data: dict) -> "ExecutedTask":
         """レスポンスデータからインスタンスを生成する
 
         :raise KeyError:
@@ -33,84 +36,36 @@ class ExecutedTask(Task):
 
         task_number = data["properties"]["ID"]["unique_id"]["number"]
         try:
-            task_name = TaskName.from_raw_task_name(
-                data["properties"]["名前"]["title"][0]["plain_text"]
-            )
+            # ========== タスク名 ==========
+            task_name = TaskName.from_response_data(data)
 
-            start_date_str = data["properties"]["日付"]["date"]["start"]
-            end_date_str = data["properties"]["日付"]["date"]["end"]
-            notion_date = NotionDate.from_raw_date(
-                start=start_date_str,
-                end=end_date_str,
-            )
+            # ========== 日付 ==========
+            notion_date = NotionDate.from_response_data(data)
+            man_hours = ManHours.from_notion_date(notion_date)
 
-            tags = Tags.from_empty()
-            for tag in data["properties"]["タグ"]["multi_select"]:
-                tags.append(Tag(tag["name"]))
-
-            # リマインド情報の設定
-            has_before_start = data["properties"]["開始前通知"]["checkbox"]
-            has_before_end = data["properties"]["終了前通知"]["checkbox"]
-            before_start_minutes = data["properties"]["開始前通知時間(分)"].get(
-                "number"
-            )
-            before_end_minutes = data["properties"]["終了前通知時間(分)"].get("number")
-            remind_info = TaskRemindInfo.from_raw_values(
-                has_before_start=has_before_start,
-                has_before_end=has_before_end,
-                raw_before_start_minutes=before_start_minutes,
-                raw_before_end_minutes=before_end_minutes,
-            )
-
+            # ========== インスタンス生成 ==========
             instance = cls(
-                page_id=PageId(data["id"]),
-                name=task_name,
-                tags=tags,
-                id=NotionId(
-                    number=task_number,
-                    prefix=data["properties"]["ID"]["unique_id"]["prefix"],
-                ),
-                status=Status.from_str(
-                    data["properties"]["ステータス"]["status"]["name"]
-                ),
+                page_id=PageId.from_response_data_for_scheduled_task(data),  #
+                name=TaskName.from_response_data(data),
+                tags=Tags.from_response_data(data),
+                id=NotionId.from_response_data(data),
+                status=Status.from_response_data(data),
                 date=notion_date,
-                man_hours=ManHours.from_notion_date(notion_date),
-                scheduled_task_id=(
-                    NotionId(
-                        number=task_name.id_label.value,
-                    )
-                    if task_name.id_label
-                    else None
+                man_hours=man_hours,
+                scheduled_task_id=ScheduledTaskId.from_task_name(task_name),
+                parent_task_page_id=ParentTaskPageId.from_response_data_for_executed_task(
+                    data
                 ),
-                parent_task_page_id=(
-                    PageId(
-                        value=data["properties"]["親アイテム(予)"]["relation"][0]["id"],
-                    )
-                    if data["properties"]["親アイテム(予)"]["relation"]
-                    else None
+                scheduled_task_page_id=ScheduledTaskPageId.from_response_data_for_scheduled_task(
+                    data
                 ),
-                scheduled_task_page_id=(
-                    PageId(
-                        value=data["properties"]["予定タスク"]["relation"][0]["id"],
-                    )
-                    if data["properties"]["予定タスク"]["relation"]
-                    else None
-                ),
-                remind_info=remind_info,
+                remind_info=TaskRemindInfo.from_response_data(data),
             )
 
-            if not before_start_minutes or not before_end_minutes:
-                # 開始前通知時間と終了前通知時間が設定されていない場合はデフォルト値を設定
-                instance.update_remind_info(
-                    TaskRemindInfo.from_raw_values(
-                        has_before_start=has_before_start,
-                        has_before_end=has_before_end,
-                        raw_before_start_minutes=before_start_minutes
-                        or config.DEFAULT_BEFORE_START_MINUTES,
-                        raw_before_end_minutes=before_end_minutes
-                        or config.DEFAULT_BEFORE_END_MINUTES,
-                    )
-                )
+            # ========== リマインド情報の更新 ==========
+            if not instance.remind_info.has_value():
+                # 開始前通知時間と終了前通知時間が設定されていない場合はデフォルト値で更新
+                instance.update_remind_info(instance.remind_info.get_default_self())
 
             return instance
 
@@ -119,10 +74,14 @@ class ExecutedTask(Task):
         except ValueError as e:
             raise ValueError(f"In ExecutedTask[{task_number}] initialize error, {e}")
 
-    def update_scheduled_task_id(self, scheduled_task_id: NotionId):
+    def update_scheduled_task_id(self, scheduled_task_id: ScheduledTaskId):
         """予定タスクIDを更新するメソッド"""
         if self.scheduled_task_id != scheduled_task_id:
             self._toggle_is_updated(
-                f"予定タスクID: {self.scheduled_task_id} -> {scheduled_task_id}"
+                UpdateContent(
+                    key="予定タスクID",
+                    original_value=str(self.scheduled_task_id),
+                    update_value=str(scheduled_task_id),
+                )
             )
             self.scheduled_task_id = scheduled_task_id
