@@ -95,10 +95,7 @@ class TaskRemindInfo:
     def has_value(self) -> bool:
         """値が存在するか調べる"""
         return (
-            self.has_before_start
-            or self.has_before_end
-            or self.before_start_minutes is not None
-            or self.before_end_minutes is not None
+            self.before_start_minutes is not None or self.before_end_minutes is not None
         )
 
     def __eq__(self, other: object) -> bool:
