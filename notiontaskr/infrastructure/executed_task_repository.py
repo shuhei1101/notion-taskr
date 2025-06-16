@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable
 from notiontaskr.infrastructure.executed_task_update_properties import (
     ExecutedTaskUpdateProperties,
 )
